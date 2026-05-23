@@ -1,0 +1,26 @@
+services:
+  container-cost:
+    build: .
+    container_name: container-cost
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      # Docker socket — required to collect container stats
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Persistent config & database
+      - container-cost-data:/data
+    environment:
+      - PORT=8080
+      - DOCKER_COST_CONFIG_DIR=/data
+      - TZ=Asia/Jakarta
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  container-cost-data:
+    driver: local
