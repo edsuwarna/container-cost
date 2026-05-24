@@ -82,30 +82,7 @@ func NewStore(databaseURL string) (*Store, error) {
 }
 
 func (s *Store) migrate() error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		username VARCHAR(100) UNIQUE NOT NULL,
-		password_hash TEXT NOT NULL,
-		display_name VARCHAR(200) NOT NULL DEFAULT '',
-		role VARCHAR(20) NOT NULL DEFAULT 'engineer',
-		created_at TIMESTAMP DEFAULT NOW()
-	);
-
-	CREATE TABLE IF NOT EXISTS snapshots (
-		id SERIAL PRIMARY KEY,
-		vps_id INTEGER REFERENCES vps_agents(id) ON DELETE CASCADE,
-		created_at TIMESTAMP DEFAULT NOW(),
-		report_json JSONB NOT NULL
-	);
-
-	CREATE INDEX IF NOT EXISTS idx_snapshots_created
-		ON snapshots(created_at DESC);
-
-	CREATE INDEX IF NOT EXISTS idx_snapshots_vps
-		ON snapshots(vps_id, created_at DESC);
-	`
-	// Add vps_agents table separately to handle "IF NOT EXISTS" for new table
+	// Step 1: Create vps_agents table (new table, no dependency)
 	vpsTable := `
 	CREATE TABLE IF NOT EXISTS vps_agents (
 		id SERIAL PRIMARY KEY,
@@ -132,15 +109,46 @@ func (s *Store) migrate() error {
 	CREATE INDEX IF NOT EXISTS idx_vps_agents_name
 		ON vps_agents(name);
 	`
+	if _, err := s.db.Exec(vpsTable); err != nil {
+		return fmt.Errorf("failed to create vps_agents: %w", err)
+	}
+
+	// Step 2: Create users & snapshots (existing tables, IF NOT EXISTS)
+	schema := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		username VARCHAR(100) UNIQUE NOT NULL,
+		password_hash TEXT NOT NULL,
+		display_name VARCHAR(200) NOT NULL DEFAULT '',
+		role VARCHAR(20) NOT NULL DEFAULT 'engineer',
+		created_at TIMESTAMP DEFAULT NOW()
+	);
+
+	CREATE TABLE IF NOT EXISTS snapshots (
+		id SERIAL PRIMARY KEY,
+		vps_id INTEGER REFERENCES vps_agents(id) ON DELETE CASCADE,
+		created_at TIMESTAMP DEFAULT NOW(),
+		report_json JSONB NOT NULL
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_snapshots_created
+		ON snapshots(created_at DESC);
+	`
 	if _, err := s.db.Exec(schema); err != nil {
 		return err
 	}
-	_, err := s.db.Exec(vpsTable)
-	if err != nil {
-		// If vps_agents already exists (columns might differ), that's ok
-		// Just add the vps_id column to snapshots if missing
-		s.db.Exec(`ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS vps_id INTEGER REFERENCES vps_agents(id) ON DELETE CASCADE`)
+
+	// Step 3: Add vps_id column to snapshots if it doesn't exist (for existing DBs)
+	if _, err := s.db.Exec(`
+		ALTER TABLE snapshots ADD COLUMN IF NOT EXISTS vps_id INTEGER REFERENCES vps_agents(id) ON DELETE CASCADE
+	`); err != nil {
+		// If column already exists but FK constraint failed, that's fine
+		return fmt.Errorf("failed to add vps_id to snapshots: %w", err)
 	}
+
+	// Step 4: Create index on vps_id if it doesn't exist
+	s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_snapshots_vps ON snapshots(vps_id, created_at DESC)`)
+
 	return nil
 }
 
