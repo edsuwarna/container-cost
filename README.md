@@ -1,77 +1,143 @@
-# Docker Cost Calculator 💰🐳
+# Container Cost 💰🐳
 
-> Hitung biaya container Docker berdasarkan resource usage aktual di VPS — **dengan dashboard & auth!**
+> Multi-VPS Docker Container Cost Calculator — Agent & Central Server Architecture.
 
-Docker Cost Calculator membantu developer/DevOps melihat seberapa besar biaya yang dipakai setiap container di VPS. Cocok buat **chargeback**, **cost tracking**, atau sekedar tahu container mana yang paling boros tanpa nebak-nebak.
+Hitung & monitor biaya container Docker di **satu atau banyak VPS** dari dashboard terpusat. Deploy **agent** di tiap VPS, semua data otomatis terkumpul di **central server**.
+
+Cocok buat **chargeback**, **cost tracking**, atau tau container mana yang paling boros tanpa SSH satu-satu.
 
 ---
 
 ## ✨ Fitur
 
-- 🔍 **Collect otomatis** — Baca stat CPU/RAM dari semua container via Docker socket
-- 🧮 **Weighted cost allocation** — Hitung biaya per container pake formula terbobot (CPU 50%, RAM 40%, Storage 10%)
-- 💾 **PostgreSQL storage** — Simpan snapshot + user data
-- 📡 **REST API** — Integrasi dengan tools lain
-- 🔐 **Auth & Role-based access** — Login/logout, 3 role (admin/engineer/management)
-- 📊 **Dashboard UI** — Chart cost distribution, breakdown, trend, container history
-- ⚡ **Auto refresh** — Generate report otomatis tiap 30 detik
-- 🐳 **Docker Compose ready** — 2 service (Go app + PostgreSQL)
+### 🔹 Single VPS (Legacy)
+- 🔍 Collect CPU/RAM dari Docker socket
+- 🧮 Weighted cost allocation (CPU 50%, RAM 40%, Storage 10%)
+- 💾 PostgreSQL storage + history
+- 📊 Frontend dashboard (Chart.js — doughnut, bar, line chart)
+- 🔐 Auth system (admin/engineer/management)
+- 🐳 Docker Compose deployment
 
-## 📊 Preview
+### 🔸 Multi-VPS (v2.0)
+- 🖥️ **VPS Management** — tambah/hapus/edit VPS dari dashboard
+- 🤖 **Agent Mode** — `--mode=agent` di setiap VPS
+- 📡 **Push API** — agent push report ke central (API key auth)
+- 📊 **Aggregated Dashboard** — total cost semua VPS
+- 🟢 **Live Status** — online/offline detection per VPS
+- 🔑 **Auto API Key** — generate key pas tambah VPS
+- 🐳 **Docker Image** — `ghcr.io/edsuwarna/container-cost`
+- 🚀 **One-liner deploy** — `curl ... | bash`
+
+---
+
+## 🏗️ Arsitektur
 
 ```
-Container           CPU%    RAM      Cost/Bulan
-───────────────────────────────────────────────
-vps-dashboard       2.5%    128 MB    Rp  6.500
-vps-dashboard-db    1.2%    256 MB    Rp  9.200
-nginx-proxy         0.8%     64 MB    Rp  3.100
-postgres            15.2%   1.2 GB    Rp 45.800
-───────────────────────────────────────────────
-Overhead (OS/Docker)                   Rp 28.000
-Unallocated (idle)                     Rp 37.400
-TOTAL VPS                              Rp200.000
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  VPS-1       │  │  VPS-2       │  │  VPS-3       │
+│  ┌──────────┐│  │  ┌──────────┐│  │  ┌──────────┐│
+│  │  Agent   ││  │  │  Agent   ││  │  │  Agent   ││
+│  │ (Docker) ││  │  │ (Docker) ││  │  │ (Docker) ││
+│  └────┬─────┘│  │  └────┬─────┘│  │  └────┬─────┘│
+└───────┼──────┘  └───────┼──────┘  └───────┼──────┘
+        │ POST            │ POST            │ POST
+        │ /api/v1/push    │ /api/v1/push    │ /api/v1/push
+        ▼                 ▼                 ▼
+┌───────────────────────────────────────────────────┐
+│               CENTRAL SERVER                        │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  API Server (:8080) + Frontend Dashboard    │   │
+│  │  PostgreSQL (snapshots, users, vps_agents)  │   │
+│  └─────────────────────────────────────────────┘   │
+└───────────────────────────────────────────────────┘
+```
+
+Setiap agent punya **config.json sendiri** (nama VPS, spesifikasi, harga). Agent ngitung cost per VPS masing-masing, lalu push hasilnya ke central. Dashboard langsung nampilin data dari semua VPS.
+
+---
+
+## 🚀 Quick Start
+
+### 1️⃣ Central Server
+
+```bash
+git clone https://github.com/edsuwarna/container-cost.git
+cd container-cost
+
+# Set DATABASE_URL di docker-compose.yml atau .env
+# Lalu:
+docker compose up -d
+
+# Buka: http://localhost:8081
+# Login: admin / change-me
+```
+
+### 2️⃣ Tambah VPS dari Dashboard
+
+Login → **VPS** menu (admin only) → **➕ Tambah VPS** → isi nama → dapet API Key + command buat agent:
+
+```
+docker-cost --mode=agent \
+  --server=http://CENTRAL_IP:8080 \
+  --api-key=dckr_a1b2c3d4...
+```
+
+### 3️⃣ Deploy Agent di VPS Lain
+
+**One-liner (recommended):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh | bash -s -- \
+  --server=http://CENTRAL_IP:8080 \
+  --api-key=dckr_lanjka... \
+  --name="Hetzner CX42" \
+  --price=200000 \
+  --cpu=4 \
+  --ram=8
+```
+
+**Atau pake docker-compose:**
+```bash
+curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
+# Edit: ganti --server dan --api-key
+docker compose -f docker-compose.agent.yml up -d
+```
+
+**Atau pake docker run:**
+```bash
+docker run -d --name container-cost-agent \
+  --restart unless-stopped \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v ~/.docker-cost/config.json:/root/.docker-cost/config.json:ro \
+  ghcr.io/edsuwarna/container-cost:latest \
+  --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
+```
+
+**Atau binary langsung:**
+```bash
+# Di VPS target (butuh Go 1.22+)
+docker-cost --mode=agent \
+  --server=http://CENTRAL_IP:8080 \
+  --api-key=dckr_xxx \
+  --push-interval=60
 ```
 
 ---
 
-## 🚀 Quick Start (Docker)
-
-### 1. Clone & konfigurasi
-
-```bash
-git clone <repo-url>
-cd docker-cost
-
-# Config sudah include di docker-compose.yml
-# Default: Rp 200.000/bulan, 4 CPU, 8 GB RAM
-```
-
-### 2. Jalankan
-
-```bash
-docker compose up -d
-```
-
-### 3. Buka dashboard
+## 📊 Preview
 
 ```
-http://localhost:8081
-```
+VPS-1: Hetzner CX42 (Rp 200.000/bulan)
+├── web        2.5% CPU   128 MB RAM    Rp  6.500
+├── postgres  15.2% CPU   1.2 GB RAM    Rp 45.800
+└── nginx      0.8% CPU    64 MB RAM    Rp  3.100
 
-**Login default:** `admin` / `change-me`
+VPS-2: DOK Basic (Rp 350.000/bulan)
+├── api        8.1% CPU   512 MB RAM    Rp 28.400
+├── redis      3.2% CPU   256 MB RAM    Rp 12.100
+└── worker    12.5% CPU   1.0 GB RAM    Rp 41.200
 
-### 4. Generate report pertama
-
-Klik tombol **🔄 Generate Report** di dashboard, atau via API:
-
-```bash
-curl -X POST http://localhost:8081/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"change-me"}' \
-  -c cookies.txt
-
-curl -X POST http://localhost:8081/api/report/refresh \
-  -b cookies.txt
+──────────────────────────────────────────────────
+TOTAL: 6 containers · Rp 137.100 · 2 VPS
 ```
 
 ---
@@ -79,90 +145,85 @@ curl -X POST http://localhost:8081/api/report/refresh \
 ## 📡 API Documentation
 
 ### Base URL
-
 ```
-http://localhost:8081
+http://localhost:8080 (atau 8081 via docker-compose)
 ```
 
-### Unauthenticated
-
+### Public
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/auth/login` | Login (dapet session cookie) |
-| `GET` | `/api/auth/check` | Cek status session |
+| GET | `/api/health` | Health check |
 
-### Authenticated (perlu session cookie)
-
+### Auth
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/auth/logout` | Logout |
-| `GET` | `/api/report/latest` | Report cost terakhir |
-| `POST` | `/api/report/refresh` | Collect stats + generate report baru |
-| `GET` | `/api/report/history` | Histori report (default 7 hari) |
-| `GET` | `/api/containers` | List container + cost per bulan |
-| `GET` | `/api/containers/{name}` | Cost history per container (50 snapshot) |
-| `GET` | `/api/config` | Lihat konfigurasi VPS |
-| `PUT` | `/api/config` | Update konfigurasi VPS |
-| `GET` | `/api/costs/trends` | Tren biaya harian |
+| POST | `/api/auth/login` | Login (body: username, password) |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/check` | Check session |
 
-### Admin Only
-
+### Agent Push (API Key auth)
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/users` | List semua user |
-| `POST` | `/api/users` | Tambah user baru |
-| `PUT` | `/api/users/{id}` | Update role user |
-| `DELETE` | `/api/users/{id}` | Hapus user |
-| `POST` | `/api/users/{id}/reset-password` | Reset password user |
+| POST | `/api/v1/push` | Push report (Authorization: Bearer <key>) |
 
-### Contoh Response
+### Dashboard (Authenticated)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/dashboard` | Aggregated multi-VPS report |
+| GET | `/api/report/latest` | Latest snapshot |
+| POST | `/api/report/refresh` | Generate report |
+| GET | `/api/report/history` | Historical reports |
+| GET | `/api/containers` | List all containers + cost |
+| GET | `/api/containers/{name}` | Container cost history |
+| GET | `/api/costs/trends` | Cost trend over time |
+| GET/PUT | `/api/config` | VPS config |
 
-**GET /api/report/latest**
-```json
-{
-  "vps": {
-    "name": "My VPS",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
-  "containers": [
-    {
-      "container": {
-        "name": "web",
-        "id": "abc123def456",
-        "image": "nginx:alpine",
-        "cpu_percent": 2.5,
-        "mem_usage_mb": 128,
-        "status": "running"
-      },
-      "cpu_cost": 4750.00,
-      "ram_cost": 1500.00,
-      "storage_cost": 500.00,
-      "total_cost": 6750.00
-    }
-  ],
-  "overhead_cost": 30000.00,
-  "unallocated_cost": 55000.00,
-  "total_cost": 200000.00,
-  "period": "month"
-}
+### VPS Management (Admin only)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/vps` | List VPS agents |
+| POST | `/api/vps` | Add new VPS (generates API key) |
+| GET | `/api/vps/{id}` | VPS detail + latest report |
+| PUT | `/api/vps/{id}` | Update VPS name/notes |
+| DELETE | `/api/vps/{id}` | Remove VPS + data |
+| POST | `/api/vps/{id}/reset-key` | Regenerate API key |
+
+### User Management (Admin only)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET/POST | `/api/users` | List / Create users |
+| PUT/DELETE | `/api/users/{id}` | Update / Delete user |
+| POST | `/api/users/{id}/reset-password` | Reset password |
+
+---
+
+## 🖥️ CLI Reference
+
+```
+Usage of /app/docker-cost:
+  -mode string
+        Run mode: 'server' (central) or 'agent' (default "server")
+  -server string
+        Central server URL (agent mode)
+  -api-key string
+        Agent API key (agent mode)
+  -push-interval int
+        Push interval in seconds (agent mode, default 60)
 ```
 
-**GET /api/containers/web**
-```json
-[
-  {
-    "timestamp": "2026-05-23T12:00:00Z",
-    "name": "web",
-    "cpu_percent": 2.5,
-    "mem_usage_mb": 128,
-    "total_cost": 6750.00
-  }
-]
+---
+
+## 🧮 Cost Formula
+
 ```
+Container Cost = Harga VPS × Weighted Resource Fraction
+
+CPU Fraction   = Container CPU cores / Available CPU (after 15% overhead)
+RAM Fraction   = Container RAM GB / Available RAM
+Weighted       = CPU_Frac × 50% + RAM_Frac × 40% + Storage_Frac × 10%
+```
+
+Setiap agent ngitung cost **per VPS masing-masing** pake config sendiri (harga, CPU, RAM beda tiap VPS).
 
 ---
 
@@ -170,167 +231,56 @@ http://localhost:8081
 
 ```
 docker-cost/
-├── cmd/
-│   └── server/
-│       └── main.go              # Entry point, wiring dependencies
+├── cmd/server/main.go              # Entry point (server & agent mode)
 ├── internal/
-│   ├── collector/
-│   │   └── docker.go            # Docker socket → ContainerStats
-│   ├── calculator/
-│   │   └── cost.go              # Cost formula engine (weighted)
-│   ├── storage/
-│   │   └── postgres.go          # PostgreSQL CRUD (users, snapshots)
-│   ├── api/
-│   │   └── handler.go           # HTTP handlers + auth middleware
-│   └── config/
-│       └── config.go            # VPSConfig loader/saver
-├── web/
-│   └── dist/
-│       ├── index.html           # Dashboard HTML
-│       ├── css/style.css        # Dark theme CSS
-│       └── js/app.js            # Frontend logic (Chart.js)
-├── Dockerfile                   # Multi-stage Go build
-├── docker-compose.yml           # App + PostgreSQL
-├── Makefile                     # Build/run/test commands
-├── go.mod / go.sum
-├── PRD.md                       # Product Requirements Document
-└── README.md                    # You are here
-```
-
-### Package Dependency
-
-```
-cmd/server/main.go
-    │
-    ├── internal/config      (VPSConfig struct, load/save JSON)
-    ├── internal/collector   (Docker API via Unix socket)
-    ├── internal/calculator  (Cost formula: weighted allocation)
-    ├── internal/storage     (PostgreSQL: snapshots + users)
-    └── internal/api         (HTTP handlers, routing, auth)
+│   ├── agent/client.go             # Agent push client + retry logic
+│   ├── collector/docker.go         # Docker socket → ContainerStats
+│   ├── calculator/cost.go          # Weighted cost formula engine
+│   ├── storage/postgres.go         # PostgreSQL: users, snapshots, vps_agents
+│   ├── api/handler.go              # HTTP handlers + routes
+│   └── config/config.go            # VPSConfig + AgentConfig loader
+├── web/dist/                        # Frontend (HTML/CSS/JS + Chart.js)
+├── deploy/
+│   └── setup-agent.sh              # One-liner agent deployment script
+├── Dockerfile                       # Multi-stage build → ghcr.io
+├── docker-compose.yml               # Central server (Go app + PostgreSQL)
+├── docker-compose.agent.yml         # Agent deployment
+├── Makefile
+├── PRD.md
+└── README.md
 ```
 
 ---
 
-## 🧮 Cara Kerja Cost Calculator
+## 🐳 Docker Image
 
-### 1. Collect
+Image tersedia di **GitHub Container Registry**:
 
-```
-Docker Socket ──▶ listContainers() ──▶ getContainerStats(id)
-                    │                       │
-                    ▼                       ▼
-              Container list           CPU delta, mem usage
-              (id, name, image)        (from /containers/{id}/stats)
+```bash
+docker pull ghcr.io/edsuwarna/container-cost:latest
 ```
 
-Collector membaca Docker API via Unix socket (`/var/run/docker.sock`):
-- List container: `GET /containers/json`
-- Stat per container: `GET /containers/{id}/stats?stream=false`
+Tags:
+- `latest` — rilis terbaru
+- `v2.0.0` — Multi-VPS release
 
-CPU dihitung dari delta antara waktu sekarang dan sebelumnya (mirip `docker stats`).
-
-### 2. Calculate
-
-```
-Stat Container ──▶ CPU Fraction  ──▶ Weight ──▶ Container Cost
-                  RAM Fraction  ──▶ Weight ──▶ Container Cost
-                  Storage        ──▶ Weight ──▶ Container Cost
-                                +
-                        Overhead Cost
-                        Unallocated Cost
-                                =
-                      Total VPS Cost
+### Run as Server
+```bash
+docker run -d --name container-cost \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  ghcr.io/edsuwarna/container-cost:latest
 ```
 
-Rumus lengkapnya ada di [PRD.md → Cost Formula](./PRD.md#4-cost-formula).
-
-### 3. Store & Serve
-
+### Run as Agent
+```bash
+docker run -d --name container-cost-agent \
+  --restart unless-stopped \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -v $HOME/.docker-cost/config.json:/root/.docker-cost/config.json:ro \
+  ghcr.io/edsuwarna/container-cost:latest \
+  --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```
-Calculate ──▶ SaveSnapshot() ──▶ PostgreSQL (snapshots table)
-                 │
-                 ▼
-         REST API endpoints + Web Dashboard
-```
-
----
-
-## 🔐 Auth System
-
-| Role | Akses |
-|------|-------|
-| **admin** | Full — semua halaman + user management |
-| **engineer** | Dashboard, Containers, Settings |
-| **management** | Dashboard (read-only), Containers |
-
-**Default user:**
-- `admin` / `change-me` — Admin
-- `eng` / `change-me` — Engineer
-- `mgt` / `change-me` — Management
-
----
-
-## ⚙️ Environment Variables
-
-| Variable | Default | Deskripsi |
-|----------|---------|-----------|
-| `PORT` | `8080` | Port HTTP server |
-| `DOCKER_COST_CONFIG_DIR` | `/data` | Direktori config |
-| `DATABASE_URL` | `postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable` | Koneksi PostgreSQL |
-| `ADMIN_PASSWORD` | `change-me` | Password default admin |
-| `TZ` | `Asia/Jakarta` | Timezone |
-
----
-
-## 🚦 Status & Roadmap
-
-### ✅ v1.0 — Core
-- [x] Docker stats collector via Unix socket
-- [x] Weighted cost allocation formula (CPU 50%, RAM 40%, Storage 10%)
-- [x] PostgreSQL storage with auto-migration
-- [x] REST API (13 endpoints)
-- [x] VPS config from JSON file
-- [x] Startup snapshot
-
-### ✅ v1.1 — Dashboard
-- [x] HTML/CSS/JS frontend with Chart.js
-- [x] Cost distribution chart (doughnut)
-- [x] Cost breakdown chart (bar)
-- [x] Cost trend chart (line — dual axis: cost + containers)
-- [x] Container detail with cost history chart
-- [x] Period filter (latest/7d/30d/all)
-- [x] Auto-refresh every 30s
-
-### ✅ v1.2 — Auth & Security
-- [x] Login/logout with session cookies
-- [x] bcrypt password hashing
-- [x] Role-based access (3 roles)
-- [x] User management CRUD (admin)
-- [x] Rate limiting on login
-- [x] Docker Compose deployment
-
-### 📋 v2.0 — Integration (Next)
-- [ ] Telegram bot for daily reports
-- [ ] Multi-VPS mode
-- [ ] Cost alerts (webhook)
-- [ ] Export CSV/PDF
-- [ ] Scheduled reports (cron)
-
----
-
-## 🧪 Edge Cases Handled
-
-| Skenario | Handling |
-|----------|----------|
-| Docker ga terinstall | Collector.available=false, return error dengan pesan jelas |
-| Container baru jalan | Terdeteksi di listContainers, masuk next report |
-| Container berhenti/mati | Stats = 0, cost minimal |
-| Config file belum ada | Auto-create dengan default values |
-| DB belum ada | Auto-create + migrate |
-| Report kosong (belum pernah refresh) | Return message: "no reports yet" |
-| Container name sama | Container ID tetap unik |
-| CPU delta 0 (container idle) | Cost minimal (ga ada aktivitas CPU) |
-| Overweight (weights > 1) | Normalized — totalWeight dipake sebagai divisor |
 
 ---
 
@@ -342,8 +292,11 @@ Calculate ──▶ SaveSnapshot() ──▶ PostgreSQL (snapshots table)
 # Go 1.22+
 go version
 
-# Docker (untuk collect container stats)
-docker ps
+# PostgreSQL 16+
+psql --version
+
+# Docker (for agent testing)
+docker --version
 ```
 
 ### Commands
@@ -352,11 +305,17 @@ docker ps
 # Build binary
 make build
 
+# Run server mode langsung
+make run-quick
+
 # Test
 make test
 
-# Run with Docker
-docker compose up -d
+# Build Docker image
+docker build -t container-cost:latest .
+
+# Clean
+make clean
 ```
 
 ### Testing
@@ -370,7 +329,66 @@ go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
 ```
 
-> **Note:** Testing butuh Docker socket. Kalo ga ada Docker, test collector bakal skip.
+---
+
+## 🚦 Status & Roadmap
+
+### ✅ v1.0 — Core
+- [x] Docker stats collector
+- [x] Weighted cost allocation formula
+- [x] PostgreSQL storage + auto-migration
+- [x] REST API (health, report, containers, config)
+- [x] VPS config from JSON file
+
+### ✅ v1.1 — Dashboard & Auth
+- [x] Frontend dashboard (Chart.js)
+- [x] Cost charts + container detail
+- [x] Auth system (login, sessions, roles)
+- [x] User management (CRUD)
+- [x] Dockerfile + docker-compose.yml
+
+### ✅ v2.0 — Multi-VPS Scale
+- [x] Multi-VPS agent mode (`--mode=agent`)
+- [x] Agent push API (`POST /api/v1/push`)
+- [x] VPS management (CRUD from dashboard)
+- [x] Aggregated dashboard (all VPS)
+- [x] Offline detection per VPS
+- [x] GitHub Container Registry
+- [x] One-liner agent deployment
+
+### 📋 Future
+- [ ] Cost alerts (Telegram/webhook)
+- [ ] Export CSV/PDF
+- [ ] Cost comparison chart antar VPS
+- [ ] Telegram bot for daily reports
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Deskripsi |
+|----------|---------|-----------|
+| `PORT` | `8080` | Port HTTP server |
+| `DATABASE_URL` | — | PostgreSQL connection string |
+| `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
+| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Direktori config & database |
+| `TZ` | `Asia/Jakarta` | Timezone |
+
+---
+
+## 🧪 Edge Cases Handled
+
+| Skenario | Handling |
+|----------|----------|
+| Docker ga terinstall di central | Central tetep jalan — dia nunggu push dari agent |
+| Agent ga bisa reach central | Retry 5x dengan exponential backoff |
+| Container baru jalan | Masuk di next report cycle |
+| Container berhenti/mati | Stats = 0, cost minimal |
+| VPS mati total | Status otomatis jadi offline setelah 24 jam |
+| Multiple VPS name sama | Dibedain oleh ID internal (vps_id) |
+| Config file belum ada | Auto-create dengan default values |
+| Container name duplicate di VPS beda | Container "nginx" di VPS-1 ≠ "nginx" di VPS-2 |
+| API key kompromi | Bisa regenerate dari dashboard, key lama langsung mati |
 
 ---
 
@@ -378,8 +396,10 @@ go tool cover -html=coverage.out -o coverage.html
 
 **Endang Suwarna** — DevOps Engineer & AI Infrastructure Enthusiast
 
+---
+
 ## 📚 Related
 
 - [PRD.md](./PRD.md) — Product Requirements Document (detail lengkap)
 - [Docker Engine API](https://docs.docker.com/engine/api/v1.43/) — Docker API reference
-- [Chart.js](https://www.chartjs.org/) — Frontend chart library
+- [ghcr.io/edsuwarna/container-cost](https://github.com/edsuwarna/container-cost/pkgs/container/container-cost) — Docker image

@@ -1,74 +1,123 @@
 # Docker Cost Calculator — PRD
 
 > **Product Requirements Document**
-> **Version:** 1.0
-> **Status:** Draft
+> **Version:** 2.0
+> **Status:** Active
 > **Author:** Endang Suwarna
 
 ---
 
 ## 1. Executive Summary
 
-**Docker Cost Calculator** adalah alat untuk menghitung alokasi biaya container Docker berdasarkan resource yang digunakan (CPU, RAM, Storage) di atas sebuah VPS. Setiap container yang jalan di VPS yang sama berbagi resource VPS tersebut — dengan kalkulator ini, kita bisa tahu secara fair berapa biaya masing-masing container per bulan.
+**Docker Cost Calculator** adalah alat untuk menghitung alokasi biaya container Docker berdasarkan resource yang digunakan (CPU, RAM, Storage) di satu atau banyak VPS. Mendukung **arsitektur agent + central server** — deploy agent di setiap VPS, semua data terkumpul di central dashboard.
 
 ### 1.1 Problem Statement
 
-Developer/DevOps yang menjalankan banyak container di satu VPS sering kesulitan menjawab pertanyaan:
+Developer/DevOps yang menjalankan container di **banyak VPS** sering kesulitan:
 
-- "Container A make biaya berapa per bulan?"
-- "Kalau client bayar sekian, untung gue berapa setelah dikurangi biaya VPS?"
-- "Container mana yang paling boros resource?"
-- "Apakah harga VPS yang gue bayar sebanding dengan yang dipake?"
+- "Container A di VPS mana? Total cost semua VPS berapa?"
+- "VPS mana yang paling mahal? Paling boros?"
+- "Kalau client punya container di VPS berbeda, gue charge gimana?"
+- "Tracking cost per VPS tanpa harus SSH satu-satu?"
 
-Tanpa alat ini, jawabannya cuma perkiraan kasar karena resource sharing antar container.
+Tanpa alat ini, jawabannya manual: SSH ke tiap VPS, `docker stats`, kalkulasi manual.
 
 ### 1.2 Target Audience
 
 | Segment | Kebutuhan |
 |---------|-----------|
-| **Indie Developer / Solo Dev** | Side project di VPS murah, pingin tau cost breakdown |
+| **Indie Developer / Solo Dev** | Side project di 1-3 VPS, tau cost breakdown |
 | **DevOps Engineer** | Multi-tenant container deployment, chargeback ke tim/client |
 | **VPS Reseller** | Jual container ke client, perlu acuan pricing |
-| **Small Team** | Sharing 1 VPS, perlu fair cost splitting |
+| **Small Team** | Sharing VPS, perlu fair cost splitting |
 
 ### 1.3 Goals
 
 1. **Show cost per container** secara real-time berdasarkan resource usage aktual
-2. **Historical tracking** — lihat tren biaya dari waktu ke waktu
-3. **Fair allocation** — weighted formula yang representatif (CPU 50%, RAM 40%, Storage 10%)
-4. **REST API first** — biar gampang diintegrasi sama tools lain (dashboard, bot, dll)
-5. **Zero dependency on cloud APIs** — semua berjalan lokal via Docker socket
+2. **Multi-VPS support** — agent di tiap VPS push ke central dashboard
+3. **Historical tracking** — lihat tren biaya dari waktu ke waktu
+4. **Fair allocation** — weighted formula (CPU 50%, RAM 40%, Storage 10%)
+5. **REST API** — integrasi dengan tools lain
+6. **Role-based access** — admin, engineer, management
 
 ### 1.4 Non-Goals
 
 - ❌ Bukan billing system — ga ada payment gateway
 - ❌ Bukan cost optimizer — ga kasih rekomendasi ganti provider
 - ❌ Bukan container orchestrator — cukup monitor cost aja
-- ❌ Bukan multi-VPS agent — arsitektur single VPS dulu
 
 ---
 
 ## 2. Product Overview
 
-### 2.1 Arsitektur
+### 2.1 Arsitektur Multi-VPS
+
+```
+┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+│  VPS-1 (Agent)       │     │  VPS-2 (Agent)       │     │  VPS-3 (Agent)       │
+│  ┌─────────────────┐ │     │  ┌─────────────────┐ │     │  ┌─────────────────┐ │
+│  │ Docker Collector │ │     │  │ Docker Collector │ │     │  │ Docker Collector │ │
+│  │ Cost Calculator  │ │     │  │ Cost Calculator  │ │     │  │ Cost Calculator  │ │
+│  │ Agent Client     │─┼─────┼─►│ Agent Client     │─┼─────┼─►│ Agent Client     │ │
+│  └─────────────────┘ │     │  └─────────────────┘ │     │  └─────────────────┘ │
+│  config.json:        │     │  config.json:        │     │  config.json:        │
+│  name: "Hetzner"     │     │  name: "DOK"         │     │  name: "Vultr"      │
+│  cpu: 4, ram: 8GB   │     │  cpu: 8, ram: 16GB   │     │  cpu: 2, ram: 4GB   │
+│  price: Rp200rb      │     │  price: Rp350rb      │     │  price: Rp100rb     │
+└─────────────────────┘     └─────────────────────┘     └─────────────────────┘
+         │                          │                          │
+         └──────────────┬───────────┴──────────────┬───────────┘
+                        │                          │
+               POST /api/v1/push          POST /api/v1/push
+               (Bearer API Key)            (Bearer API Key)
+                        │                          │
+                        ▼                          ▼
+            ┌──────────────────────────────────────────┐
+            │           CENTRAL SERVER                   │
+            │                                            │
+            │  ┌──────────┐   ┌────────────┐           │
+            │  │Collector │──▶│ Calculator │──▶  DB    │
+            │  │ (local)  │   │ (Weighted  │    PG    │
+            │  │          │   │  Formula)  │          │
+            │  └──────────┘   └─────┬──────┘          │
+            │                       │                  │
+            │                 ┌─────▼──────────────┐   │
+            │                 │  REST API Server    │   │
+            │                 │  :8080              │   │
+            │                 │  /api/v1/push       │   │
+            │                 │  /api/vps/*         │   │
+            │                 │  /api/dashboard     │   │
+            │                 │  /api/report/*      │   │
+            │                 └────────────────────┘   │
+            │                                            │
+            │  ┌──────────────────────────────────┐      │
+            │  │  Frontend Dashboard (Chart.js)    │      │
+            │  │  - Multi-VPS overview             │      │
+            │  │  - VPS management (admin)         │      │
+            │  │  - Cost per container / VPS       │      │
+            │  │  - Cost trend charts              │      │
+            │  └──────────────────────────────────┘      │
+            └────────────────────────────────────────────┘
+```
+
+### 2.2 Arsitektur Single VPS (Legacy)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Docker Host (VPS)                     │
+│                    Docker Host (VPS)                      │
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐   │
 │  │              Docker Cost Calculator                │   │
-│  │                                                    │   │
-│  │  ┌──────────┐   ┌────────────┐   ┌────────────┐  │   │
-│  │  │Collector │──▶│ Calculator │──▶│  Storage    │  │   │
-│  │  │(Docker   │   │ (Weighted  │   │ (PostgreSQL)│  │   │
-│  │  │ socket)  │   │  Formula)  │   │             │  │   │
-│  │  └──────────┘   └─────┬──────┘   └──────┬──────┘  │   │
-│  │                       │                  │         │   │
-│  │                 ┌─────▼──────────────────▼──────┐  │   │
-│  │                 │        REST API Server         │  │   │
-│  │                 │        (port :8080)           │  │   │
-│  │                 └───────────────────────────────┘  │   │
+│  │  ┌──────────┐   ┌────────────┐   ┌───────────┐  │   │
+│  │  │Collector │──▶│ Calculator │──▶│  Storage   │  │   │
+│  │  │(Docker   │   │ (Weighted  │   │ (PostgreSQL│  │   │
+│  │  │ socket)  │   │  Formula)  │   │           │  │   │
+│  │  └──────────┘   └─────┬──────┘   └─────┬─────┘  │   │
+│  │                       │                │         │   │
+│  │                 ┌─────▼────────────────▼──────┐  │   │
+│  │                 │        REST API Server       │  │   │
+│  │                 │        (port :8080)          │  │   │
+│  │                 └─────────────────────────────┘  │   │
 │  └──────────────────────────────────────────────────┘   │
 │                                                          │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐                  │
@@ -78,112 +127,124 @@ Tanpa alat ini, jawabannya cuma perkiraan kasar karena resource sharing antar co
 └─────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Tech Stack
+### 2.3 Tech Stack
 
 | Layer | Technology | Alasan |
 |-------|-----------|--------|
 | **Language** | Go 1.22 | Performa tinggi, binary kecil, cocok untuk CLI/tool |
-| **Storage** | PostgreSQL 16 | Robust, battle-tested, support JSONB untuk snapshot report |
+| **Storage** | PostgreSQL 16 | Robust, JSONB untuk snapshot report |
 | **API** | net/http (stdlib) | No framework — ringan, mudah di-maintain |
 | **Docker API** | Unix socket (HTTP) | Baca stat container langsung dari Docker Engine |
-| **Frontend** | Vanilla HTML/CSS/JS + Chart.js | Zero build step, lightweight, dark theme |
-| **Auth** | Session-based (cookie) | Login/logout, bcrypt password, 3 role (admin/engineer/management) |
+| **Frontend** | Vanilla HTML/CSS/JS + Chart.js | Zero build step, dark theme |
+| **Auth** | Session-based (cookie) | Login/logout, bcrypt, 3 role (admin/engineer/management) |
+| **Container Registry** | GitHub Container Registry | ghcr.io/edsuwarna/container-cost |
 
-### 2.3 Data Model
+### 2.4 Data Model
 
+```sql
+-- VPS Agents (multi-VPS support)
+CREATE TABLE vps_agents (
+    id              SERIAL PRIMARY KEY,
+    name            VARCHAR(200) NOT NULL,        -- "Hetzner CX42"
+    api_key         VARCHAR(128) UNIQUE NOT NULL,  -- auto-generated
+    cpu             DOUBLE PRECISION,             -- from agent report
+    ram_gb          DOUBLE PRECISION,
+    storage_gb      DOUBLE PRECISION,
+    price_per_month DOUBLE PRECISION,
+    currency        VARCHAR(10) DEFAULT 'IDR',
+    cpu_weight      DOUBLE PRECISION DEFAULT 0.5,
+    ram_weight      DOUBLE PRECISION DEFAULT 0.4,
+    storage_weight  DOUBLE PRECISION DEFAULT 0.1,
+    overhead_percent DOUBLE PRECISION DEFAULT 15.0,
+    notes           TEXT DEFAULT '',
+    status          VARCHAR(20) DEFAULT 'offline', -- online/offline
+    last_seen       TIMESTAMP,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- Cost report snapshots (per VPS)
+CREATE TABLE snapshots (
+    id          SERIAL PRIMARY KEY,
+    vps_id      INTEGER REFERENCES vps_agents(id) ON DELETE CASCADE,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    report_json JSONB NOT NULL                     -- Full CostReport
+);
+
+-- Users
+CREATE TABLE users (
+    id              SERIAL PRIMARY KEY,
+    username        VARCHAR(100) UNIQUE NOT NULL,
+    password_hash   TEXT NOT NULL,
+    display_name    VARCHAR(200),
+    role            VARCHAR(20) DEFAULT 'engineer',
+    created_at      TIMESTAMP DEFAULT NOW()
+);
 ```
-┌──────────────────────────────┐
-│         VPSConfig            │
-├──────────────────────────────┤
-│ name: string                 │
-│ price_per_month: float64     │
-│ cpu_cores: float64           │
-│ ram_gb: float64              │
-│ storage_gb: float64          │
-│ currency: string             │
-│ cpu_weight: float64 [0.5]    │
-│ ram_weight: float64 [0.4]    │
-│ storage_weight: float64 [0.1]│
-│ overhead_percent: float64    │
-└──────────────────────────────┘
 
-┌──────────────────────────────┐
-│        ContainerCost         │
-├──────────────────────────────┤
-│ name: string                 │
-│ cpu_percent: float64         │
-│ mem_usage_mb: float64        │
-│ mem_limit_mb: float64        │
-│ cpu_cost: float64            │
-│ ram_cost: float64            │
-│ storage_cost: float64        │
-│ total_cost: float64          │
-└──────────────────────────────┘
-
-┌──────────────────────────────┐
-│         CostReport           │
-├──────────────────────────────┤
-│ vps: VPSInfo                 │
-│ containers: []ContainerCost  │
-│ overhead_cost: float64       │
-│ unallocated_cost: float64    │
-│ total_cost: float64          │
-│ period: string               │
-│ created_at: datetime         │
-└──────────────────────────────┘
-
-PostgreSQL Tables:
-┌──────────────────────────────────────────┐
-│              users                        │
-├──────────────────────────────────────────┤
-│ id (PK)  │  username  │  role            │
-│ SERIAL   │  VARCHAR   │  admin/eng/mgt   │
-└──────────────────────────────────────────┘
-
-┌──────────────────────────────────────────┐
-│            snapshots                      │
-├──────────────────────────────────────────┤
-│ id (PK)  │  created_at  │  report_json   │
-│ SERIAL   │  TIMESTAMP   │  JSONB          │
-└──────────────────────────────────────────┘
+**Report JSON structure** (disimpan di snapshots.report_json):
+```json
+{
+  "vps": {
+    "name": "Hetzner CX42",
+    "price_per_month": 200000,
+    "cpu_cores": 4,
+    "ram_gb": 8,
+    "currency": "IDR"
+  },
+  "containers": [
+    {
+      "container": { "name": "web", "cpu_percent": 2.5, "mem_usage_mb": 128 },
+      "cpu_cost": 4750.00,
+      "ram_cost": 1500.00,
+      "total_cost": 6750.00
+    }
+  ],
+  "overhead_cost": 30000.00,
+  "unallocated_cost": 55000.00,
+  "total_cost": 200000.00,
+  "period": "month"
+}
 ```
 
 ---
 
 ## 3. Feature Requirements
 
-### 3.1 P0 — Core (Wajib) ✅ Done
+### 3.1 P0 — Core (Wajib)
 
 | ID | Feature | Priority | Deskripsi |
 |----|---------|----------|-----------|
-| F1 | Docker Stats Collector | P0 | Collect CPU%, memory usage, status dari semua container via Docker socket |
+| F1 | Docker Stats Collector | P0 | Collect CPU%, memory, status dari container via Docker socket |
 | F2 | Weighted Cost Calculator | P0 | Alokasi biaya per container pake formula terbobot |
-| F3 | PostgreSQL Storage | P0 | Simpan snapshot report + user data ke PostgreSQL |
-| F4 | GET /api/report/latest | P0 | Lihat report terakhir |
-| F5 | POST /api/report/refresh | P0 | Generate report baru (collect + calculate + save) |
-| F6 | GET /api/containers | P0 | List container beserta cost-nya |
-| F7 | VPS Configuration | P0 | Load config dari JSON file atau Update via API |
+| F3 | PostgreSQL Storage | P0 | Simpan snapshot report, users, VPS agents |
+| F4 | REST API | P0 | Semua data bisa diakses via HTTP API |
+| F5 | VPS Configuration | P0 | Load config dari JSON file |
+| F6 | Auth System | P0 | Login/logout, session cookies, bcrypt passwords |
 
-### 3.2 P1 — Important (Penting) ✅ Done
-
-| ID | Feature | Priority | Deskripsi |
-|----|---------|----------|-----------|
-| F8 | GET /api/report/history | P1 | Histori report dengan filter `since` parameter |
-| F9 | GET /api/containers/{name} | P1 | Detail biaya spesifik container dari waktu ke waktu (50 snapshot) |
-| F10 | Startup snapshot | P1 | Auto-generate report saat aplikasi pertama jalan |
-| F11 | CORS support | P1 | Biar frontend bisa consume API dari domain beda |
-| F12 | GET/PUT /api/config | P1 | Lihat/update konfigurasi via API |
-
-### 3.3 P2 — Future (Nanti)
+### 3.2 P1 — Important (Penting)
 
 | ID | Feature | Priority | Deskripsi |
 |----|---------|----------|-----------|
-| F13 | Telegram bot notification | P2 | Laporan harian ke grup |
-| F14 | Multi-VPS support | P2 | Agent di tiap VPS, central collector |
-| F15 | Cost alert threshold | P2 | Notifikasi kalau biaya naik drastis |
-| F16 | Export to CSV/PDF | P2 | Download raw data |
-| F17 | Backup config | P2 | Export/import config |
-| F18 | Scheduled reports (cron) | P2 | Laporan periodik via cron bawaan |
+| F7 | Frontend Dashboard | P1 | UI visual dengan Chart.js (doughnut, bar, line) |
+| F8 | Cost History | P1 | Lihat tren biaya dari waktu ke waktu |
+| F9 | Role-based Access | P1 | Admin, Engineer, Management — beda akses |
+| F10 | User Management | P1 | CRUD users, assign roles, reset password |
+| F11 | Docker Deployment | P1 | Dockerfile + docker-compose.yml |
+| F12 | Auto-migration | P1 | Database schema auto-create on startup |
+
+### 3.3 P2 — Multi-VPS & Scale (v2.0)
+
+| ID | Feature | Priority | Deskripsi |
+|----|---------|----------|-----------|
+| F13 | Agent Mode | P2 | `--mode=agent` — jalan di VPS remote |
+| F14 | Push API | P2 | `POST /api/v1/push` — agent push report (API key auth) |
+| F15 | VPS Management | P2 | CRUD VPS agents dari dashboard |
+| F16 | Aggregated Dashboard | P2 | Total cost, containers, overhead across all VPS |
+| F17 | API Key Auth | P2 | Agent authentication via Bearer token |
+| F18 | Retry & Buffer | P2 | Agent retry 5x kalo central down |
+| F19 | Offline Detection | P2 | VPS marked offline if not seen for 24h |
+| F20 | GitHub Container Registry | P2 | Image published ke ghcr.io |
+| F21 | One-liner Deploy | P2 | `curl ... | bash` — deploy agent dalam 1 command |
 
 ---
 
@@ -195,7 +256,6 @@ PostgreSQL Tables:
 Biaya Container per Bulan = Total Biaya VPS × (Proporsi Resource Tertimbang)
 
 Langkah:
-
 1. Resource tersedia (setelah overhead OS/Docker 15%):
    CPU_available = Total_CPU × (1 - Overhead)
    RAM_available = Total_RAM × (1 - Overhead)
@@ -223,29 +283,19 @@ Langkah:
 
 ### 4.3 Overhead Cost
 
-Biaya OS dan Docker itu sendiri (biasanya ~15% dari total VPS):
+Biaya OS dan Docker itu sendiri (~15% dari total VPS):
 - CPU overhead: total_CPU × overhead_percent
 - RAM overhead: total_RAM × overhead_percent
 - Overhead dihitung secara proporsional
 
-### 4.4 Contoh Kasus
+### 4.4 Contoh Multi-VPS
 
-**Konfigurasi VPS:**
-- Harga: Rp 200.000/bulan
-- CPU: 4 core
-- RAM: 8 GB
-- Overhead: 15%
+**VPS-1 (Hetzner):** Rp 200.000/bulan, 4 CPU, 8GB RAM → 3 container
+**VPS-2 (DOK):** Rp 350.000/bulan, 8 CPU, 16GB RAM → 5 container
 
-**Container A (Nginx):** 15% CPU, 256 MB RAM
-**Container B (Postgres):** 35% CPU, 2 GB RAM
-
-**Hasil:**
-- CPU tersedia: 4 × 0.85 = 3.4 core
-- RAM tersedia: 8 × 0.85 = 6.8 GB
-- Container A: ~Rp 13.500/bulan (CPU) + Rp 2.400/bulan (RAM) = **~Rp 16.500/bulan**
-- Container B: ~Rp 31.500/bulan (CPU) + Rp 18.800/bulan (RAM) = **~Rp 51.000/bulan**
-- Overhead: ~Rp 30.000/bulan
-- Unallocated: sisanya (resource yang nganggur)
+**Total biaya semua VPS:** Rp 200.000 + Rp 350.000 = **Rp 550.000/bulan**
+**Total container:** 8 container dari 2 VPS
+**Biaya per container:** dihitung otomatis per VPS masing-masing
 
 ---
 
@@ -253,133 +303,77 @@ Biaya OS dan Docker itu sendiri (biasanya ~15% dari total VPS):
 
 ### 5.1 Endpoints
 
-#### Unauthenticated:
-
+#### Public
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Health check |
-| `POST` | `/api/auth/login` | Login (returns session cookie) |
-| `GET` | `/api/auth/check` | Cek session status |
+| GET | `/api/health` | Health check |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/check` | Check session |
 
-#### Authenticated (session cookie required):
-
+#### Agent Push (API Key auth)
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/auth/logout` | Logout |
-| `GET` | `/api/report/latest` | Report cost terakhir |
-| `POST` | `/api/report/refresh` | Generate report baru |
-| `GET` | `/api/report/history` | Histori report |
-| `GET` | `/api/containers` | List container + cost |
-| `GET` | `/api/containers/{name}` | Cost history per container |
-| `GET` | `/api/config` | Lihat konfigurasi |
-| `PUT` | `/api/config` | Simpan konfigurasi |
-| `GET` | `/api/costs/trends` | Tren biaya harian |
+| POST | `/api/v1/push` | Agent pushes cost report (Authorization: Bearer <key>) |
 
-#### Admin Only:
-
+#### Dashboard (Authenticated)
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/users` | List all users |
-| `POST` | `/api/users` | Create user |
-| `DELETE` | `/api/users/{id}` | Delete user |
-| `PUT` | `/api/users/{id}` | Update user role |
-| `POST` | `/api/users/{id}/reset-password` | Reset password user |
+| GET | `/api/report/latest` | Latest snapshot |
+| POST | `/api/report/refresh` | Generate report (local collector only) |
+| GET | `/api/report/history` | Historical reports |
+| GET | `/api/containers` | List containers + cost |
+| GET | `/api/containers/{name}` | Container cost history |
+| GET | `/api/costs/trends` | Cost trend data |
+| GET | `/api/dashboard` | Aggregated multi-VPS report |
+| GET/PUT | `/api/config` | VPS config |
 
-#### GET /api/health
-```json
-{
-  "status": "ok",
-  "time": "2026-05-23T14:30:00Z"
-}
+#### VPS Management (Admin only)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/vps` | List all VPS agents |
+| POST | `/api/vps` | Add new VPS (generates API key) |
+| GET | `/api/vps/{id}` | VPS detail + latest report |
+| PUT | `/api/vps/{id}` | Update VPS name/notes |
+| DELETE | `/api/vps/{id}` | Remove VPS + all its data |
+| POST | `/api/vps/{id}/reset-key` | Regenerate API key |
+
+#### User Management (Admin only)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/users` | List users |
+| POST | `/api/users` | Create user |
+| PUT | `/api/users/{id}` | Update role |
+| DELETE | `/api/users/{id}` | Delete user |
+| POST | `/api/users/{id}/reset-password` | Reset password |
+
+### 5.2 Agent Push Request (POST /api/v1/push)
+
 ```
+Headers:
+  Authorization: Bearer dckr_a1b2c3d4...
 
-#### POST /api/report/refresh
-```json
-// Response 200
-{
-  "message": "report generated",
-  "snapshot_id": 42,
-  "report": { /* CostReport object */ }
-}
-```
-
-#### GET /api/report/latest
-```json
-// Response 200
+Body (CostReport JSON):
 {
   "vps": {
-    "name": "My VPS",
+    "name": "Hetzner CX42",
     "price_per_month": 200000,
     "cpu_cores": 4,
     "ram_gb": 8,
     "currency": "IDR"
   },
-  "containers": [
-    {
-      "container": { "name": "web", "cpu_percent": 12.5, ... },
-      "cpu_cost": 10500.00,
-      "ram_cost": 2400.00,
-      "total_cost": 15400.00
-    }
-  ],
-  "overhead_cost": 30000.00,
-  "unallocated_cost": 45000.00,
-  "total_cost": 200000.00,
-  "period": "month"
+  "containers": [...],
+  "total_cost": 200000.00
 }
-```
 
-#### GET /api/report/history?since=2026-01-01T00:00:00Z
-```json
-[ /* array of CostReport */ ]
-```
-
-#### GET /api/containers
-```json
-[
-  {
-    "name": "web",
-    "image": "nginx:alpine",
-    "cpu_percent": 12.5,
-    "mem_usage_mb": 256,
-    "cost_per_month": 15400.00,
-    "cpu_cost": 10500.00,
-    "ram_cost": 2400.00,
-    "status": "running"
-  }
-]
-```
-
-#### GET /api/containers/{name}
-```json
-[
-  {
-    "timestamp": "2026-05-23T12:00:00Z",
-    "name": "web",
-    "cpu_percent": 12.5,
-    "mem_usage_mb": 256.0,
-    "total_cost": 15400.00
-  }
-]
-```
-
-#### GET/PUT /api/config
-```json
+Response 200:
 {
-  "name": "My VPS",
-  "price_per_month": 200000,
-  "cpu_cores": 4,
-  "ram_gb": 8,
-  "storage_gb": 100,
-  "currency": "IDR",
-  "cpu_weight": 0.5,
-  "ram_weight": 0.4,
-  "storage_weight": 0.1,
-  "overhead_percent": 15
+  "status": "accepted",
+  "snapshot_id": 42
 }
 ```
 
-### 5.2 Error Handling
+### 5.3 Error Handling
 
 ```json
 {
@@ -388,22 +382,15 @@ Biaya OS dan Docker itu sendiri (biasanya ~15% dari total VPS):
 }
 ```
 
-Semua error response pakai format: `{ "error": string, "details?": string }`
+Semua error response: `{ "error": string, "details?": string }`
 
 ---
 
 ## 6. Konfigurasi
 
-### 6.1 File: `/data/config.json` (Di dalam Docker volume)
+### 6.1 File: `~/.docker-cost/config.json`
 
-Config disimpan di `/data/config.json` (volume Docker). Untuk akses langsung di host bisa cek volume Docker:
-
-```bash
-docker exec container-cost cat /data/config.json
-```
-
-Format file:
-
+#### Server Mode:
 ```json
 {
   "name": "My VPS",
@@ -411,13 +398,31 @@ Format file:
   "cpu_cores": 4,
   "ram_gb": 8,
   "storage_gb": 100,
-  "bandwidth_gb": 0,
   "currency": "IDR",
   "cpu_weight": 0.5,
   "ram_weight": 0.4,
   "storage_weight": 0.1,
-  "network_weight": 0.0,
   "overhead_percent": 15
+}
+```
+
+#### Agent Mode (FullConfig):
+```json
+{
+  "vps": {
+    "name": "Hetzner CX42",
+    "price_per_month": 200000,
+    "cpu_cores": 4,
+    "ram_gb": 8,
+    "overhead_percent": 15
+  },
+  "agent": {
+    "mode": "agent",
+    "central_url": "http://central:8080",
+    "agent_key": "dckr_xxx...",
+    "push_interval": 60,
+    "push_retries": 5
+  }
 }
 ```
 
@@ -426,60 +431,79 @@ Format file:
 | Variable | Default | Deskripsi |
 |----------|---------|-----------|
 | `PORT` | `8080` | Port HTTP server |
-| `DOCKER_COST_CONFIG_DIR` | `/data` | Direktori config & database |
-| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | Koneksi PostgreSQL |
-| `ADMIN_PASSWORD` | `change-me` | Password default user admin |
-| `TZ` | `Asia/Jakarta` | Timezone untuk log & timestamp |
+| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | PostgreSQL connection |
+| `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
+| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Direktori config |
 
 ---
 
-## 7. Non-Functional Requirements
+## 7. CLI Usage
 
-| Aspek | Target |
-|-------|--------|
-| **Startup time** | < 1 detik |
-| **Memory usage** | < 50 MB |
-| **Binary size** | < 10 MB |
-| **API latency** | < 500ms untuk report fresh, < 100ms untuk cached |
-| **Data retention** | Unlimited (PostgreSQL) — pruning opsional |
-| **Uptime** | Stateless design — tinggal restart |
-| **Security** | Session-based auth dengan bcrypt, 3 role (admin/engineer/management), rate limiting login |
+### Server Mode (default)
+```bash
+docker-cost
+# atau
+docker-cost --mode=server
+```
+
+### Agent Mode
+```bash
+docker-cost \
+  --mode=agent \
+  --server=http://central-ip:8080 \
+  --api-key=dckr_xxx \
+  --push-interval=60
+```
+
+### Docker (image: ghcr.io/edsuwarna/container-cost)
+```bash
+# Server
+docker run -d -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  ghcr.io/edsuwarna/container-cost:latest
+
+# Agent
+docker run -d \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  ghcr.io/edsuwarna/container-cost:latest \
+  --mode=agent --server=http://central:8080 --api-key=dckr_xxx
+```
 
 ---
 
-## 8. Milestone & Timeline
+## 8. Milestone
 
-### Phase 1: Core (v1.0) ✅ Done
+### ✅ v1.0 — Core
 - [x] Docker stats collector
-- [x] Cost calculator engine (CPU 50%, RAM 40%, Storage 10%)
-- [x] PostgreSQL storage
-- [x] REST API endpoints (health, report, container, config)
-- [x] VPS config from JSON
-- [x] Startup snapshot
+- [x] Cost calculator engine
+- [x] SQLite storage (legacy) / PostgreSQL storage
+- [x] REST API endpoints
+- [x] VPS config
 
-### Phase 2: Dashboard (v1.1) ✅ Done
-- [x] HTML/CSS/JS frontend with Chart.js
-- [x] Cost distribution chart (doughnut)
-- [x] Cost breakdown chart (bar)
-- [x] Cost trend chart (line — dual axis)
-- [x] Container detail with cost history chart
-- [x] Period filter (latest/7d/30d/all)
-- [x] Auto-refresh every 30s
+### ✅ v1.1 — Dashboard & Deployment
+- [x] Frontend dashboard (Chart.js)
+- [x] Cost charts (doughnut, bar, line)
+- [x] Container detail page
+- [x] Dockerfile + docker-compose.yml
+- [x] Auth system (login, roles, sessions)
+- [x] User management (CRUD)
 
-### Phase 3: Auth & Security (v1.2) ✅ Done
-- [x] Login/logout with session cookies
-- [x] bcrypt password hashing
-- [x] Role-based access (admin/engineer/management)
-- [x] User management CRUD
-- [x] Rate limiting on login
-- [x] Docker deployment with docker-compose
+### ✅ v2.0 — Multi-VPS Scale
+- [x] Multi-VPS agent mode
+- [x] Agent push API (API key auth)
+- [x] VPS management (CRUD from dashboard)
+- [x] Aggregated dashboard (across all VPS)
+- [x] Agent retry mechanism
+- [x] VPS offline detection
+- [x] GitHub Container Registry (ghcr.io)
+- [x] One-liner agent deployment script
 
-### Phase 4: Integration (v2.0) — Next
-- [ ] Telegram bot for daily reports
-- [ ] Multi-VPS mode
-- [ ] Cost alerts (webhook/notif)
+### 📋 Future
+- [ ] Cost alerts (webhook/telegram)
 - [ ] Export CSV/PDF
-- [ ] Scheduled reports (cron)
+- [ ] Per-period breakdown (hour/day/week)
+- [ ] Cost comparison chart antar VPS
+- [ ] Telegram bot for daily report
 
 ---
 
@@ -488,28 +512,69 @@ Format file:
 | Istilah | Definisi |
 |---------|----------|
 | **VPS** | Virtual Private Server — server virtual tempat container jalan |
+| **Agent** | Binary/container yang jalan di tiap VPS, collect & push report |
+| **Central Server** | Server pusat yang nerima data dari semua agent |
 | **Container** | Docker container yang jalan di VPS |
 | **Snapshot** | Cuplikan cost report di satu titik waktu |
 | **Overhead** | Resource yang dipakai OS dan Docker itu sendiri |
 | **Unallocated** | Resource VPS yang tidak dipakai container (idle) |
 | **Weighted allocation** | Pembagian biaya berdasarkan bobot resource |
-| **Chargeback** | Mekanisme billing antar tim berdasarkan resource usage |
+| **ghcr.io** | GitHub Container Registry — tempat image Docker di-host |
+| **API Key** | Token unik per VPS agent buat autentikasi ke central |
 
 ---
 
-## 10. FAQ
+## 10. Deployment
 
-**Q: Akurat ga sih perhitungannya?**
-A: Tidak 100% akurat secara akuntansi — resource sharing di Linux itu kompleks. Tapi cukup untuk estimasi chargeback, pricing, dan monitoring tren.
+### One-liner Agent Setup
+```bash
+curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh | bash -s -- \
+  --server=http://CENTRAL_IP:8080 \
+  --api-key=dckr_lanjka... \
+  --name="My VPS" \
+  --price=200000 \
+  --cpu=4 \
+  --ram=8
+```
 
-**Q: Bisa dipake di production?**
-A: Bisa — kodenya sederhana, edge cases udah di-handle (Docker ga available, container berhenti, db error).
+### Docker Compose (Central Server)
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: docker-cost
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: docker-cost
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
-**Q: Butuh database server?**
-A: Nggak perlu setup manual — PostgreSQL otomatis lewat docker-compose. Database terisolasi di volume Docker, ga perlu install PostgreSQL di host.
+  container-cost:
+    image: ghcr.io/edsuwarna/container-cost:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config.json:/root/.docker-cost/config.json:ro
+    environment:
+      - DATABASE_URL=postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable
+```
 
-**Q: Mode multi-VPS?**
-A: Belum — fase 2.0 nanti. Buat sekarang per VPS jalan sendiri-sendiri.
+### Docker Compose (Agent)
+```yaml
+services:
+  container-cost-agent:
+    image: ghcr.io/edsuwarna/container-cost:latest
+    command: >
+      --mode=agent
+      --server=http://CENTRAL_IP:8080
+      --api-key=dckr_xxx
+      --push-interval=60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config.json:/root/.docker-cost/config.json:ro
+    restart: unless-stopped
+```
 
 ---
 
@@ -517,3 +582,6 @@ A: Belum — fase 2.0 nanti. Buat sekarang per VPS jalan sendiri-sendiri.
 
 - [README.md](./README.md) — Dokumentasi teknis & cara pakai
 - [Makefile](./Makefile) — Build commands
+- [deploy/setup-agent.sh](./deploy/setup-agent.sh) — One-liner agent deployment
+- [docker-compose.yml](./docker-compose.yml) — Central server deployment
+- [docker-compose.agent.yml](./docker-compose.agent.yml) — Agent deployment
