@@ -1239,6 +1239,11 @@ document.getElementById('btnAddVPS').addEventListener('click', () => {
 
 document.getElementById('btnCancelVPS').addEventListener('click', () => {
     document.getElementById('vpsModal').style.display = 'none';
+    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').onclick = null;
+    document.getElementById('btnCancelVPS').textContent = 'Cancel';
+    document.getElementById('vpsName').disabled = false;
+    document.getElementById('vpsNotes').disabled = false;
 });
 
 document.getElementById('vpsForm').addEventListener('submit', async (e) => {
@@ -1249,18 +1254,16 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
 
     try {
         const result = await API.postWithBody('/vps', { name, notes });
-        // Show the generated API key
+        // Show the generated API key — modal stays open until user closes
         document.getElementById('vpsKeyGroup').style.display = 'block';
         document.getElementById('vpsApiKey').textContent = result.api_key;
-        document.getElementById('vpsSaveBtn').textContent = '✅ Saved!';
+        document.getElementById('vpsSaveBtn').textContent = '📋 Copied? Click to copy again';
+        document.getElementById('vpsSaveBtn').onclick = () => copyKey();
         document.getElementById('vpsName').disabled = true;
         document.getElementById('vpsNotes').disabled = true;
-        setTimeout(() => {
-            document.getElementById('vpsModal').style.display = 'none';
-            document.getElementById('vpsName').disabled = false;
-            document.getElementById('vpsNotes').disabled = false;
-            loadVPSList();
-        }, 3000);
+        document.getElementById('btnCancelVPS').textContent = '✅ Close';
+        // Refresh VPS list in background
+        loadVPSList();
     } catch (err) {
         errEl.textContent = '❌ ' + err.message;
         errEl.style.display = 'block';

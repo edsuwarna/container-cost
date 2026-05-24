@@ -388,14 +388,14 @@ func (s *Store) ListVPS() ([]VPSAgent, error) {
 
 func (s *Store) GetVPSByID(id int) (*VPSAgent, error) {
 	row := s.db.QueryRow(
-		`SELECT id, name, cpu, ram_gb, storage_gb, price_per_month, currency,
+		`SELECT id, name, api_key, cpu, ram_gb, storage_gb, price_per_month, currency,
 		        cpu_weight, ram_weight, storage_weight, overhead_percent,
 		        notes, status, last_seen, created_at
 		 FROM vps_agents WHERE id = $1`,
 		id,
 	)
 	var a VPSAgent
-	if err := row.Scan(&a.ID, &a.Name, &a.CPU, &a.RAMGB,
+	if err := row.Scan(&a.ID, &a.Name, &a.APIKey, &a.CPU, &a.RAMGB,
 		&a.StorageGB, &a.PricePerMonth, &a.Currency,
 		&a.CPUWeight, &a.RAMWeight, &a.StorageWeight, &a.OverheadPercent,
 		&a.Notes, &a.Status, &a.LastSeen, &a.CreatedAt); err != nil {
