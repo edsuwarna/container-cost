@@ -105,11 +105,12 @@ function navigate(page) {
     });
 
     // Update topbar title
-    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
+    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'vps': 'VPS', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
     if (page === 'dashboard') renderDashboard();
     if (page === 'containers') renderContainerList();
+    if (page === 'vps') loadVPSList();
     if (page === 'config') loadConfig();
     if (page === 'users') loadUsers();
     if (page === 'permissions') renderPermissions();
@@ -193,6 +194,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             if (res.role === 'admin') {
                 document.getElementById('navUsers').style.display = 'flex';
                 document.getElementById('navPermissions').style.display = 'flex';
+                const vpsNav = document.querySelector('.nav-item[data-page="vps"]');
+                if (vpsNav) vpsNav.style.display = 'flex';
             }
             document.getElementById('sidebarUser').textContent = res.user;
             showApp();
@@ -209,6 +212,8 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
     state.userRole = null;
     document.getElementById('navUsers').style.display = 'none';
     document.getElementById('navPermissions').style.display = 'none';
+    const vpsNav = document.querySelector('.nav-item[data-page="vps"]');
+    if (vpsNav) vpsNav.style.display = 'none';
     document.getElementById('sidebarUser').textContent = '';
     showLogin();
 });
@@ -221,6 +226,8 @@ async function checkAuth() {
             if (res.role === 'admin') {
                 document.getElementById('navUsers').style.display = 'flex';
                 document.getElementById('navPermissions').style.display = 'flex';
+                const vpsNav = document.querySelector('.nav-item[data-page="vps"]');
+                if (vpsNav) vpsNav.style.display = 'flex';
             }
             document.getElementById('sidebarUser').textContent = res.user;
             showApp();
@@ -1061,5 +1068,219 @@ document.getElementById('roleForm').addEventListener('submit', async (e) => {
 // ─── Permissions Page (static) ──────────────────────────
 function renderPermissions() {
     // Content is already in HTML — no dynamic data needed
-    // This triggers any future dynamic logic if needed
 }
+
+// ─── VPS Management ─────────────────────────────────────
+let currentVPSId = null;
+let vpsList = [];
+
+async function loadVPSList() {
+    document.getElementById('vpsDetail').style.display = 'none';
+    try {
+        vpsList = await API.get('/vps');
+        renderVPSTable(vpsList);
+    } catch (err) {
+        document.getElementById('vpsTableBody').innerHTML =
+            `<tr><td colspan="6" class="empty-state">❌ Failed to load VPS: ${err.message}</td></tr>`;
+    }
+}
+
+function renderVPSTable(vpsList) {
+    const tbody = document.getElementById('vpsTableBody');
+    const statsBar = document.getElementById('vpsStatsBar');
+
+    if (!vpsList || vpsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No VPS registered yet. Click ➕ Tambah VPS to add one.</td></tr>';
+        statsBar.style.display = 'none';
+        return;
+    }
+
+    // Update stats bar
+    statsBar.style.display = 'flex';
+    document.getElementById('vpsTotalCount').textContent = vpsList.length;
+    const online = vpsList.filter(v => v.status === 'online').length;
+    document.getElementById('vpsOnlineCount').textContent = online;
+    const totalCost = vpsList.reduce((sum, v) => sum + (v.price_per_month || 0), 0);
+    document.getElementById('vpsTotalCost').textContent = formatCurrency(totalCost, 'IDR');
+
+    tbody.innerHTML = vpsList.map(v => `
+        <tr>
+            <td><a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a></td>
+            <td style="color:var(--text-secondary);font-size:13px;">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</td>
+            <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
+            <td><span class="vps-status-${v.status}">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span></td>
+            <td style="color:var(--text-secondary);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
+            <td>
+                <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details">👁️</button>
+                <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--red);">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Click row to view
+    tbody.querySelectorAll('.vps-row-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            viewVPS(parseInt(el.dataset.id));
+        });
+    });
+}
+
+async function viewVPS(id) {
+    currentVPSId = id;
+    document.getElementById('vpsDetail').style.display = 'block';
+    const content = document.getElementById('vpsDetailContent');
+
+    try {
+        const data = await API.get(`/vps/${id}`);
+        const v = data.vps;
+        const report = data.report;
+        const currency = v.currency || 'IDR';
+
+        content.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
+                <div>
+                    <h2 style="margin:0 0 4px 0;">🖥️ ${v.name}</h2>
+                    <span class="vps-status-${v.status}" style="font-size:14px;">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span>
+                    <span style="color:var(--text-muted);font-size:13px;margin-left:8px;">
+                        Last seen: ${v.last_seen ? formatTime(v.last_seen) : 'Never'}
+                    </span>
+                </div>
+                <div>
+                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--red);">🗑️ Hapus</button>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">CPU Cores</span>
+                        <span class="info-value">${v.cpu_cores || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">RAM</span>
+                        <span class="info-value">${v.ram_gb || '-'} GB</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Harga</span>
+                        <span class="info-value">${formatCurrency(v.price_per_month, currency)}</span>
+                    </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:12px;">
+                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">🔑 API Key</div>
+                        <div class="key-display" style="margin-bottom:6px;">
+                            <code>${v.api_key || '********'}</code>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="regenerateKey(${v.id})">🔄 Regenerate Key</button>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:12px;">
+                <strong>📋 Setup Agent:</strong><br>
+                SSH ke VPS ini, jalanin:<br>
+                <code style="display:block;margin-top:6px;padding:8px;background:var(--bg-primary);border-radius:6px;color:var(--accent);">
+                docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}
+                </code>
+            </div>
+            ${report ? `
+            <div style="margin-top:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                <h3 style="margin:0 0 12px 0;font-size:15px;">📊 Latest Cost Report</h3>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                    <div><span style="color:var(--text-muted);font-size:12px;">Containers</span><br><span style="font-size:18px;font-weight:700;">${(report.containers || []).length}</span></div>
+                    <div><span style="color:var(--text-muted);font-size:12px;">Total Cost</span><br><span style="font-size:18px;font-weight:700;color:var(--accent);">${formatCurrency(report.total_cost, currency)}</span></div>
+                    <div><span style="color:var(--text-muted);font-size:12px;">Overhead</span><br><span style="font-size:18px;font-weight:700;color:var(--yellow);">${formatCurrency(report.overhead_cost, currency)}</span></div>
+                </div>
+            </div>` : ''}
+        `;
+    } catch (err) {
+        content.innerHTML = `<div class="empty-state">❌ Failed to load VPS detail: ${err.message}</div>`;
+    }
+}
+
+document.getElementById('btnBackToVPSList').addEventListener('click', () => {
+    document.getElementById('vpsDetail').style.display = 'none';
+    currentVPSId = null;
+    loadVPSList();
+});
+
+async function deleteVPS(id) {
+    if (!confirm('Are you sure you want to remove this VPS? All its data will be deleted.')) return;
+    try {
+        await API.del(`/vps/${id}`);
+        if (currentVPSId === id) {
+            document.getElementById('vpsDetail').style.display = 'none';
+            currentVPSId = null;
+        }
+        loadVPSList();
+    } catch (err) {
+        alert('Failed to delete VPS: ' + err.message);
+    }
+}
+
+async function regenerateKey(id) {
+    if (!confirm('Regenerate API key? The old key will stop working immediately.')) return;
+    try {
+        const data = await API.post(`/vps/${id}/reset-key`);
+        alert('✅ New API key generated! Copy it now:\n\n' + data.api_key);
+        viewVPS(id); // Refresh view
+    } catch (err) {
+        alert('❌ Failed to regenerate key: ' + err.message);
+    }
+}
+
+// ─── Add VPS Modal ────────────────────────────────────
+document.getElementById('btnAddVPS').addEventListener('click', () => {
+    document.getElementById('vpsForm').reset();
+    document.getElementById('vpsKeyGroup').style.display = 'none';
+    document.getElementById('vpsFormError').style.display = 'none';
+    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsModal').style.display = 'flex';
+});
+
+document.getElementById('btnCancelVPS').addEventListener('click', () => {
+    document.getElementById('vpsModal').style.display = 'none';
+});
+
+document.getElementById('vpsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('vpsName').value;
+    const notes = document.getElementById('vpsNotes').value;
+    const errEl = document.getElementById('vpsFormError');
+
+    try {
+        const result = await API.postWithBody('/vps', { name, notes });
+        // Show the generated API key
+        document.getElementById('vpsKeyGroup').style.display = 'block';
+        document.getElementById('vpsApiKey').textContent = result.api_key;
+        document.getElementById('vpsSaveBtn').textContent = '✅ Saved!';
+        document.getElementById('vpsName').disabled = true;
+        document.getElementById('vpsNotes').disabled = true;
+        setTimeout(() => {
+            document.getElementById('vpsModal').style.display = 'none';
+            document.getElementById('vpsName').disabled = false;
+            document.getElementById('vpsNotes').disabled = false;
+            loadVPSList();
+        }, 3000);
+    } catch (err) {
+        errEl.textContent = '❌ ' + err.message;
+        errEl.style.display = 'block';
+    }
+});
+
+function copyKey() {
+    const key = document.getElementById('vpsApiKey').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+        alert('✅ API Key copied to clipboard!');
+    }).catch(() => {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = key;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('✅ API Key copied!');
+    });
+}
+
+

@@ -28,10 +28,10 @@ type Server struct {
 }
 
 type sessionInfo struct {
-	UserID    int       `json:"user_id"`
-	Username  string    `json:"username"`
+	UserID    int          `json:"user_id"`
+	Username  string       `json:"username"`
 	Role      storage.Role `json:"role"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ExpiresAt time.Time    `json:"expires_at"`
 }
 
 func NewServer(
@@ -227,7 +227,6 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUserDetail(w http.ResponseWriter, r *http.Request) {
-	// /api/users/{id}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/users/"), "/")
 	if len(parts) == 0 || parts[0] == "" {
 		http.Error(w, "user id required", http.StatusBadRequest)
@@ -294,7 +293,6 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request, id int) {
-	// Prevent deleting yourself
 	sess := s.isAuthenticated(r)
 	if sess != nil && sess.UserID == id {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "cannot delete yourself"})
@@ -348,6 +346,211 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request, id 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "password updated"})
 }
 
+// ─── VPS Management (Admin only) ─────────────────────
+
+func (s *Server) handleListVPS(w http.ResponseWriter, r *http.Request) {
+	vpsList, err := s.store.ListVPS()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if vpsList == nil {
+		vpsList = []storage.VPSAgent{}
+	}
+	writeJSON(w, http.StatusOK, vpsList)
+}
+
+func (s *Server) handleCreateVPS(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var body struct {
+		Name  string `json:"name"`
+		Notes string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	if body.Name == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name required"})
+		return
+	}
+
+	agent, err := s.store.CreateVPS(body.Name, body.Notes)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusCreated, agent)
+}
+
+func (s *Server) handleVPSDetail(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/vps/"), "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.Error(w, "vps id required", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(parts[0])
+	if err != nil {
+		http.Error(w, "invalid vps id", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		agent, err := s.store.GetVPSByID(id)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		if agent == nil {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "VPS not found"})
+			return
+		}
+
+		// Get latest report
+		report, _ := s.store.GetLatestSnapshotForVPS(id)
+
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"vps":    agent,
+			"report": report,
+		})
+
+	case http.MethodPut:
+		var body struct {
+			Name  string `json:"name"`
+			Notes string `json:"notes"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+			return
+		}
+		if err := s.store.UpdateVPSAgent(id, body.Name, body.Notes); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+
+	case http.MethodDelete:
+		if err := s.store.DeleteVPS(id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleResetVPSKey(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract ID: /api/vps/{id}/reset-key
+	path := strings.TrimPrefix(r.URL.Path, "/api/vps/")
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 || parts[0] == "" {
+		http.Error(w, "vps id required", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(parts[0])
+	if err != nil {
+		http.Error(w, "invalid vps id", http.StatusBadRequest)
+		return
+	}
+
+	key, err := s.store.RegenerateVPSKey(id)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":  "key regenerated",
+		"api_key": key,
+	})
+}
+
+// ─── Agent Push Endpoint (no session auth — uses API key) ──
+
+func (s *Server) handlePush(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Authenticate via API key in Authorization header
+	auth := r.Header.Get("Authorization")
+	if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "missing api key"})
+		return
+	}
+	apiKey := strings.TrimPrefix(auth, "Bearer ")
+
+	agent, err := s.store.GetVPSByAPIKey(apiKey)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "auth error"})
+		return
+	}
+	if agent == nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid api key"})
+		return
+	}
+
+	// Decode report
+	var report calculator.CostReport
+	if err := json.NewDecoder(r.Body).Decode(&report); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid report JSON"})
+		return
+	}
+
+	// Update last seen
+	s.store.UpdateVPSLastSeen(agent.ID)
+
+	// Save snapshot linked to this VPS
+	id, err := s.store.SaveSnapshotForVPS(agent.ID, report)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"status":      "accepted",
+		"snapshot_id": id,
+	})
+}
+
+// ─── Aggregated Dashboard ────────────────────────────
+
+func (s *Server) handleAggregatedDashboard(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	agg, err := s.store.GetAggregatedReport()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if agg.TotalVPS == 0 {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"message": "no VPS agents registered yet",
+			"vps_list": []interface{}{},
+			"total_cost": 0,
+			"total_vps": 0,
+			"total_containers": 0,
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, agg)
+}
+
 // ─── Routes ─────────────────────────────────────────
 
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
@@ -359,9 +562,17 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Health (no auth)
 	mux.HandleFunc("/api/health", s.handleHealth)
 
+	// Agent push (no session auth — uses API key)
+	mux.HandleFunc("/api/v1/push", s.handlePush)
+
 	// User management (admin only)
 	mux.HandleFunc("/api/users", s.requireRole(storage.RoleAdmin)(s.handleUsers))
 	mux.HandleFunc("/api/users/", s.requireRole(storage.RoleAdmin)(s.handleUserDetail))
+
+	// VPS Management (admin only)
+	mux.HandleFunc("/api/vps", s.requireRole(storage.RoleAdmin)(s.handleListVPS))
+	mux.HandleFunc("/api/vps/", s.requireRole(storage.RoleAdmin)(s.handleVPSDetail))
+	mux.HandleFunc("/api/vps/reset-key", s.requireRole(storage.RoleAdmin)(s.handleResetVPSKey))
 
 	// Dashboard (any authenticated)
 	mux.HandleFunc("/api/report/latest", s.requireAuth(s.handleLatestReport))
@@ -371,6 +582,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/containers", s.requireAuth(s.handleContainers))
 	mux.HandleFunc("/api/containers/", s.requireAuth(s.handleContainerDetail))
 	mux.HandleFunc("/api/costs/trends", s.requireAuth(s.handleCostTrends))
+	mux.HandleFunc("/api/dashboard", s.requireAuth(s.handleAggregatedDashboard))
 
 	// Frontend
 	mux.Handle("/", http.FileServer(http.Dir("./web/dist")))
@@ -504,15 +716,15 @@ func (s *Server) handleContainers(w http.ResponseWriter, r *http.Request) {
 	containers := make([]map[string]interface{}, 0, len(report.Containers))
 	for _, cc := range report.Containers {
 		containers = append(containers, map[string]interface{}{
-			"name":          cc.Container.Name,
-			"image":         cc.Container.Image,
-			"cpu_percent":   cc.Container.CPUPercent,
-			"mem_usage_mb":  cc.Container.MemUsageMB,
-			"mem_percent":   cc.Container.MemPercent,
+			"name":           cc.Container.Name,
+			"image":          cc.Container.Image,
+			"cpu_percent":    cc.Container.CPUPercent,
+			"mem_usage_mb":   cc.Container.MemUsageMB,
+			"mem_percent":    cc.Container.MemPercent,
 			"cost_per_month": cc.TotalCost,
-			"cpu_cost":      cc.CPUCost,
-			"ram_cost":      cc.RAMCost,
-			"status":        cc.Container.Status,
+			"cpu_cost":       cc.CPUCost,
+			"ram_cost":       cc.RAMCost,
+			"status":         cc.Container.Status,
 		})
 	}
 	writeJSON(w, http.StatusOK, containers)
@@ -581,7 +793,6 @@ func (s *Server) handleCostTrends(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Sort by date ascending
 	for i := 0; i < len(trends); i++ {
 		for j := i + 1; j < len(trends); j++ {
 			if trends[i].Date > trends[j].Date {

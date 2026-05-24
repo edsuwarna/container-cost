@@ -68,6 +68,10 @@
                     <span class="nav-icon">🐳</span>
                     <span>Containers</span>
                 </a>
+                <a href="#" class="nav-item" data-page="vps">
+                    <span class="nav-icon">🖥️</span>
+                    <span>VPS</span>
+                </a>
                 <a href="#" class="nav-item" data-page="config">
                     <span class="nav-icon">⚙️</span>
                     <span>Settings</span>
@@ -243,6 +247,85 @@
                             <div class="info-grid" id="detailInfo">
                                 <!-- populated by JS -->
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══ VPS Management Page ═══ -->
+                <section class="page" id="page-vps">
+                    <div class="vps-card">
+                        <div class="vps-header">
+                            <h3>VPS Management</h3>
+                            <button class="btn-primary" id="btnAddVPS">➕ Tambah VPS</button>
+                        </div>
+                        <div class="vps-stats-bar" id="vpsStatsBar" style="display:none;">
+                            <div class="vps-stat-item">
+                                <span class="vps-stat-value" id="vpsTotalCount">0</span>
+                                <span class="vps-stat-label">Total VPS</span>
+                            </div>
+                            <div class="vps-stat-item">
+                                <span class="vps-stat-value" id="vpsOnlineCount">0</span>
+                                <span class="vps-stat-label">Online</span>
+                            </div>
+                            <div class="vps-stat-item">
+                                <span class="vps-stat-value" id="vpsTotalCost">-</span>
+                                <span class="vps-stat-label">Total Cost</span>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table id="vpsTable">
+                                <thead>
+                                    <tr>
+                                        <th>VPS Name</th>
+                                        <th>Specs</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Last Seen</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vpsTableBody">
+                                    <tr><td colspan="6" class="empty-state">Loading VPS list...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- VPS Detail -->
+                    <div class="detail-view" id="vpsDetail" style="display:none;">
+                        <button class="btn-back" id="btnBackToVPSList">← Back to VPS list</button>
+                        <div class="vps-detail-card" id="vpsDetailContent">
+                            <!-- populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Add VPS Modal -->
+                    <div class="modal-overlay" id="vpsModal" style="display:none;">
+                        <div class="modal-card" style="width:500px;">
+                            <h3>➕ Tambah VPS Baru</h3>
+                            <form id="vpsForm">
+                                <div class="form-group">
+                                    <label>Nama VPS</label>
+                                    <input type="text" id="vpsName" placeholder="Contoh: Hetzner CX42" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Catatan (opsional)</label>
+                                    <input type="text" id="vpsNotes" placeholder="Lokasi: Singapore, provider: Hetzner">
+                                </div>
+                                <div class="form-group" id="vpsKeyGroup" style="display:none;">
+                                    <label>API Key</label>
+                                    <div class="key-display">
+                                        <code id="vpsApiKey"></code>
+                                        <button type="button" class="btn-secondary btn-sm" onclick="copyKey()">📋 Copy</button>
+                                    </div>
+                                    <p class="form-hint">Gunakan key ini di agent VPS dengan flag <code>--api-key</code></p>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary" id="vpsSaveBtn">💾 Simpan & Generate Key</button>
+                                    <button type="button" class="btn-secondary" id="btnCancelVPS">Cancel</button>
+                                </div>
+                            </form>
+                            <div id="vpsFormError" class="config-status error" style="display:none;"></div>
                         </div>
                     </div>
                 </section>

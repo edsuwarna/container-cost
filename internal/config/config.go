@@ -21,8 +21,22 @@ type VPSConfig struct {
 	NetworkWeight  float64 `json:"network_weight"`
 	OverheadPercent float64 `json:"overhead_percent"`
 	AdminUser      string  `json:"admin_user"`
-	AdminPass      string  `json:"admin_pass"` // bcrypt hash
-	SecretKey      string  `json:"secret_key"` // for session signing
+	AdminPass      string  `json:"admin_pass"`
+	SecretKey      string  `json:"secret_key"`
+}
+
+// AgentConfig holds configuration for agent mode
+type AgentConfig struct {
+	Mode       string `json:"mode"`        // "server" or "agent"
+	CentralURL string `json:"central_url"` // e.g. "https://central:8081"
+	AgentKey   string `json:"agent_key"`   // API key for agent auth
+	PushInterval int  `json:"push_interval"` // seconds between pushes (default 60)
+	PushRetries  int  `json:"push_retries"`  // retry count (default 5)
+}
+
+type FullConfig struct {
+	VPS   VPSConfig   `json:"vps"`
+	Agent AgentConfig `json:"agent"`
 }
 
 func DefaultConfig() VPSConfig {
@@ -40,8 +54,18 @@ func DefaultConfig() VPSConfig {
 		NetworkWeight:   0.0,
 		OverheadPercent: 15.0,
 		AdminUser:       "admin",
-		AdminPass:       "", // set via env or first-run
+		AdminPass:       "",
 		SecretKey:       "",
+	}
+}
+
+func DefaultAgentConfig() AgentConfig {
+	return AgentConfig{
+		Mode:         "server",
+		CentralURL:   "",
+		AgentKey:     "",
+		PushInterval: 60,
+		PushRetries:  5,
 	}
 }
 
@@ -57,10 +81,39 @@ func LoadConfig(path string) (VPSConfig, error) {
 		}
 		return cfg, fmt.Errorf("failed to read config: %w", err)
 	}
+
+	// Try loading as FullConfig first (new format)
+	var full FullConfig
+	if err := json.Unmarshal(data, &full); err == nil && full.VPS.Name != "" {
+		return full.VPS, nil
+	}
+
+	// Fallback to legacy VPSConfig format
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return cfg, fmt.Errorf("failed to parse config: %w", err)
 	}
 	return cfg, nil
+}
+
+func LoadAgentConfig(path string) (AgentConfig, error) {
+	ac := DefaultAgentConfig()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ac, nil
+		}
+		return ac, fmt.Errorf("failed to read config: %w", err)
+	}
+
+	// Try FullConfig first
+	var full FullConfig
+	if err := json.Unmarshal(data, &full); err == nil {
+		if full.Agent.Mode != "" {
+			return full.Agent, nil
+		}
+	}
+
+	return ac, nil
 }
 
 func (c VPSConfig) Save(path string) error {
