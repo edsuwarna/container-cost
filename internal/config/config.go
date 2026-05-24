@@ -20,6 +20,9 @@ type VPSConfig struct {
 	StorageWeight  float64 `json:"storage_weight"`
 	NetworkWeight  float64 `json:"network_weight"`
 	OverheadPercent float64 `json:"overhead_percent"`
+	AdminUser      string  `json:"admin_user"`
+	AdminPass      string  `json:"admin_pass"` // bcrypt hash
+	SecretKey      string  `json:"secret_key"` // for session signing
 }
 
 func DefaultConfig() VPSConfig {
@@ -36,6 +39,9 @@ func DefaultConfig() VPSConfig {
 		StorageWeight:   0.1,
 		NetworkWeight:   0.0,
 		OverheadPercent: 15.0,
+		AdminUser:       "admin",
+		AdminPass:       "", // set via env or first-run
+		SecretKey:       "",
 	}
 }
 

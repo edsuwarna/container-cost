@@ -3,18 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Container Cost</title>
+    <title>ContainerCost</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
+    <!-- ═══ Loading Overlay ═══ -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="loading-text">Generating Report...</div>
+            <div class="loading-sub">Collecting Docker stats &amp; calculating costs</div>
+        </div>
+    </div>
+
+    <!-- ═══ Login Screen ═══ -->
+    <div id="loginScreen" class="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="login-icon">💰</div>
+                <h1>ContainerCost</h1>
+                <p>Docker Cost Calculator</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUser" value="admin" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="pwd-wrapper">
+                        <input type="password" id="loginPass" class="pwd-input" required>
+                        <button type="button" class="pwd-toggle" onclick="togglePwd('loginPass', this)" tabindex="-1">👁️</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">Sign In</button>
+                <div id="loginError" class="login-error" style="display:none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══ Main App ═══ -->
     <div id="app">
         <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="logo-icon">💰</span>
-                    <span class="logo-text">ContainerCost</span>
+                    <div class="logo-icon">💰</div>
+                    <div>
+                        <div class="logo-text">ContainerCost</div>
+                        <span class="logo-sub">Cost Analyzer</span>
+                    </div>
                 </div>
             </div>
             <div class="sidebar-nav">
@@ -30,214 +72,444 @@
                     <span class="nav-icon">⚙️</span>
                     <span>Settings</span>
                 </a>
+                <a href="#" class="nav-item" id="navUsers" data-page="users" style="display:none;">
+                    <span class="nav-icon">👥</span>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="nav-item" id="navPermissions" data-page="permissions" style="display:none;">
+                    <span class="nav-icon">🔒</span>
+                    <span>Permissions</span>
+                </a>
             </div>
             <div class="sidebar-footer">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Connected</span>
-                <button class="btn-refresh" id="btnRefresh" title="Refresh Now">🔄</button>
+                <div class="sidebar-footer-top">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Connected</span>
+                    <span class="sidebar-user" id="sidebarUser"></span>
+                </div>
+                <div class="sidebar-footer-actions">
+                    <button class="btn-footer-action btn-logout" id="btnLogout" title="Logout">🚪 Logout</button>
+                </div>
             </div>
         </nav>
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Page: Dashboard -->
-            <section class="page active" id="page-dashboard">
-                <div class="page-header">
-                    <h1>Dashboard</h1>
-                    <div class="header-meta">
-                        <span id="vpsName">-</span>
-                        <span class="separator">·</span>
-                        <span id="lastUpdated">-</span>
-                    </div>
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <span class="topbar-title" id="pageTitle">Dashboard</span>
+                    <span class="topbar-meta" id="vpsName">-</span>
+                    <span class="vps-badge" id="lastUpdated">-</span>
                 </div>
+                <div class="topbar-right">
+                    <button class="btn-header-action" id="btnGenerateReport" title="Collect Docker stats & generate report">🔄 Generate Report</button>
+                    <span class="period-badge">Monthly</span>
+                </div>
+            </header>
 
-                <!-- Summary Cards -->
-                <div class="summary-grid">
-                    <div class="summary-card" id="cardTotal">
-                        <div class="card-label">Total VPS Cost</div>
-                        <div class="card-value" id="totalCost">-</div>
-                        <div class="card-sub" id="totalPeriod">per month</div>
+            <div class="content">
+                <!-- ═══ Dashboard Page ═══ -->
+                <section class="page active" id="page-dashboard">
+                    <!-- Summary Cards -->
+                    <div class="summary-grid">
+                        <div class="summary-card" id="cardTotal">
+                            <div class="card-top">
+                                <div class="card-icon">💰</div>
+                                <span class="card-change up" id="budgetIndicator">-</span>
+                            </div>
+                            <div class="card-label">Total Cost</div>
+                            <div class="card-value" id="totalCost">-</div>
+                            <div class="card-sub" id="totalPeriod">per month</div>
+                            <div class="card-hover-info">Total VPS cost per month including overhead &amp; unallocated resources</div>
+                        </div>
+                        <div class="summary-card" id="cardContainers">
+                            <div class="card-top">
+                                <div class="card-icon">💵</div>
+                            </div>
+                            <div class="card-label">Container Cost</div>
+                            <div class="card-value" id="containerCount">-</div>
+                            <div class="card-sub" id="containerSub">Total containers</div>
+                            <div class="card-hover-info">Sum of all running containers' allocated costs per month</div>
+                        </div>
+                        <div class="summary-card" id="cardOverhead">
+                            <div class="card-top">
+                                <div class="card-icon">⚡</div>
+                            </div>
+                            <div class="card-label">Overhead</div>
+                            <div class="card-value" id="overheadCost">-</div>
+                            <div class="card-sub">OS + Docker</div>
+                            <div class="card-hover-info">Cost of OS/Docker layer — resources used by the host system, not containers</div>
+                        </div>
+                        <div class="summary-card" id="cardUnalloc">
+                            <div class="card-top">
+                                <div class="card-icon">📦</div>
+                            </div>
+                            <div class="card-label">Unallocated</div>
+                            <div class="card-value" id="unallocCost">-</div>
+                            <div class="card-sub">idle resources</div>
+                            <div class="card-hover-info">Cost of unused VPS resources not consumed by any container or overhead</div>
+                        </div>
                     </div>
-                    <div class="summary-card" id="cardContainers">
-                        <div class="card-label">Containers</div>
-                        <div class="card-value" id="containerCount">-</div>
-                        <div class="card-sub" id="containerSub">running</div>
-                    </div>
-                    <div class="summary-card" id="cardOverhead">
-                        <div class="card-label">Overhead</div>
-                        <div class="card-value" id="overheadCost">-</div>
-                        <div class="card-sub">OS + Docker</div>
-                    </div>
-                    <div class="summary-card" id="cardUnalloc">
-                        <div class="card-label">Unallocated</div>
-                        <div class="card-value" id="unallocCost">-</div>
-                        <div class="card-sub">idle resources</div>
-                    </div>
-                </div>
 
-                <!-- Charts Row -->
-                <div class="charts-row">
-                    <div class="chart-card">
-                        <div class="chart-card-header">
-                            <h3>Cost Distribution per Container</h3>
+                    <!-- Period Filter -->
+                    <div class="period-filter-bar">
+                        <div class="period-filter-label">📅 Period:</div>
+                        <div class="period-filter-btns">
+                            <button class="period-btn active" data-period="latest" onclick="setPeriod('latest')">Latest</button>
+                            <button class="period-btn" data-period="7d" onclick="setPeriod('7d')">7 Days</button>
+                            <button class="period-btn" data-period="30d" onclick="setPeriod('30d')">30 Days</button>
+                            <button class="period-btn" data-period="all" onclick="setPeriod('all')">All Time</button>
                         </div>
-                        <div class="chart-container">
-                            <canvas id="costChart"></canvas>
-                        </div>
+                        <span class="period-filter-info" id="periodInfo">Showing latest snapshot</span>
                     </div>
-                    <div class="chart-card">
-                        <div class="chart-card-header">
-                            <h3>Cost Breakdown (Monthly)</h3>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="breakdownChart"></canvas>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Container Table -->
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3>Container Costs</h3>
-                        <span class="badge" id="tableCount">0 containers</span>
+                    <!-- Charts Row -->
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3>Cost Distribution <span class="chart-period-label">· per month</span></h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="costChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <h3>Cost Breakdown <span class="chart-period-label">· per month</span></h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="breakdownChart"></canvas>
+                            </div>
+                        </div>
                     </div>
-                    <div class="table-wrapper">
-                        <table id="containerTable">
-                            <thead>
-                                <tr>
-                                    <th>Container</th>
-                                    <th>Image</th>
-                                    <th>CPU %</th>
-                                    <th>RAM</th>
-                                    <th>Status</th>
-                                    <th>CPU Cost</th>
-                                    <th>RAM Cost</th>
-                                    <th>Total/Month</th>
-                                </tr>
-                            </thead>
-                            <tbody id="containerTableBody">
-                                <tr><td colspan="8" class="empty-state">No data yet. Click refresh to generate a report.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Page: Containers -->
-            <section class="page" id="page-containers">
-                <div class="page-header">
-                    <h1>Container Details</h1>
-                    <div class="header-meta">
-                        <span id="containerDetailName">-</span>
-                    </div>
-                </div>
-                <div class="container-list" id="containerList">
-                    <!-- populated by JS -->
-                </div>
-                <div class="detail-view" id="containerDetail" style="display:none;">
-                    <button class="btn-back" id="btnBackToList">← Back to list</button>
-                    <div class="detail-chart-card">
-                        <h3>Cost History</h3>
-                        <div class="chart-container" style="height:300px">
-                            <canvas id="historyChart"></canvas>
+                    <!-- Trend Chart -->
+                    <div class="trend-card">
+                        <div class="trend-card-header">
+                            <h3>Cost Trend</h3>
+                            <span class="trend-period" id="trendPeriod">Last 30 days</span>
+                        </div>
+                        <div class="chart-container" style="height:240px;">
+                            <canvas id="trendChart"></canvas>
                         </div>
                     </div>
-                    <div class="detail-info">
-                        <div class="info-grid" id="detailInfo">
-                            <!-- populated by JS -->
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Page: Config -->
-            <section class="page" id="page-config">
-                <div class="page-header">
-                    <h1>Settings</h1>
-                    <div class="header-meta">
-                        <span>VPS Configuration</span>
+                    <!-- Table -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h3>Container Costs</h3>
+                            <span class="badge" id="tableCount">0 containers</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table id="containerTable">
+                                <thead>
+                                    <tr>
+                                        <th>Container</th>
+                                        <th>Image</th>
+                                        <th>CPU</th>
+                                        <th>RAM</th>
+                                        <th>Status</th>
+                                        <th>CPU Cost</th>
+                                        <th>RAM Cost</th>
+                                        <th>Total/Month</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="containerTableBody">
+                                    <tr><td colspan="8" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-                <div class="config-card">
-                    <form id="configForm">
-                        <div class="config-section">
-                            <h3>VPS Info</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>VPS Name</label>
-                                    <input type="text" name="name" placeholder="My VPS">
+                </section>
+
+                <!-- ═══ Containers Page ═══ -->
+                <section class="page" id="page-containers">
+                    <div class="container-list" id="containerList">
+                        <!-- populated by JS -->
+                    </div>
+                    <div class="detail-view" id="containerDetail" style="display:none;">
+                        <button class="btn-back" id="btnBackToList">← Back to list</button>
+                        <div style="margin-bottom:12px;">
+                            <h3 id="containerDetailName" style="margin:0;font-weight:600;font-size:16px;"></h3>
+                        </div>
+                        <div class="detail-chart-card">
+                            <h3>Cost History</h3>
+                            <div class="chart-container" style="height:300px">
+                                <canvas id="historyChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="detail-info">
+                            <div class="info-grid" id="detailInfo">
+                                <!-- populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══ Config Page ═══ -->
+                <section class="page" id="page-config">
+                    <div class="config-card">
+                        <form id="configForm">
+                            <div class="config-section">
+                                <h3>VPS Info</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>VPS Name</label>
+                                        <input type="text" name="name" placeholder="My VPS">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Currency</label>
+                                        <input type="text" name="currency" placeholder="IDR">
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Currency</label>
-                                    <input type="text" name="currency" placeholder="IDR">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Price per Month</label>
+                                        <input type="number" name="price_per_month" step="1000" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Overhead %</label>
+                                        <input type="number" name="overhead_percent" step="1" min="0" max="50">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-row">
+                            <div class="config-section">
+                                <h3>VPS Specs</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>CPU Cores</label>
+                                        <input type="number" name="cpu_cores" step="1" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RAM (GB)</label>
+                                        <input type="number" name="ram_gb" step="1" min="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Storage (GB)</label>
+                                        <input type="number" name="storage_gb" step="10" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Bandwidth (GB)</label>
+                                        <input type="number" name="bandwidth_gb" step="10" min="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="config-section">
+                                <h3>Cost Weights</h3>
+                                <p class="section-desc">Weight distribution for cost allocation. Must sum to 1.0.</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>CPU Weight</label>
+                                        <input type="number" name="cpu_weight" step="0.05" min="0" max="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RAM Weight</label>
+                                        <input type="number" name="ram_weight" step="0.05" min="0" max="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Storage Weight</label>
+                                        <input type="number" name="storage_weight" step="0.05" min="0" max="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Network Weight</label>
+                                        <input type="number" name="network_weight" step="0.05" min="0" max="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">💾 Save Config</button>
+                            </div>
+                        </form>
+                        <div id="configStatus" class="config-status"></div>
+                    </div>
+                </section>
+                <!-- ═══ Users Page (Admin only) ═══ -->
+                <section class="page" id="page-users">
+                    <div class="users-card">
+                        <div class="users-header">
+                            <h3>User Management</h3>
+                            <button class="btn-primary" id="btnAddUser">➕ Add User</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Display Name</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <tr><td colspan="6" class="empty-state">Loading users...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit User Modal -->
+                    <div class="modal-overlay" id="userModal" style="display:none;">
+                        <div class="modal-card">
+                            <h3 id="userModalTitle">Add User</h3>
+                            <form id="userForm">
                                 <div class="form-group">
-                                    <label>Price per Month</label>
-                                    <input type="number" name="price_per_month" step="1000" min="0">
+                                    <label>Username</label>
+                                    <input type="text" id="userUsername" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Overhead %</label>
-                                    <input type="number" name="overhead_percent" step="1" min="0" max="50">
+                                    <label>Password</label>
+                                    <div class="pwd-wrapper">
+                                        <input type="password" id="userPassword" class="pwd-input" required>
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('userPassword', this)" tabindex="-1">👁️</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Display Name</label>
+                                    <input type="text" id="userDisplayName">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <select id="userRole">
+                                        <option value="admin">Admin</option>
+                                        <option value="engineer" selected>Engineer</option>
+                                        <option value="management">Management</option>
+                                    </select>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">💾 Save</button>
+                                    <button type="button" class="btn-secondary" id="btnCancelUser">Cancel</button>
+                                </div>
+                            </form>
+                            <div id="userFormError" class="config-status error" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Role Modal -->
+                    <div class="modal-overlay" id="roleModal" style="display:none;">
+                        <div class="modal-card" style="width:360px;">
+                            <h3>Edit Role</h3>
+                            <form id="roleForm">
+                                <div class="form-group">
+                                    <label>User</label>
+                                    <input type="text" id="roleUserDisplay" disabled style="opacity:0.6;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Role</label>
+                                    <input type="text" id="roleCurrentDisplay" disabled style="opacity:0.6;">
+                                </div>
+                                <div class="form-group">
+                                    <label>New Role</label>
+                                    <select id="roleNewSelect">
+                                        <option value="admin">Admin 👑</option>
+                                        <option value="engineer">Engineer 🔧</option>
+                                        <option value="management">Management 📋</option>
+                                    </select>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">💾 Update Role</button>
+                                    <button type="button" class="btn-secondary" id="btnCancelRole">Cancel</button>
+                                </div>
+                            </form>
+                            <div id="roleFormError" class="config-status error" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Password Modal -->
+                    <div class="modal-overlay" id="resetPwdModal" style="display:none;">
+                        <div class="modal-card" style="width:360px;">
+                            <h3>🔑 Reset Password</h3>
+                            <form id="resetPwdForm">
+                                <div class="form-group">
+                                    <label>User</label>
+                                    <input type="text" id="resetPwdUserDisplay" disabled style="opacity:0.6;">
+                                </div>
+                                <div class="form-group">
+                                    <label>New Password</label>
+                                    <div class="pwd-wrapper">
+                                        <input type="password" id="resetPwdNewPass" class="pwd-input" placeholder="Min 4 characters" required minlength="4">
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdNewPass', this)" tabindex="-1">👁️</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirm Password</label>
+                                    <div class="pwd-wrapper">
+                                        <input type="password" id="resetPwdConfirm" class="pwd-input" placeholder="Re-enter password" required minlength="4">
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdConfirm', this)" tabindex="-1">👁️</button>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">🔑 Update Password</button>
+                                    <button type="button" class="btn-secondary" id="btnCancelResetPwd">Cancel</button>
+                                </div>
+                            </form>
+                            <div id="resetPwdError" class="config-status error" style="display:none;"></div>
+                        </div>
+                    </div>
+                </section>
+                <!-- ═══ Permissions Page ═══ -->
+                <section class="page" id="page-permissions">
+                    <div class="permissions-card">
+                        <div class="permissions-header">
+                            <h3>Role Permissions</h3>
+                            <span class="badge">3 roles</span>
+                        </div>
+                        <div class="permissions-grid">
+                            <div class="permission-role-card role-admin">
+                                <div class="role-card-header">
+                                    <span class="role-badge role-badge-admin">Admin</span>
+                                    <span class="role-icon">👑</span>
+                                </div>
+                                <div class="role-desc">Full access to all features. Can manage users, configure VPS settings, and view all data.</div>
+                                <div class="role-perm-list">
+                                    <div class="perm-item allowed">📊 View Dashboard</div>
+                                    <div class="perm-item allowed">🐳 View Containers</div>
+                                    <div class="perm-item allowed">⚙️ Configure Settings</div>
+                                    <div class="perm-item allowed">👥 Manage Users</div>
+                                    <div class="perm-item allowed">🔒 Manage Permissions</div>
+                                    <div class="perm-item allowed">🔄 Generate Reports</div>
+                                </div>
+                            </div>
+                            <div class="permission-role-card role-engineer">
+                                <div class="role-card-header">
+                                    <span class="role-badge role-badge-engineer">Engineer</span>
+                                    <span class="role-icon">🔧</span>
+                                </div>
+                                <div class="role-desc">Can view dashboard, container details, and generate cost reports. Cannot manage users or settings.</div>
+                                <div class="role-perm-list">
+                                    <div class="perm-item allowed">📊 View Dashboard</div>
+                                    <div class="perm-item allowed">🐳 View Containers</div>
+                                    <div class="perm-item denied">⚙️ Configure Settings</div>
+                                    <div class="perm-item denied">👥 Manage Users</div>
+                                    <div class="perm-item denied">🔒 Manage Permissions</div>
+                                    <div class="perm-item allowed">🔄 Generate Reports</div>
+                                </div>
+                            </div>
+                            <div class="permission-role-card role-management">
+                                <div class="role-card-header">
+                                    <span class="role-badge role-badge-management">Management</span>
+                                    <span class="role-icon">📋</span>
+                                </div>
+                                <div class="role-desc">Can view dashboard with cost summaries, per-container costs, and high-level reports. Cannot configure settings or manage users.</div>
+                                <div class="role-perm-list">
+                                    <div class="perm-item allowed">📊 View Dashboard</div>
+                                    <div class="perm-item allowed">🐳 View Container Costs</div>
+                                    <div class="perm-item denied">⚙️ Configure Settings</div>
+                                    <div class="perm-item denied">👥 Manage Users</div>
+                                    <div class="perm-item denied">🔒 Manage Permissions</div>
+                                    <div class="perm-item allowed">🔄 Generate Reports</div>
                                 </div>
                             </div>
                         </div>
-                        <div class="config-section">
-                            <h3>VPS Specs</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>CPU Cores</label>
-                                    <input type="number" name="cpu_cores" step="1" min="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>RAM (GB)</label>
-                                    <input type="number" name="ram_gb" step="1" min="1">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Storage (GB)</label>
-                                    <input type="number" name="storage_gb" step="10" min="0">
-                                </div>
-                                <div class="form-group">
-                                    <label>Bandwidth (GB)</label>
-                                    <input type="number" name="bandwidth_gb" step="10" min="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="config-section">
-                            <h3>Cost Weights</h3>
-                            <p class="section-desc">Weight distribution for cost allocation. Must sum to 1.0.</p>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>CPU Weight</label>
-                                    <input type="number" name="cpu_weight" step="0.05" min="0" max="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>RAM Weight</label>
-                                    <input type="number" name="ram_weight" step="0.05" min="0" max="1">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Storage Weight</label>
-                                    <input type="number" name="storage_weight" step="0.05" min="0" max="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>Network Weight</label>
-                                    <input type="number" name="network_weight" step="0.05" min="0" max="1">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">💾 Save Config</button>
-                            <button type="button" class="btn-secondary" id="btnGenerateReport">🔄 Generate Report</button>
-                        </div>
-                    </form>
-                    <div id="configStatus" class="config-status"></div>
-                </div>
-            </section>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 

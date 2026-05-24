@@ -18,12 +18,13 @@ type ContainerCost struct {
 
 // CostReport contains the full cost breakdown
 type CostReport struct {
-	VPS           VPSInfo                    `json:"vps"`
-	Containers    []ContainerCost            `json:"containers"`
-	OverheadCost  float64                    `json:"overhead_cost"`
-	UnallocatedCost float64                  `json:"unallocated_cost"`
-	TotalCost     float64                    `json:"total_cost"`
-	Period        string                     `json:"period"` // "hour", "day", "month"
+	VPS             VPSInfo                    `json:"vps"`
+	Containers      []ContainerCost            `json:"containers"`
+	OverheadCost    float64                    `json:"overhead_cost"`
+	UnallocatedCost float64                    `json:"unallocated_cost"`
+	TotalCost       float64                    `json:"total_cost"`
+	Period          string                     `json:"period"`
+	CreatedAt       string                     `json:"created_at,omitempty"`
 }
 
 type VPSInfo struct {

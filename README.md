@@ -1,6 +1,6 @@
 # Docker Cost Calculator 💰🐳
 
-> Hitung biaya container Docker berdasarkan resource usage aktual di VPS.
+> Hitung biaya container Docker berdasarkan resource usage aktual di VPS — **dengan dashboard & auth!**
 
 Docker Cost Calculator membantu developer/DevOps melihat seberapa besar biaya yang dipakai setiap container di VPS. Cocok buat **chargeback**, **cost tracking**, atau sekedar tahu container mana yang paling boros tanpa nebak-nebak.
 
@@ -9,10 +9,13 @@ Docker Cost Calculator membantu developer/DevOps melihat seberapa besar biaya ya
 ## ✨ Fitur
 
 - 🔍 **Collect otomatis** — Baca stat CPU/RAM dari semua container via Docker socket
-- 🧮 **Weighted cost allocation** — Hitung biaya per container pake formula terbobot
-- 💾 **Riwayat SQLite** — Simpan snapshot tiap kali refresh
-- 📡 **REST API** — Integrasi dengan dashboard, bot, atau tools lain
-- ⚡ **Binary kecil** — ~7MB, zero dependency runtime
+- 🧮 **Weighted cost allocation** — Hitung biaya per container pake formula terbobot (CPU 50%, RAM 40%, Storage 10%)
+- 💾 **PostgreSQL storage** — Simpan snapshot + user data
+- 📡 **REST API** — Integrasi dengan tools lain
+- 🔐 **Auth & Role-based access** — Login/logout, 3 role (admin/engineer/management)
+- 📊 **Dashboard UI** — Chart cost distribution, breakdown, trend, container history
+- ⚡ **Auto refresh** — Generate report otomatis tiap 30 detik
+- 🐳 **Docker Compose ready** — 2 service (Go app + PostgreSQL)
 
 ## 📊 Preview
 
@@ -31,93 +34,44 @@ TOTAL VPS                              Rp200.000
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Docker)
 
-### 1. Prasyarat
-
-- Docker (dengan Docker socket `/var/run/docker.sock`)
-- Go 1.22+ (untuk build)
-- SQLite3 (terinstall di OS)
+### 1. Clone & konfigurasi
 
 ```bash
-# Install sistem dependencies (Debian/Ubuntu)
-sudo apt-get update && sudo apt-get install -y gcc libc6-dev sqlite3
+git clone <repo-url>
+cd docker-cost
 
-# Clone atau copy project
-cd /home/ubuntu/docker-cost
+# Config sudah include di docker-compose.yml
+# Default: Rp 200.000/bulan, 4 CPU, 8 GB RAM
 ```
 
-### 2. Konfigurasi VPS
+### 2. Jalankan
 
 ```bash
-mkdir -p ~/.docker-cost
+docker compose up -d
 ```
 
-Buat file `~/.docker-cost/config.json`:
+### 3. Buka dashboard
 
-```json
-{
-  "name": "VPS Gue",
-  "price_per_month": 200000,
-  "cpu_cores": 4,
-  "ram_gb": 8,
-  "storage_gb": 100,
-  "currency": "IDR",
-  "cpu_weight": 0.5,
-  "ram_weight": 0.4,
-  "storage_weight": 0.1,
-  "overhead_percent": 15
-}
+```
+http://localhost:8081
 ```
 
-| Field | Type | Default | Deskripsi |
-|-------|------|---------|-----------|
-| `name` | string | "My VPS" | Nama VPS (untuk display) |
-| `price_per_month` | float | 200000 | Harga VPS per bulan |
-| `cpu_cores` | float | 4 | Total CPU cores |
-| `ram_gb` | float | 8 | Total RAM dalam GB |
-| `storage_gb` | float | 100 | Total storage dalam GB |
-| `currency` | string | "IDR" | Mata uang (IDR/USD/etc) |
-| `cpu_weight` | float | 0.5 | Bobot CPU (50%) |
-| `ram_weight` | float | 0.4 | Bobot RAM (40%) |
-| `storage_weight` | float | 0.1 | Bobot storage (10%) |
-| `overhead_percent` | float | 15 | Overhead OS/Docker (%) |
+**Login default:** `admin` / `change-me`
 
-### 3. Build & Run
+### 4. Generate report pertama
+
+Klik tombol **🔄 Generate Report** di dashboard, atau via API:
 
 ```bash
-# Build
-make build
+curl -X POST http://localhost:8081/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"change-me"}' \
+  -c cookies.txt
 
-# Run
-./build/docker-cost
-
-# Atau langsung tanpa build
-make run-quick
-```
-
-Output:
-```
-2026/05/23 14:30:00 Initial snapshot saved (id=1)
-2026/05/23 14:30:00 Docker Cost Calculator starting on :8080
-2026/05/23 14:30:00 Config: /home/ubuntu/.docker-cost/config.json
-2026/05/23 14:30:00 Database: /home/ubuntu/.docker-cost/docker-cost.db
-```
-
-### 4. Cek API
-
-```bash
-# Health check
-curl http://localhost:8080/api/health
-
-# Generate report baru
-curl -X POST http://localhost:8080/api/report/refresh
-
-# Lihat report terakhir
-curl http://localhost:8080/api/report/latest | jq .
-
-# List container + cost
-curl http://localhost:8080/api/containers | jq .
+curl -X POST http://localhost:8081/api/report/refresh \
+  -b cookies.txt
 ```
 
 ---
@@ -127,21 +81,40 @@ curl http://localhost:8080/api/containers | jq .
 ### Base URL
 
 ```
-http://localhost:8080
+http://localhost:8081
 ```
 
-### Endpoints
+### Unauthenticated
 
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| `GET` | `/api/health` | Health check | ❌ |
-| `POST` | `/api/report/refresh` | Collect stats + generate report baru | ❌ |
-| `GET` | `/api/report/latest` | Report cost terakhir | ❌ |
-| `GET` | `/api/report/history` | Histori report (default 7 hari) | ❌ |
-| `GET` | `/api/containers` | List container + cost per bulan | ❌ |
-| `GET` | `/api/containers/{name}` | Cost history per container | ❌ |
-| `GET` | `/api/config` | Lihat konfigurasi VPS | ❌ |
-| `PUT` | `/api/config` | Update konfigurasi VPS | ❌ |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/auth/login` | Login (dapet session cookie) |
+| `GET` | `/api/auth/check` | Cek status session |
+
+### Authenticated (perlu session cookie)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/logout` | Logout |
+| `GET` | `/api/report/latest` | Report cost terakhir |
+| `POST` | `/api/report/refresh` | Collect stats + generate report baru |
+| `GET` | `/api/report/history` | Histori report (default 7 hari) |
+| `GET` | `/api/containers` | List container + cost per bulan |
+| `GET` | `/api/containers/{name}` | Cost history per container (50 snapshot) |
+| `GET` | `/api/config` | Lihat konfigurasi VPS |
+| `PUT` | `/api/config` | Update konfigurasi VPS |
+| `GET` | `/api/costs/trends` | Tren biaya harian |
+
+### Admin Only
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/users` | List semua user |
+| `POST` | `/api/users` | Tambah user baru |
+| `PUT` | `/api/users/{id}` | Update role user |
+| `DELETE` | `/api/users/{id}` | Hapus user |
+| `POST` | `/api/users/{id}/reset-password` | Reset password user |
 
 ### Contoh Response
 
@@ -149,7 +122,7 @@ http://localhost:8080
 ```json
 {
   "vps": {
-    "name": "VPS Gue",
+    "name": "My VPS",
     "price_per_month": 200000,
     "cpu_cores": 4,
     "ram_gb": 8,
@@ -187,13 +160,6 @@ http://localhost:8080
     "cpu_percent": 2.5,
     "mem_usage_mb": 128,
     "total_cost": 6750.00
-  },
-  {
-    "timestamp": "2026-05-23T13:00:00Z",
-    "name": "web",
-    "cpu_percent": 3.1,
-    "mem_usage_mb": 132,
-    "total_cost": 7100.00
   }
 ]
 ```
@@ -206,24 +172,29 @@ http://localhost:8080
 docker-cost/
 ├── cmd/
 │   └── server/
-│       └── main.go            # Entry point, wiring dependencies
+│       └── main.go              # Entry point, wiring dependencies
 ├── internal/
 │   ├── collector/
-│   │   └── docker.go          # Docker socket -> ContainerStats
+│   │   └── docker.go            # Docker socket → ContainerStats
 │   ├── calculator/
-│   │   └── cost.go            # Cost formula engine
+│   │   └── cost.go              # Cost formula engine (weighted)
 │   ├── storage/
-│   │   └── sqlite.go          # SQLite CRUD
+│   │   └── postgres.go          # PostgreSQL CRUD (users, snapshots)
 │   ├── api/
-│   │   └── handler.go         # HTTP handlers
+│   │   └── handler.go           # HTTP handlers + auth middleware
 │   └── config/
-│       └── config.go          # VPSConfig loader/saver
-├── web/                        # Frontend (coming soon)
-├── build/                      # Compiled binary
-├── Makefile
+│       └── config.go            # VPSConfig loader/saver
+├── web/
+│   └── dist/
+│       ├── index.html           # Dashboard HTML
+│       ├── css/style.css        # Dark theme CSS
+│       └── js/app.js            # Frontend logic (Chart.js)
+├── Dockerfile                   # Multi-stage Go build
+├── docker-compose.yml           # App + PostgreSQL
+├── Makefile                     # Build/run/test commands
 ├── go.mod / go.sum
-├── PRD.md                      # Product Requirements Document
-└── README.md                   # You are here
+├── PRD.md                       # Product Requirements Document
+└── README.md                    # You are here
 ```
 
 ### Package Dependency
@@ -234,8 +205,8 @@ cmd/server/main.go
     ├── internal/config      (VPSConfig struct, load/save JSON)
     ├── internal/collector   (Docker API via Unix socket)
     ├── internal/calculator  (Cost formula: weighted allocation)
-    ├── internal/storage     (SQLite: snapshots table)
-    └── internal/api         (HTTP handlers, routing)
+    ├── internal/storage     (PostgreSQL: snapshots + users)
+    └── internal/api         (HTTP handlers, routing, auth)
 ```
 
 ---
@@ -276,14 +247,90 @@ Rumus lengkapnya ada di [PRD.md → Cost Formula](./PRD.md#4-cost-formula).
 ### 3. Store & Serve
 
 ```
-Calculate ──▶ SaveSnapshot() ──▶ SQLite (snapshots table)
+Calculate ──▶ SaveSnapshot() ──▶ PostgreSQL (snapshots table)
                  │
                  ▼
-         REST API endpoints
-         - GET /api/report/latest
-         - GET /api/report/history
-         - GET /api/containers
+         REST API endpoints + Web Dashboard
 ```
+
+---
+
+## 🔐 Auth System
+
+| Role | Akses |
+|------|-------|
+| **admin** | Full — semua halaman + user management |
+| **engineer** | Dashboard, Containers, Settings |
+| **management** | Dashboard (read-only), Containers |
+
+**Default user:**
+- `admin` / `change-me` — Admin
+- `eng` / `change-me` — Engineer
+- `mgt` / `change-me` — Management
+
+---
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Deskripsi |
+|----------|---------|-----------|
+| `PORT` | `8080` | Port HTTP server |
+| `DOCKER_COST_CONFIG_DIR` | `/data` | Direktori config |
+| `DATABASE_URL` | `postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable` | Koneksi PostgreSQL |
+| `ADMIN_PASSWORD` | `change-me` | Password default admin |
+| `TZ` | `Asia/Jakarta` | Timezone |
+
+---
+
+## 🚦 Status & Roadmap
+
+### ✅ v1.0 — Core
+- [x] Docker stats collector via Unix socket
+- [x] Weighted cost allocation formula (CPU 50%, RAM 40%, Storage 10%)
+- [x] PostgreSQL storage with auto-migration
+- [x] REST API (13 endpoints)
+- [x] VPS config from JSON file
+- [x] Startup snapshot
+
+### ✅ v1.1 — Dashboard
+- [x] HTML/CSS/JS frontend with Chart.js
+- [x] Cost distribution chart (doughnut)
+- [x] Cost breakdown chart (bar)
+- [x] Cost trend chart (line — dual axis: cost + containers)
+- [x] Container detail with cost history chart
+- [x] Period filter (latest/7d/30d/all)
+- [x] Auto-refresh every 30s
+
+### ✅ v1.2 — Auth & Security
+- [x] Login/logout with session cookies
+- [x] bcrypt password hashing
+- [x] Role-based access (3 roles)
+- [x] User management CRUD (admin)
+- [x] Rate limiting on login
+- [x] Docker Compose deployment
+
+### 📋 v2.0 — Integration (Next)
+- [ ] Telegram bot for daily reports
+- [ ] Multi-VPS mode
+- [ ] Cost alerts (webhook)
+- [ ] Export CSV/PDF
+- [ ] Scheduled reports (cron)
+
+---
+
+## 🧪 Edge Cases Handled
+
+| Skenario | Handling |
+|----------|----------|
+| Docker ga terinstall | Collector.available=false, return error dengan pesan jelas |
+| Container baru jalan | Terdeteksi di listContainers, masuk next report |
+| Container berhenti/mati | Stats = 0, cost minimal |
+| Config file belum ada | Auto-create dengan default values |
+| DB belum ada | Auto-create + migrate |
+| Report kosong (belum pernah refresh) | Return message: "no reports yet" |
+| Container name sama | Container ID tetap unik |
+| CPU delta 0 (container idle) | Cost minimal (ga ada aktivitas CPU) |
+| Overweight (weights > 1) | Normalized — totalWeight dipake sebagai divisor |
 
 ---
 
@@ -295,8 +342,8 @@ Calculate ──▶ SaveSnapshot() ──▶ SQLite (snapshots table)
 # Go 1.22+
 go version
 
-# C compiler (untuk SQLite CGO)
-gcc --version
+# Docker (untuk collect container stats)
+docker ps
 ```
 
 ### Commands
@@ -305,17 +352,11 @@ gcc --version
 # Build binary
 make build
 
-# Run langsung (tanpa build)
-make run-quick
-
 # Test
 make test
 
-# Clean
-make clean
-
-# Build static binary
-make build-static
+# Run with Docker
+docker compose up -d
 ```
 
 ### Testing
@@ -333,122 +374,12 @@ go tool cover -html=coverage.out -o coverage.html
 
 ---
 
-## 🐳 Docker Deployment
-
-Coming soon di fase v1.2. Rencana `Dockerfile`:
-
-```dockerfile
-FROM golang:1.22 AS builder
-WORKDIR /app
-COPY . .
-RUN make build
-
-FROM alpine:3.19
-RUN apk add --no-cache ca-certificates sqlite-libs
-COPY --from=builder /app/build/docker-cost /usr/local/bin/
-VOLUME /data
-EXPOSE 8080
-CMD ["docker-cost"]
-```
-
-```yaml
-# docker-compose.yml
-services:
-  docker-cost:
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ~/.docker-cost:/root/.docker-cost
-    environment:
-      - PORT=8080
-```
-
----
-
-## 🚦 Status & Roadmap
-
-### ✅ v1.0 — Core (Done)
-- [x] Docker stats collector via Unix socket
-- [x] Weighted cost allocation formula
-- [x] SQLite storage with auto-migration
-- [x] REST API (7 endpoints)
-- [x] VPS config from JSON file
-- [x] Startup snapshot
-- [x] CORS support
-
-### 🔄 v1.1 — Dashboard (Next)
-- [ ] React/Svelte frontend
-- [ ] Cost chart (per container daily trend)
-- [ ] Container detail page
-- [ ] Dark mode UI
-
-### 📋 v1.2 — Integration
-- [ ] Docker image publish
-- [ ] Telegram bot for daily report
-- [ ] Scheduled auto-refresh
-- [ ] Config backup/export
-
-### 🚀 v2.0 — Scale
-- [ ] Multi-VPS mode (agent + central)
-- [ ] Cost alerts (webhook)
-- [ ] Export CSV/PDF
-- [ ] Role-based access
-
----
-
-## ⚙️ Environment Variables
-
-| Variable | Default | Deskripsi |
-|----------|---------|-----------|
-| `PORT` | `8080` | Port HTTP server |
-| `DOCKER_HOST` | `/var/run/docker.sock` | Path ke Docker socket |
-| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Direktori config & database |
-
----
-
-## 🧪 Edge Cases Handled
-
-| Skenario | Handling |
-|----------|----------|
-| Docker ga terinstall | Collector.available=false, return error dengan pesan jelas |
-| Container baru jalan | Terdeteksi di listContainers, masuk next report |
-| Container berhenti/mati | Stats = 0, cost minimal |
-| Config file belum ada | Auto-create dengan default values |
-| DB file belum ada | Auto-create + migrate |
-| Report kosong (belum pernah refresh) | Return message: "no reports yet" |
-| Container name sama | Container ID tetap unik |
-| CPU delta 0 (container idle) | Cost minimal (ga ada aktivitas CPU) |
-| Overweight (weights > 1) | Normalized — totalWeight dipake sebagai divisor |
-
----
-
-## 🤝 Kontribusi
-
-Lagi open source friendly! Beberapa cara bantu:
-
-1. **Report bug** — buka issue di repo
-2. **Request feature** — PRD udah ada list P2-nya
-3. **Pull request** — langsung aja
-4. **Frontend** — butuh React/Svelte developer buat dashboard
-
----
-
-## 📄 License
-
-MIT — bebas dipake, dimodif, didistribusiin.
-
----
-
 ## 👤 Author
 
 **Endang Suwarna** — DevOps Engineer & AI Infrastructure Enthusiast
-
----
 
 ## 📚 Related
 
 - [PRD.md](./PRD.md) — Product Requirements Document (detail lengkap)
 - [Docker Engine API](https://docs.docker.com/engine/api/v1.43/) — Docker API reference
-- [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) — SQLite driver for Go
+- [Chart.js](https://www.chartjs.org/) — Frontend chart library

@@ -36,8 +36,11 @@ func main() {
 	}
 
 	// --- Database ---
-	dbPath := filepath.Join(configDir, "docker-cost.db")
-	store, err := storage.NewStore(dbPath)
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://docker-cost:docker-cost@localhost:5432/docker-cost?sslmode=disable"
+	}
+	store, err := storage.NewStore(dbURL)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
@@ -72,11 +75,31 @@ func main() {
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("Docker Cost Calculator starting on %s", addr)
 	log.Printf("Config: %s", cfgPath)
-	log.Printf("Database: %s", dbPath)
+	log.Printf("Database URL: %s", maskURL(dbURL))
 
 	if err := http.ListenAndServe(addr, withCORS(mux)); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+// maskURL hides the password in a connection URL for logging
+func maskURL(s string) string {
+	// Very basic masking: postgres://user:pass@host/db → postgres://user:***@host/db
+	raw := s
+	start := 0
+	for i := 0; i < len(s)-1; i++ {
+		if s[i] == ':' && s[i+1] == '/' && s[i+2] == '/' {
+			start = i + 3
+			break
+		}
+	}
+	// Find the @ after start
+	for i := start; i < len(s); i++ {
+		if s[i] == '@' {
+			return s[:start] + "***" + s[i:]
+		}
+	}
+	return raw
 }
 
 // withCORS wraps a handler with permissive CORS for dev

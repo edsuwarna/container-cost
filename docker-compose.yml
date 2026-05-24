@@ -1,19 +1,40 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: docker-cost-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: docker-cost
+      POSTGRES_PASSWORD: change-me
+      POSTGRES_DB: docker-cost
+    volumes:
+      - docker-cost-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker-cost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   container-cost:
     build: .
     container_name: container-cost
     restart: unless-stopped
     ports:
       - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       # Docker socket — required to collect container stats
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Persistent config & database
+      # Config directory
       - container-cost-data:/data
     environment:
       - PORT=8080
       - DOCKER_COST_CONFIG_DIR=/data
+      - DATABASE_URL=postgres://docker-cost:docker-cost@postgres:5432/docker-cost?sslmode=disable
       - TZ=Asia/Jakarta
+      - ADMIN_PASSWORD=change-me
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
       interval: 30s
@@ -22,5 +43,7 @@ services:
       retries: 3
 
 volumes:
+  docker-cost-pgdata:
+    driver: local
   container-cost-data:
     driver: local

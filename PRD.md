@@ -61,7 +61,7 @@ Tanpa alat ini, jawabannya cuma perkiraan kasar karena resource sharing antar co
 │  │                                                    │   │
 │  │  ┌──────────┐   ┌────────────┐   ┌────────────┐  │   │
 │  │  │Collector │──▶│ Calculator │──▶│  Storage    │  │   │
-│  │  │(Docker   │   │ (Weighted  │   │ (SQLite)    │  │   │
+│  │  │(Docker   │   │ (Weighted  │   │ (PostgreSQL)│  │   │
 │  │  │ socket)  │   │  Formula)  │   │             │  │   │
 │  │  └──────────┘   └─────┬──────┘   └──────┬──────┘  │   │
 │  │                       │                  │         │   │
@@ -83,10 +83,11 @@ Tanpa alat ini, jawabannya cuma perkiraan kasar karena resource sharing antar co
 | Layer | Technology | Alasan |
 |-------|-----------|--------|
 | **Language** | Go 1.22 | Performa tinggi, binary kecil, cocok untuk CLI/tool |
-| **Storage** | SQLite (mattn/go-sqlite3) | Zero config, embedded, cukup untuk single VPS |
+| **Storage** | PostgreSQL 16 | Robust, battle-tested, support JSONB untuk snapshot report |
 | **API** | net/http (stdlib) | No framework — ringan, mudah di-maintain |
 | **Docker API** | Unix socket (HTTP) | Baca stat container langsung dari Docker Engine |
-| **Masa depan** | React/Svelte (dashboard) | Frontend SPA ringan |
+| **Frontend** | Vanilla HTML/CSS/JS + Chart.js | Zero build step, lightweight, dark theme |
+| **Auth** | Session-based (cookie) | Login/logout, bcrypt password, 3 role (admin/engineer/management) |
 
 ### 2.3 Data Model
 
@@ -131,12 +132,19 @@ Tanpa alat ini, jawabannya cuma perkiraan kasar karena resource sharing antar co
 │ created_at: datetime         │
 └──────────────────────────────┘
 
-Database:
+PostgreSQL Tables:
 ┌──────────────────────────────────────────┐
-│              snapshots                    │
+│              users                        │
+├──────────────────────────────────────────┤
+│ id (PK)  │  username  │  role            │
+│ SERIAL   │  VARCHAR   │  admin/eng/mgt   │
+└──────────────────────────────────────────┘
+
+┌──────────────────────────────────────────┐
+│            snapshots                      │
 ├──────────────────────────────────────────┤
 │ id (PK)  │  created_at  │  report_json   │
-│ INTEGER  │  DATETIME    │  TEXT (JSON)    │
+│ SERIAL   │  TIMESTAMP   │  JSONB          │
 └──────────────────────────────────────────┘
 ```
 
@@ -144,24 +152,24 @@ Database:
 
 ## 3. Feature Requirements
 
-### 3.1 P0 — Core (Wajib)
+### 3.1 P0 — Core (Wajib) ✅ Done
 
 | ID | Feature | Priority | Deskripsi |
 |----|---------|----------|-----------|
 | F1 | Docker Stats Collector | P0 | Collect CPU%, memory usage, status dari semua container via Docker socket |
 | F2 | Weighted Cost Calculator | P0 | Alokasi biaya per container pake formula terbobot |
-| F3 | SQLite Storage | P0 | Simpan snapshot report ke database |
+| F3 | PostgreSQL Storage | P0 | Simpan snapshot report + user data ke PostgreSQL |
 | F4 | GET /api/report/latest | P0 | Lihat report terakhir |
 | F5 | POST /api/report/refresh | P0 | Generate report baru (collect + calculate + save) |
 | F6 | GET /api/containers | P0 | List container beserta cost-nya |
-| F7 | VPS Configuration | P0 | Load config dari JSON file (~/.docker-cost/config.json) |
+| F7 | VPS Configuration | P0 | Load config dari JSON file atau Update via API |
 
-### 3.2 P1 — Important (Penting)
+### 3.2 P1 — Important (Penting) ✅ Done
 
 | ID | Feature | Priority | Deskripsi |
 |----|---------|----------|-----------|
-| F8 | GET /api/report/history | P1 | Histori report (default 7 hari) |
-| F9 | GET /api/containers/{name} | P1 | Detail biaya spesifik container dari waktu ke waktu |
+| F8 | GET /api/report/history | P1 | Histori report dengan filter `since` parameter |
+| F9 | GET /api/containers/{name} | P1 | Detail biaya spesifik container dari waktu ke waktu (50 snapshot) |
 | F10 | Startup snapshot | P1 | Auto-generate report saat aplikasi pertama jalan |
 | F11 | CORS support | P1 | Biar frontend bisa consume API dari domain beda |
 | F12 | GET/PUT /api/config | P1 | Lihat/update konfigurasi via API |
@@ -170,14 +178,12 @@ Database:
 
 | ID | Feature | Priority | Deskripsi |
 |----|---------|----------|-----------|
-| F13 | React Dashboard | P2 | UI visual buat liat chart cost |
-| F14 | Per-period breakdown | P2 | Biaya per jam/hari/bulan |
-| F15 | Docker image | P2 | Jalan sebagai container |
-| F16 | Telegram bot notification | P2 | Laporan harian ke grup |
-| F17 | Multi-VPS support | P2 | Agent di tiap VPS, central collector |
-| F18 | Cost alert threshold | P2 | Notifikasi kalau biaya naik drastis |
-| F19 | Export to CSV | P2 | Download raw data |
-| F20 | Backup config | P2 | Export/import config |
+| F13 | Telegram bot notification | P2 | Laporan harian ke grup |
+| F14 | Multi-VPS support | P2 | Agent di tiap VPS, central collector |
+| F15 | Cost alert threshold | P2 | Notifikasi kalau biaya naik drastis |
+| F16 | Export to CSV/PDF | P2 | Download raw data |
+| F17 | Backup config | P2 | Export/import config |
+| F18 | Scheduled reports (cron) | P2 | Laporan periodik via cron bawaan |
 
 ---
 
@@ -246,6 +252,38 @@ Biaya OS dan Docker itu sendiri (biasanya ~15% dari total VPS):
 ## 5. API Specifications
 
 ### 5.1 Endpoints
+
+#### Unauthenticated:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/auth/login` | Login (returns session cookie) |
+| `GET` | `/api/auth/check` | Cek session status |
+
+#### Authenticated (session cookie required):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/logout` | Logout |
+| `GET` | `/api/report/latest` | Report cost terakhir |
+| `POST` | `/api/report/refresh` | Generate report baru |
+| `GET` | `/api/report/history` | Histori report |
+| `GET` | `/api/containers` | List container + cost |
+| `GET` | `/api/containers/{name}` | Cost history per container |
+| `GET` | `/api/config` | Lihat konfigurasi |
+| `PUT` | `/api/config` | Simpan konfigurasi |
+| `GET` | `/api/costs/trends` | Tren biaya harian |
+
+#### Admin Only:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/users` | List all users |
+| `POST` | `/api/users` | Create user |
+| `DELETE` | `/api/users/{id}` | Delete user |
+| `PUT` | `/api/users/{id}` | Update user role |
+| `POST` | `/api/users/{id}/reset-password` | Reset password user |
 
 #### GET /api/health
 ```json
@@ -356,7 +394,15 @@ Semua error response pakai format: `{ "error": string, "details?": string }`
 
 ## 6. Konfigurasi
 
-### 6.1 File: `~/.docker-cost/config.json`
+### 6.1 File: `/data/config.json` (Di dalam Docker volume)
+
+Config disimpan di `/data/config.json` (volume Docker). Untuk akses langsung di host bisa cek volume Docker:
+
+```bash
+docker exec container-cost cat /data/config.json
+```
+
+Format file:
 
 ```json
 {
@@ -380,8 +426,10 @@ Semua error response pakai format: `{ "error": string, "details?": string }`
 | Variable | Default | Deskripsi |
 |----------|---------|-----------|
 | `PORT` | `8080` | Port HTTP server |
-| `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
-| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Direktori config & database |
+| `DOCKER_COST_CONFIG_DIR` | `/data` | Direktori config & database |
+| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | Koneksi PostgreSQL |
+| `ADMIN_PASSWORD` | `change-me` | Password default user admin |
+| `TZ` | `Asia/Jakarta` | Timezone untuk log & timestamp |
 
 ---
 
@@ -393,9 +441,9 @@ Semua error response pakai format: `{ "error": string, "details?": string }`
 | **Memory usage** | < 50 MB |
 | **Binary size** | < 10 MB |
 | **API latency** | < 500ms untuk report fresh, < 100ms untuk cached |
-| **Data retention** | Unlimited (SQLite) — pruning opsional |
+| **Data retention** | Unlimited (PostgreSQL) — pruning opsional |
 | **Uptime** | Stateless design — tinggal restart |
-| **Security** | Hanya akses Docker socket lokal, tanpa auth |
+| **Security** | Session-based auth dengan bcrypt, 3 role (admin/engineer/management), rate limiting login |
 
 ---
 
@@ -403,25 +451,35 @@ Semua error response pakai format: `{ "error": string, "details?": string }`
 
 ### Phase 1: Core (v1.0) ✅ Done
 - [x] Docker stats collector
-- [x] Cost calculator engine
-- [x] SQLite storage
-- [x] REST API endpoints
-- [x] VPS config
+- [x] Cost calculator engine (CPU 50%, RAM 40%, Storage 10%)
+- [x] PostgreSQL storage
+- [x] REST API endpoints (health, report, container, config)
+- [x] VPS config from JSON
+- [x] Startup snapshot
 
-### Phase 2: Dashboard (v1.1) — Next
-- [ ] React/Vue frontend
-- [ ] Cost chart visual
-- [ ] Container detail view
+### Phase 2: Dashboard (v1.1) ✅ Done
+- [x] HTML/CSS/JS frontend with Chart.js
+- [x] Cost distribution chart (doughnut)
+- [x] Cost breakdown chart (bar)
+- [x] Cost trend chart (line — dual axis)
+- [x] Container detail with cost history chart
+- [x] Period filter (latest/7d/30d/all)
+- [x] Auto-refresh every 30s
 
-### Phase 3: Integration (v1.2)
-- [ ] Docker image & docker-compose
-- [ ] Telegram bot integration
-- [ ] Scheduled reports
+### Phase 3: Auth & Security (v1.2) ✅ Done
+- [x] Login/logout with session cookies
+- [x] bcrypt password hashing
+- [x] Role-based access (admin/engineer/management)
+- [x] User management CRUD
+- [x] Rate limiting on login
+- [x] Docker deployment with docker-compose
 
-### Phase 4: Scale (v2.0)
+### Phase 4: Integration (v2.0) — Next
+- [ ] Telegram bot for daily reports
 - [ ] Multi-VPS mode
-- [ ] Cost alerts
-- [ ] Export/backup
+- [ ] Cost alerts (webhook/notif)
+- [ ] Export CSV/PDF
+- [ ] Scheduled reports (cron)
 
 ---
 
@@ -448,7 +506,7 @@ A: Tidak 100% akurat secara akuntansi — resource sharing di Linux itu kompleks
 A: Bisa — kodenya sederhana, edge cases udah di-handle (Docker ga available, container berhenti, db error).
 
 **Q: Butuh database server?**
-A: Nggak — SQLite aja cukup. Database cuma 1 file.
+A: Nggak perlu setup manual — PostgreSQL otomatis lewat docker-compose. Database terisolasi di volume Docker, ga perlu install PostgreSQL di host.
 
 **Q: Mode multi-VPS?**
 A: Belum — fase 2.0 nanti. Buat sekarang per VPS jalan sendiri-sendiri.

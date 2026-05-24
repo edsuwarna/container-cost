@@ -1,7 +1,7 @@
 # ─── Builder ───────────────────────────────────────
 FROM golang:1.22-alpine AS builder
 
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
 
@@ -11,12 +11,12 @@ RUN go mod download
 
 # Build
 COPY . .
-RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o /app/docker-cost ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /app/docker-cost ./cmd/server
 
 # ─── Runner ────────────────────────────────────────
 FROM alpine:3.19
 
-RUN apk add --no-cache ca-certificates sqlite-libs tzdata
+RUN apk add --no-cache ca-certificates tzdata
 
 # Timezone support
 ENV TZ=Asia/Jakarta
@@ -29,7 +29,7 @@ COPY --from=builder /app/docker-cost .
 # Copy frontend
 COPY --from=builder /app/web/dist ./web/dist
 
-# Volume for config & database
+# Volume for config
 VOLUME ["/data"]
 
 # Expose API port
