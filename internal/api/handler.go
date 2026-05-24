@@ -349,15 +349,22 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request, id 
 // ─── VPS Management (Admin only) ─────────────────────
 
 func (s *Server) handleListVPS(w http.ResponseWriter, r *http.Request) {
-	vpsList, err := s.store.ListVPS()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
+	switch r.Method {
+	case http.MethodGet:
+		vpsList, err := s.store.ListVPS()
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		if vpsList == nil {
+			vpsList = []storage.VPSAgent{}
+		}
+		writeJSON(w, http.StatusOK, vpsList)
+	case http.MethodPost:
+		s.handleCreateVPS(w, r)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	if vpsList == nil {
-		vpsList = []storage.VPSAgent{}
-	}
-	writeJSON(w, http.StatusOK, vpsList)
 }
 
 func (s *Server) handleCreateVPS(w http.ResponseWriter, r *http.Request) {
