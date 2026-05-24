@@ -1,0 +1,22 @@
+services:
+  container-cost-agent:
+    image: ghcr.io/edsuwarna/container-cost:latest
+    container_name: container-cost-agent
+    restart: unless-stopped
+    command: >
+      --mode=agent
+      --server=http://CHANGE_ME:8080
+      --api-key=CHANGE_ME
+      --push-interval=60
+    volumes:
+      # Docker socket — REQUIRED: to collect container stats
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Config file — contains VPS specs & pricing (name, cpu, ram, price, etc)
+      - ./container-cost-config.json:/root/.docker-cost/config.json:ro
+    environment:
+      - TZ=Asia/Jakarta
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
