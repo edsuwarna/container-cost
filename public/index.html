@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Cost — Multi-VPS Docker Cost Calculator</title>
+    <meta name="description" content="Hitung & monitor biaya container Docker di satu atau banyak VPS dari dashboard terpusat. Agent + Central Server architecture.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+            background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+            border-bottom: 1px solid #30363d;
+        }
+        .hero-icon { font-size: 64px; margin-bottom: 16px; }
+        .hero h1 {
+            font-size: 48px; font-weight: 800;
+            background: linear-gradient(135deg, #58a6ff, #3fb950);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .hero .tagline {
+            font-size: 18px; color: #8b949e; max-width: 600px; margin: 0 auto;
+        }
+        .hero .badge {
+            display: inline-block;
+            background: #1f6feb22;
+            border: 1px solid #1f6feb44;
+            color: #58a6ff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        /* Buttons */
+        .hero-btns { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px; border-radius: 8px;
+            font-size: 15px; font-weight: 600;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #238636; color: #fff; border: 1px solid #2ea043;
+        }
+        .btn-primary:hover { background: #2ea043; transform: translateY(-1px); }
+        .btn-secondary {
+            background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+        }
+        .btn-secondary:hover { background: #30363d; }
+        .btn-ghost {
+            background: transparent; color: #58a6ff; border: 1px solid #58a6ff44;
+        }
+        .btn-ghost:hover { background: #1f6feb22; }
+        .btn-icon { font-size: 18px; }
+
+        /* Sections */
+        section { padding: 60px 0; }
+        section:nth-child(even) { background: #161b22; }
+        .section-title {
+            font-size: 28px; font-weight: 700; margin-bottom: 8px;
+        }
+        .section-sub {
+            color: #8b949e; font-size: 15px; margin-bottom: 40px;
+        }
+
+        /* Feature grid */
+        .feature-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .feature-card {
+            background: #161b22; border: 1px solid #30363d;
+            border-radius: 12px; padding: 24px;
+            transition: border-color 0.2s;
+        }
+        .feature-card:hover { border-color: #58a6ff44; }
+        .feature-card .icon { font-size: 32px; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .feature-card p { color: #8b949e; font-size: 14px; }
+
+        /* Architecture */
+        .arch-box {
+            background: #0d1117; border: 1px solid #30363d;
+            border-radius: 12px; padding: 32px; overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px; line-height: 1.5; color: #8b949e;
+        }
+        .arch-box .hl { color: #58a6ff; }
+        .arch-box .hl2 { color: #3fb950; }
+        .arch-box .hl3 { color: #d29922; }
+
+        /* Steps */
+        .steps { counter-reset: step; }
+        .step {
+            display: flex; gap: 20px; margin-bottom: 28px;
+            counter-increment: step;
+        }
+        .step-num {
+            flex-shrink: 0;
+            width: 40px; height: 40px;
+            background: #1f6feb22; border: 1px solid #1f6feb44;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; color: #58a6ff;
+        }
+        .step-content h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .step-content p { color: #8b949e; font-size: 14px; }
+
+        /* Code */
+        code {
+            background: #21262d; border: 1px solid #30363d;
+            padding: 2px 6px; border-radius: 4px;
+            font-size: 13px; color: #f0f6fc;
+        }
+        pre {
+            background: #0d1117; border: 1px solid #30363d;
+            border-radius: 8px; padding: 20px; overflow-x: auto;
+            margin: 16px 0;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            color: #8b949e;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center; padding: 40px 0;
+            border-top: 1px solid #30363d; color: #484f58; font-size: 14px;
+        }
+        footer a { color: #58a6ff; text-decoration: none; }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 32px; }
+            .hero { padding: 48px 0 36px; }
+            .hero-btns { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-icon">💰</div>
+            <div class="badge">v2.0 — Multi-VPS</div>
+            <h1>Container Cost</h1>
+            <p class="tagline">
+                Docker Container Cost Calculator dengan arsitektur Agent + Central Server.
+                Pantau biaya semua container di seluruh VPS dari satu dashboard.
+            </p>
+            <div class="hero-btns">
+                <a href="https://github.com/edsuwarna/container-cost" class="btn btn-primary">
+                    <span class="btn-icon">📂</span> View on GitHub
+                </a>
+                <a href="https://github.com/edsuwarna/container-cost/blob/main/DOCS.md" class="btn btn-secondary">
+                    <span class="btn-icon">📖</span> Full Documentation
+                </a>
+                <a href="https://github.com/edsuwarna/container-cost/pkgs/container/container-cost" class="btn btn-ghost">
+                    <span class="btn-icon">🐳</span> Docker Image
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section>
+        <div class="container">
+            <h2 class="section-title">✨ Features</h2>
+            <p class="section-sub">Apa yang bisa dilakukan Container Cost?</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">📊</div>
+                    <h3>Multi-VPS Dashboard</h3>
+                    <p>Lihat total cost, per-container breakdown, dan tren dari semua VPS dalam satu dashboard terpusat.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🤖</div>
+                    <h3>Agent Mode</h3>
+                    <p>Deploy agent ringan di tiap VPS. Agent ngitung cost masing-masing, push ke central server.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🧮</div>
+                    <h3>Weighted Cost Formula</h3>
+                    <p>Alokasi biaya berdasarkan resource aktual: CPU 50%, RAM 40%, Storage 10%.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔐</div>
+                    <h3>Role-based Auth</h3>
+                    <p>Tiga role: Admin, Engineer, Management — beda akses sesuai kebutuhan.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🖥️</div>
+                    <h3>VPS Management</h3>
+                    <p>Tambah/hapus VPS dari dashboard, auto-generate API key, monitoring online/offline.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🚀</div>
+                    <h3>One-liner Deploy</h3>
+                    <p>Deploy agent di VPS baru dengan satu command <code>curl ... | bash</code>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section>
+        <div class="container">
+            <h2 class="section-title">🏗️ Architecture</h2>
+            <p class="section-sub">Agent di setiap VPS push cost report ke central server via API</p>
+            <div class="arch-box">
+                <span class="hl3">┌──────────────┐</span>  <span class="hl3">┌──────────────┐</span>  <span class="hl3">┌──────────────┐</span><br>
+                <span class="hl3">│  VPS-1       │</span>  <span class="hl3">│  VPS-2       │</span>  <span class="hl3">│  VPS-3       │</span><br>
+                <span class="hl3">│  ┌──────────┐│</span>  <span class="hl3">│  ┌──────────┐│</span>  <span class="hl3">│  ┌──────────┐│</span><br>
+                <span class="hl3">│  │  Agent   ││</span>  <span class="hl3">│  │  Agent   ││</span>  <span class="hl3">│  │  Agent   ││</span><br>
+                <span class="hl3">│  │ (Docker) ││</span>  <span class="hl3">│  │ (Docker) ││</span>  <span class="hl3">│  │ (Docker) ││</span><br>
+                <span class="hl3">│  └────┬─────┘│</span>  <span class="hl3">│  └────┬─────┘│</span>  <span class="hl3">│  └────┬─────┘│</span><br>
+                <span class="hl3">└───────┼──────┘</span>  <span class="hl3">└───────┼──────┘</span>  <span class="hl3">└───────┼──────┘</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl">POST</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl">POST</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl">POST</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl2">/api/v1/push</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl2">/api/v1/push</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="hl2">/api/v1/push</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+                <span class="hl3">┌───────────────────────────────────────────────────┐</span><br>
+                <span class="hl3">│               CENTRAL SERVER                        │</span><br>
+                <span class="hl3">│  ┌─────────────────────────────────────────────┐   │</span><br>
+                <span class="hl3">│  │  API Server (:8080) + Frontend Dashboard    │   │</span><br>
+                <span class="hl3">│  │  PostgreSQL (snapshots, users, vps_agents)  │   │</span><br>
+                <span class="hl3">│  └─────────────────────────────────────────────┘   │</span><br>
+                <span class="hl3">└───────────────────────────────────────────────────┘</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section>
+        <div class="container">
+            <h2 class="section-title">⚡ Quick Start</h2>
+            <p class="section-sub">Deploy central server + agent dalam 5 menit</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h3>Clone & Start Central Server</h3>
+                        <p>Jalankan PostgreSQL dan Container Cost dengan satu perintah.</p>
+                        <pre><code>git clone https://github.com/edsuwarna/container-cost.git
+cd container-cost
+docker compose up -d
+# Buka http://localhost:8081</code></pre>
+                        <p>Login: <code>admin</code> / <code>change-me</code></p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h3>Add VPS dari Dashboard</h3>
+                        <p>Login → VPS menu → Tambah VPS → dapatkan API Key.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h3>Deploy Agent di VPS Lain</h3>
+                        <p>Satu command deploy agent di VPS mana pun yang punya Docker.</p>
+                        <pre><code>curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/\nmain/deploy/setup-agent.sh | bash -s -- \\\n  --server=http://CENTRAL_IP:8080 \\\n  --api-key=dckr_xxx \\\n  --name="Hetzner CX42" \\\n  --price=200000 \\\n  --cpu=4 \\\n  --ram=8</code></pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h3>Lihat Hasilnya</h3>
+                        <p>Dashboard otomatis nampilin data semua VPS — cost breakdown, tren, dan status.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Links -->
+    <section>
+        <div class="container" style="text-align:center;">
+            <h2 class="section-title">📚 Documentation</h2>
+            <p class="section-sub">Dokumentasi lengkap ada di repo GitHub</p>
+            <div class="hero-btns">
+                <a href="https://github.com/edsuwarna/container-cost/blob/main/DOCS.md" class="btn btn-primary">
+                    <span class="btn-icon">📖</span> Comprehensive Docs
+                </a>
+                <a href="https://github.com/edsuwarna/container-cost" class="btn btn-secondary">
+                    <span class="btn-icon">📂</span> GitHub Repository
+                </a>
+                <a href="https://github.com/edsuwarna/container-cost/issues" class="btn btn-ghost">
+                    <span class="btn-icon">🐛</span> Report Issue
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>Built with ❤️ by <a href="https://github.com/edsuwarna">Endang Suwarna</a></p>
+            <p style="margin-top:4px;">Container Cost — Multi-VPS Docker Cost Calculator</p>
+        </div>
+    </footer>
+</body>
+</html>

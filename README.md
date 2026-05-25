@@ -2,6 +2,8 @@
 
 > Multi-VPS Docker Container Cost Calculator — Agent & Central Server Architecture.
 
+📖 **[Dokumentasi Lengkap → DOCS.md](./DOCS.md)** — Architecture, API Reference, Deployment Guide, Configuration, Cost Formula, Troubleshooting & more.
+
 Hitung & monitor biaya container Docker di **satu atau banyak VPS** dari dashboard terpusat. Deploy **agent** di tiap VPS, semua data otomatis terkumpul di **central server**.
 
 Cocok buat **chargeback**, **cost tracking**, atau tau container mana yang paling boros tanpa SSH satu-satu.
@@ -400,6 +402,7 @@ go tool cover -html=coverage.out -o coverage.html
 
 ## 📚 Related
 
+- [DOCS.md](./DOCS.md) — Comprehensive documentation (deploy guide, API, formula, config)
 - [PRD.md](./PRD.md) — Product Requirements Document (detail lengkap)
 - [Docker Engine API](https://docs.docker.com/engine/api/v1.43/) — Docker API reference
 - [ghcr.io/edsuwarna/container-cost](https://github.com/edsuwarna/container-cost/pkgs/container/container-cost) — Docker image
