@@ -2,14 +2,14 @@
 # https://developers.cloudflare.com/pages/configuration/redirects/
 
 # Root → Landing page
-/ /public/index.html 200
+/ /index.html 200
 
-# GitHub repo links
-/doc https://github.com/edsuwarna/container-cost/blob/main/DOCS.md 302
-/docs https://github.com/edsuwarna/container-cost/blob/main/DOCS.md 302
+# Docs → Live documentation page
+/docs /docs.html 200
+
+# GitHub repo links (shortcuts)
 /github https://github.com/edsuwarna/container-cost 302
 /repo https://github.com/edsuwarna/container-cost 302
 /docker https://github.com/edsuwarna/container-cost/pkgs/container/container-cost 302
 /image https://github.com/edsuwarna/container-cost/pkgs/container/container-cost 302
 /prd https://github.com/edsuwarna/container-cost/blob/main/PRD.md 302
-/readme https://github.com/edsuwarna/container-cost 302
