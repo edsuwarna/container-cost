@@ -1,13 +1,6 @@
 # Cloudflare Pages Redirects
-# https://developers.cloudflare.com/pages/configuration/redirects/
+# Shortcuts for external links
 
-# Root → Landing page
-/ /index.html 200
-
-# Docs → Live documentation page
-/docs /docs.html 200
-
-# GitHub repo links (shortcuts)
 /github https://github.com/edsuwarna/container-cost 302
 /repo https://github.com/edsuwarna/container-cost 302
 /docker https://github.com/edsuwarna/container-cost/pkgs/container/container-cost 302
