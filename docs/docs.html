@@ -117,6 +117,34 @@
         .markdown-body code { background: var(--inline-bg); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: 'SF Mono','Fira Code',monospace; font-size: 13px; }
         .markdown-body pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin: 12px 0 20px; overflow-x: auto; line-height: 1.5; }
         .markdown-body pre code { background: none; border: none; padding: 0; font-size: 13px; }
+
+        /* ── Copy Button ── */
+        .code-block-wrap {
+            position: relative;
+        }
+        .code-block-wrap pre {
+            padding-top: 24px;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: var(--text2);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.15s, color 0.15s;
+            z-index: 10;
+            line-height: 1.5;
+        }
+        .code-block-wrap:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { background: var(--bg2); color: var(--text); }
+        .copy-btn.copied { color: var(--green); border-color: var(--green); }
         .markdown-body blockquote { border-left: 3px solid var(--accent); padding: 12px 16px; margin: 12px 0 20px; background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 0 8px 8px 0; }
         .markdown-body blockquote p { margin: 0; color: var(--text2); }
         .markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
@@ -284,7 +312,8 @@
             md = md.replace(/%%CB_(\d+)%%/g, (_, id) => {
                 const b = codeBlocks[parseInt(id)];
                 const lang = b.lang ? `<div style="font-size:11px;color:var(--text2);margin-bottom:-2px;font-family:monospace;">${b.lang}</div>` : '';
-                return `<pre>${lang}<code>${escapeHtml(b.code)}</code></pre>`;
+                const encoded = encodeURIComponent(b.code);
+                return `<div class="code-block-wrap"><button class="copy-btn" data-encoded="${encoded}">📋 Copy</button><pre>${lang}<code>${escapeHtml(b.code)}</code></pre></div>`;
             });
 
             // Tables
@@ -317,6 +346,39 @@
         }
 
         function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        // ═══════════════════════════════════════════════════════
+        // COPY BUTTONS
+        // ═══════════════════════════════════════════════════════
+        function setupCopyButtons() {
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const code = decodeURIComponent(this.dataset.encoded);
+                    const self = this;
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code).then(() => {
+                            self.textContent = '✅ Copied!';
+                            self.classList.add('copied');
+                            setTimeout(() => { self.textContent = '📋 Copy'; self.classList.remove('copied'); }, 2000);
+                        }).catch(() => fallbackCopy(code, self));
+                    } else {
+                        fallbackCopy(code, self);
+                    }
+                });
+            });
+            function fallbackCopy(text, btn) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.textContent = '✅ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('copied'); }, 2000);
+            }
+        }
 
         // ═══════════════════════════════════════════════════════
         // RIGHT TOC
@@ -419,6 +481,7 @@
                 const md = await resp.text();
                 const html = renderMarkdown(md);
                 container.innerHTML = `<div class="markdown-body">${html}</div>`;
+                setupCopyButtons();
 
                 // Build right TOC
                 const tocItems = buildRightTOC(html);
