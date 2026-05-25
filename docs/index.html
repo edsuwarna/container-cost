@@ -118,6 +118,18 @@
             color: var(--code-text); overflow-x: auto;
         }
         .install-box .comment { color: var(--text2); }
+        .code-block { position: relative; }
+        .copy-btn {
+            position: absolute; top: 8px; right: 8px; z-index: 10;
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: 6px; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px; opacity: 0; transition: all 0.2s;
+            color: var(--text2);
+        }
+        .code-block:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { background: var(--accent); color: #fff; }
+        .copy-btn.copied { opacity: 1; background: var(--green); color: #fff; }
 
         .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
         .doc-card {
@@ -208,6 +220,7 @@
             <p class="section-sub">Get started in 5 minutes</p>
             <div class="install-box">
                 <h3>Central Server</h3>
+                <div class="code-block">
                 <code>
                     <span class="comment"># 1. Clone & start with PostgreSQL</span><br>
                     git clone https://github.com/edsuwarna/container-cost.git<br>
@@ -218,11 +231,12 @@
                     <span class="comment"># Login: admin / change-me</span><br><br>
                     <span class="comment"># 3. Add VPS → deploy agent</span><br>
                     curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/<br>
-                    main/deploy/setup-agent.sh | bash -s -- \<br>
-                    &nbsp;&nbsp;--server=http://YOUR_IP:8080 \<br>
+                    main/deploy/setup-agent.sh | bash -s -- \\<br>
+                    &nbsp;&nbsp;--server=http://YOUR_IP:8080 \\<br>
                     &nbsp;&nbsp;--api-key=YOUR_API_KEY<br><br>
                     <span class="comment"># 4. Monitor everything from dashboard</span>
                 </code>
+                </div>
             </div>
         </div>
     </section>
@@ -270,6 +284,26 @@
         document.getElementById('themeToggle').addEventListener('click', toggleTheme);
         const saved = localStorage.getItem('container-cost-theme');
         if (saved) setTheme(saved);
+
+        function copyCode(btn) {
+            const code = btn.parentElement.querySelector('code');
+            const text = Array.from(code.childNodes).map(n =>
+                n.nodeType === 1 && n.tagName === 'BR' ? '\n' : n.textContent
+            ).join('').trim();
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = '✅';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋'; btn.classList.remove('copied'); }, 1500);
+            });
+        }
+        document.querySelectorAll('.code-block code').forEach(code => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = '📋';
+            btn.title = 'Copy';
+            btn.addEventListener('click', () => copyCode(btn));
+            code.parentElement.appendChild(btn);
+        });
     </script>
 </body>
 </html>
