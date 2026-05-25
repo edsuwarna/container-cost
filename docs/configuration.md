@@ -5,13 +5,13 @@
 
 ---
 
-## 6. Configuration Guide
+## Configuration Guide
 
-### 6.1 Config File Location
+### Config File Location
 
 Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` env var)
 
-### 6.2 Server Mode Configuration
+### Server Mode Configuration
 
 ```json
 {
@@ -52,7 +52,7 @@ Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` en
 
 > If the config file doesn't exist, it's **auto-created with defaults** on first run.
 
-### 6.3 Agent Mode Configuration
+### Agent Mode Configuration
 
 For agent mode, use the FullConfig format that wraps both VPS and agent settings:
 
@@ -92,7 +92,7 @@ For agent mode, use the FullConfig format that wraps both VPS and agent settings
 
 **CLI flags override config file values.** If both are provided, CLI wins.
 
-### 6.4 Environment Variables
+### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -102,7 +102,7 @@ For agent mode, use the FullConfig format that wraps both VPS and agent settings
 | `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Config directory |
 | `TZ` | `Asia/Jakarta` | Timezone |
 
-### 6.5 Weights Tuning
+### Weights Tuning
 
 The default weights are:
 

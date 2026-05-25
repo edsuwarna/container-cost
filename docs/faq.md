@@ -5,7 +5,7 @@
 
 ---
 
-## 14. FAQ
+## FAQ
 
 ### What's the difference between server mode and agent mode?
 

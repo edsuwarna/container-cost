@@ -5,11 +5,11 @@
 
 ---
 
-## 2. Architecture
+## Architecture
 
 ![Container Cost Architecture Diagram](container-cost-architecture.png)
 
-### 2.1 Multi-VPS Architecture (v2.0+)
+### Multi-VPS Architecture (v2.0+)
 
 Each agent:
 1. Reads Docker socket for container stats (CPU%, RAM)
@@ -24,7 +24,7 @@ The central server:
 4. Serves the aggregated dashboard
 5. Can also collect locally if Docker socket is available
 
-### 2.2 Single VPS Architecture (Legacy)
+### Single VPS Architecture (Legacy)
 
 Runs directly on the Docker host — no agent needed. The pipeline is in the bottom section of the diagram above: Collector → Calculator → Storage → API → Frontend. All within one Go binary.
 

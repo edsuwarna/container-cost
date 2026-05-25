@@ -5,16 +5,16 @@
 
 ---
 
-## 8. API Reference
+## API Reference
 
-### 8.1 Base URL
+### Base URL
 
 ```
 http://localhost:8080
 // Via docker-compose: http://localhost:8081
 ```
 
-### 8.2 Endpoint Summary
+### Endpoint Summary
 
 #### Public (No Auth)
 
@@ -67,7 +67,7 @@ http://localhost:8080
 | DELETE | `/api/users/{id}` | Delete user |
 | POST | `/api/users/{id}/reset-password` | Reset password |
 
-### 8.3 Detailed Endpoints
+### Detailed Endpoints
 
 #### GET /api/health
 
@@ -182,7 +182,7 @@ http://localhost:8080
 }
 ```
 
-### 8.4 Error Response Format
+### Error Response Format
 
 All errors follow this structure:
 
@@ -205,7 +205,7 @@ All errors follow this structure:
 | 404 | Not found |
 | 500 | Internal server error |
 
-### 8.5 Authentication
+### Authentication
 
 Two authentication methods:
 
@@ -219,7 +219,7 @@ Two authentication methods:
    - Generated per VPS from the dashboard
    - Can be regenerated (old key invalidated immediately)
 
-### 8.6 Rate Limiting
+### Rate Limiting
 
 The API has no built-in rate limiter. Agents typically push every 60 seconds by default.
 

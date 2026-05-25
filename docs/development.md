@@ -5,9 +5,9 @@
 
 ---
 
-## 11. Development Guide
+## Development Guide
 
-### 11.1 Prerequisites
+### Prerequisites
 
 ```bash
 # Go 1.22+
@@ -20,7 +20,7 @@ psql --version
 docker --version
 ```
 
-### 11.2 Project Structure
+### Project Structure
 
 ```
 container-cost/
@@ -44,7 +44,7 @@ container-cost/
 └── DOCS.md                          # This documentation
 ```
 
-### 11.3 Running Locally
+### Running Locally
 
 ```bash
 # Quick start (no Postgres setup needed for some dev tasks)
@@ -58,7 +58,7 @@ make build
 PORT=9000 ./build/docker-cost
 ```
 
-### 11.4 Testing
+### Testing
 
 ```bash
 # All tests
@@ -69,14 +69,14 @@ go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
 ```
 
-### 11.5 Building Docker Image
+### Building Docker Image
 
 ```bash
 docker build -t container-cost:latest .
 docker run -d -p 8080:8080 container-cost:latest
 ```
 
-### 11.6 Database
+### Database
 
 **Auto-migration:** On startup, the app creates all tables automatically:
 
@@ -125,11 +125,11 @@ CREATE TABLE IF NOT EXISTS snapshots (
 - `eng` / `change-me` (role: engineer)
 - `mgt` / `change-me` (role: management)
 
-### 11.7 Adding Tests
+### Adding Tests
 
 Tests use Go's standard `testing` package. The calculator package has deterministic logic — add test cases in `internal/calculator/` for new cost scenarios.
 
-### 11.8 Code Conventions
+### Code Conventions
 
 - **No external frameworks** — pure Go standard library (net/http, database/sql)
 - **Docker API** — communicate via Unix socket HTTP

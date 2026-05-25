@@ -5,9 +5,9 @@
 
 ---
 
-## 10. CLI Reference
+## CLI Reference
 
-### 10.1 Flags
+### Flags
 
 ```
 Usage of /app/docker-cost:
@@ -22,7 +22,7 @@ Usage of /app/docker-cost:
         Push interval in seconds (agent mode, default: 60)
 ```
 
-### 10.2 Makefile Commands
+### Makefile Commands
 
 | Command | Description |
 |---------|-------------|

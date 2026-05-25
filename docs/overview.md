@@ -5,13 +5,13 @@
 
 ---
 
-## 1. Overview
+## Overview
 
-### 1.1 What is Container Cost?
+### What is Container Cost?
 
 Container Cost is a **Docker container cost allocation tool** that helps you calculate and monitor how much each container costs across one or many VPS instances. It uses a weighted resource allocation formula based on actual CPU and RAM usage.
 
-### 1.2 Why?
+### Why?
 
 If you run Docker containers across multiple VPS, you've probably asked:
 
@@ -22,7 +22,7 @@ If you run Docker containers across multiple VPS, you've probably asked:
 
 Container Cost answers all of these with a single dashboard.
 
-### 1.3 Who Is It For?
+### Who Is It For?
 
 | Segment | Use Case |
 |---------|----------|
@@ -31,7 +31,7 @@ Container Cost answers all of these with a single dashboard.
 | **VPS Reseller** | Selling containers to clients with data-driven pricing |
 | **Small Team** | Sharing VPS, fair cost splitting |
 
-### 1.4 Key Features
+### Key Features
 
 **Single VPS (Legacy)**
 - Live Docker stats collection (CPU%, memory, status)
@@ -51,7 +51,7 @@ Container Cost answers all of these with a single dashboard.
 - GitHub Container Registry image
 - One-liner agent deployment
 
-### 1.5 Tech Stack
+### Tech Stack
 
 | Layer | Technology | Why |
 |-------|-----------|------|

@@ -5,7 +5,7 @@
 
 ---
 
-## 15. Roadmap
+## Roadmap
 
 ### ✅ v1.0 — Core
 - [x] Docker stats collector

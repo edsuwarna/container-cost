@@ -5,9 +5,9 @@
 
 ---
 
-## 3. Quick Start
+## Quick Start
 
-### 3.1 Central Server (5 minutes)
+### Central Server (5 minutes)
 
 ```bash
 git clone https://github.com/edsuwarna/container-cost.git
@@ -26,7 +26,7 @@ echo "Open http://localhost:8081"
 
 > Port 8081 is the external port mapped to the container's port 8080 (see docker-compose.yml).
 
-### 3.2 Add a VPS Agent
+### Add a VPS Agent
 
 1. Login to dashboard → click **VPS** menu (admin only)
 2. Click **➕ Tambah VPS**
@@ -34,7 +34,7 @@ echo "Open http://localhost:8081"
 4. Click **💾 Simpan & Generate Key**
 5. Copy the API key shown
 
-### 3.3 Deploy Agent on Another VPS
+### Deploy Agent on Another VPS
 
 **One-liner (recommended):**
 
@@ -87,7 +87,7 @@ docker run -d --name container-cost-agent \
   --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```
 
-### 3.4 Verify
+### Verify
 
 ```bash
 # Check agent logs

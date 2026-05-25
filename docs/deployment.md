@@ -5,9 +5,9 @@
 
 ---
 
-## 4. Deployment Guide
+## Deployment Guide
 
-### 4.1 Central Server (Production)
+### Central Server (Production)
 
 #### Docker Compose (Recommended)
 
@@ -51,7 +51,7 @@ docker run -d --name container-cost \
   ghcr.io/edsuwarna/container-cost:latest
 ```
 
-### 4.2 Agent Deployment
+### Agent Deployment
 
 #### One-liner Script
 
@@ -119,7 +119,7 @@ docker run -d --name container-cost-agent \
   --push-interval=60
 ```
 
-### 4.3 Single VPS Mode (Legacy, No Agent)
+### Single VPS Mode (Legacy, No Agent)
 
 If you're monitoring containers on the same machine as the server:
 
@@ -130,7 +130,7 @@ docker compose up -d
 # The server collects stats directly without needing an agent
 ```
 
-### 4.4 Docker Image Details
+### Docker Image Details
 
 **Image:** `ghcr.io/edsuwarna/container-cost:latest`
 

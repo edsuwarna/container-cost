@@ -5,9 +5,9 @@
 
 ---
 
-## 7. Cost Formula
+## Cost Formula
 
-### 7.1 How Allocation Works
+### How Allocation Works
 
 Container Cost uses a **weighted resource fraction** model:
 
@@ -15,7 +15,7 @@ Container Cost uses a **weighted resource fraction** model:
 Container Cost = VPS Monthly Price × Weighted Resource Fraction
 ```
 
-### 7.2 Step-by-Step Calculation
+### Step-by-Step Calculation
 
 **Step 1: Available Resources (after 15% overhead)**
 
@@ -43,7 +43,7 @@ Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RA
                          / (CPU_Weight + RAM_Weight + Storage_Weight)
 ```
 
-### 7.3 Example
+### Example
 
 **VPS:** Hetzner CX42 — Rp 200.000/month, 4 CPU, 8GB RAM, 3 containers
 
@@ -59,7 +59,7 @@ Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RA
 **Unallocated (idle resources):** Rp 55.000  
 **Total allocated:** Rp 200.000 ✓
 
-### 7.4 Overhead Cost
+### Overhead Cost
 
 The OS and Docker daemon themselves consume resources. The overhead is calculated as:
 
@@ -72,7 +72,7 @@ Overhead Cost = Price × (overheadCPU/totalCPU + overheadRAM/totalRAM) / 2
 
 Default overhead: **15%** (adjustable in config)
 
-### 7.5 Unallocated Cost
+### Unallocated Cost
 
 Resources not used by any container or overhead:
 
@@ -82,7 +82,7 @@ Unallocated = Price × (unusedCPUratio + unusedRAMratio) / 2
 
 This represents **idle capacity** you're paying for but not using.
 
-### 7.6 Multi-VPS Totals
+### Multi-VPS Totals
 
 The aggregated dashboard sums costs across all VPS:
 

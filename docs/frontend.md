@@ -5,9 +5,9 @@
 
 ---
 
-## 9. Frontend Dashboard
+## Frontend Dashboard
 
-### 9.1 Access
+### Access
 
 After starting the server, open:
 
@@ -17,7 +17,7 @@ http://your-server:8081
 
 Default login: `admin` / `change-me`
 
-### 9.2 Pages
+### Pages
 
 **Dashboard** — Main overview with:
 - Summary cards: Total Cost, Container Cost, Overhead, Unallocated
@@ -46,7 +46,7 @@ Default login: `admin` / `change-me`
 - Create, edit role, delete users
 - Reset password
 
-### 9.3 Chart Types
+### Chart Types
 
 | Chart | Type | Data |
 |-------|------|------|
@@ -55,7 +55,7 @@ Default login: `admin` / `change-me`
 | Cost Trend | Line | Total cost over time |
 | Detail History | Line | Single container cost over time |
 
-### 9.4 Roles & Permissions
+### Roles & Permissions
 
 | Feature | Admin | Engineer | Management |
 |---------|-------|----------|------------|
