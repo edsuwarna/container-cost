@@ -87,27 +87,9 @@ Container Cost answers all of these with a single dashboard.
 
 ## 2. Architecture
 
-### 2.1 Multi-VPS Architecture (v2.0+)
+![Container Cost Architecture Diagram](container-cost-architecture.png)
 
-```
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│  VPS-1       │  │  VPS-2       │  │  VPS-3       │
-│  ┌──────────┐│  │  ┌──────────┐│  │  ┌──────────┐│
-│  │  Agent   ││  │  │  Agent   ││  │  │  Agent   ││
-│  │ (Docker) ││  │  │ (Docker) ││  │  │ (Docker) ││
-│  └────┬─────┘│  │  └────┬─────┘│  │  └────┬─────┘│
-└───────┼──────┘  └───────┼──────┘  └───────┼──────┘
-        │ POST            │ POST            │ POST
-        │ /api/v1/push    │ /api/v1/push    │ /api/v1/push
-        ▼                 ▼                 ▼
-┌───────────────────────────────────────────────────┐
-│               CENTRAL SERVER                        │
-│  ┌─────────────────────────────────────────────┐   │
-│  │  API Server (:8080) + Frontend Dashboard    │   │
-│  │  PostgreSQL (snapshots, users, vps_agents)  │   │
-│  └─────────────────────────────────────────────┘   │
-└───────────────────────────────────────────────────┘
-```
+### 2.1 Multi-VPS Architecture (v2.0+)
 
 Each agent:
 1. Reads Docker socket for container stats (CPU%, RAM)
@@ -124,55 +106,7 @@ The central server:
 
 ### 2.2 Single VPS Architecture (Legacy)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Host (VPS)                      │
-│                                                          │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │              Container Cost                        │   │
-│  │  ┌──────────┐   ┌────────────┐   ┌───────────┐  │   │
-│  │  │Collector │──▶│ Calculator │──▶│  Storage   │  │   │
-│  │  │(Docker   │   │ (Weighted  │   │ (PostgreSQL│  │   │
-│  │  │ socket)  │   │  Formula)  │   │           │  │   │
-│  │  └──────────┘   └─────┬──────┘   └─────┬─────┘  │   │
-│  │                       │                │         │   │
-│  │                 ┌─────▼────────────────▼──────┐  │   │
-│  │                 │        REST API Server       │  │   │
-│  │                 │        (port :8080)          │  │   │
-│  │                 └─────────────────────────────┘  │   │
-│  └──────────────────────────────────────────────────┘   │
-│                                                          │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                  │
-│  │Container│  │Container│  │Container│                  │
-│  │   A     │  │   B     │  │   C     │                  │
-│  └─────────┘  └─────────┘  └─────────┘                  │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 2.3 Data Flow
-
-```
-Docker Socket
-     │
-     ▼
-┌─────────────┐     ┌──────────────┐     ┌────────────────┐
-│  Collector   │────▶│  Calculator   │────▶│   Storage      │
-│ (CPU%, RAM,  │     │ (CostReport   │     │ (PostgreSQL)   │
-│  status)     │     │  w/ formula)  │     │ snapshots +    │
-└─────────────┘     └──────────────┘     │ users + agents  │
-                                         └───────┬────────┘
-                                                 │
-                                         ┌───────▼────────┐
-                                         │  API Server    │
-                                         │  :8080         │
-                                         │  JSON REST     │
-                                         └───────┬────────┘
-                                                 │
-                                         ┌───────▼────────┐
-                                         │  Frontend      │
-                                         │  (Chart.js)    │
-                                         └────────────────┘
-```
+Runs directly on the Docker host — no agent needed. The pipeline is in the bottom section of the diagram above: Collector → Calculator → Storage → API → Frontend. All within one Go binary.
 
 ---
 

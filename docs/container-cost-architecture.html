@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Diagram — Container Cost</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #ffffff;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+.diagram { width: 1020px; position: relative; }
+.title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a2e;
+  padding: 10px 0 4px;
+}
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 22px;
+}
+
+/* ---- LAYERS ---- */
+.layer {
+  border-radius: 10px;
+  padding: 10px 0 14px;
+  margin-bottom: 6px;
+  position: relative;
+}
+.layer-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 0 0 8px 16px;
+}
+
+.layer-ui    { background: #e8f4fd; border: 1px solid #b3d9f2; }
+.layer-core  { background: #e6f7ee; border: 1px solid #b8e6cc; }
+.layer-data  { background: #fef9e7; border: 1px solid #f9e79f; }
+.layer-infra { background: #e3f2fd; border: 1px solid #90caf9; }
+.layer-net   { background: #f3e5f5; border: 1px solid #ce93d8; }
+.layer-misc  { background: #f5f5f5; border: 1px solid #bdbdbd; }
+
+.layer-ui    .layer-label { color: #1971c2; }
+.layer-core  .layer-label { color: #2b8a3e; }
+.layer-data  .layer-label { color: #e67700; }
+.layer-infra .layer-label { color: #1565c0; }
+.layer-net   .layer-label { color: #7b1fa2; }
+.layer-misc  .layer-label { color: #616161; }
+
+/* ---- BOXES ---- */
+.box-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 10px;
+  flex-wrap: wrap;
+}
+.box {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 2px solid;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.box-title { font-size: 14px; font-weight: 700; }
+.box-desc  { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.5; }
+.box-wide  { flex: 1; min-width: 180px; }
+
+.bc-ui    { border-color: #1971c2; }
+.bc-core  { border-color: #2b8a3e; }
+.bc-data  { border-color: #e67700; }
+.bc-infra { border-color: #1565c0; }
+.bc-net   { border-color: #7b1fa2; }
+.bc-misc  { border-color: #616161; }
+
+/* ---- CENTRAL SERVER: SUB-GROUP ---- */
+.server-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.server-app {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 2px solid #2b8a3e;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+.server-app .stitle { font-size: 13px; font-weight: 700; color: #2b8a3e; }
+.server-app .sdesc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.4; }
+
+.server-frontend {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 2px solid #1971c2;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+.server-frontend .stitle { font-size: 13px; font-weight: 700; color: #1971c2; }
+.server-frontend .sdesc { font-size: 10px; color: #555; margin-top: 2px; line-height: 1.4; }
+
+/* ---- ARROWS ---- */
+.arrows-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 32px;
+  gap: 20px;
+}
+.arrow-down {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #555;
+  font-size: 11px;
+  font-weight: 600;
+}
+.arrow-down .stick {
+  width: 2px;
+  height: 14px;
+  background: #666;
+}
+.arrow-down .head {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #666;
+}
+.arrow-down .alabel {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* ---- SUB-BOX ---- */
+.sub-box {
+  background: #f8f9fa;
+  border-radius: 5px;
+  padding: 3px 8px;
+  margin: 3px 0;
+  font-size: 11px;
+  color: #444;
+  text-align: left;
+  line-height: 1.6;
+}
+.sub-box strong { color: #222; }
+
+/* ---- SECTION DIVIDER ---- */
+.section-divider {
+  text-align: center;
+  padding: 22px 0 12px;
+  border-top: 2px dashed #ddd;
+  margin-top: 18px;
+}
+.section-divider h2 {
+  font-size: 17px;
+  color: #333;
+}
+.section-divider p {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* ---- FOOTER ---- */
+.footer-note {
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  padding: 12px 0 4px;
+  font-style: italic;
+}
+
+/* ---- LEGEND ---- */
+.legend {
+  display: flex;
+  gap: 22px;
+  justify-content: center;
+  padding: 16px 0 6px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-swatch {
+  width: 16px; height: 12px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+.legend-swatch.ui    { background: #e8f4fd; border-color: #b3d9f2; }
+.legend-swatch.core  { background: #e6f7ee; border-color: #b8e6cc; }
+.legend-swatch.data  { background: #fef9e7; border-color: #f9e79f; }
+.legend-swatch.infra { background: #e3f2fd; border-color: #90caf9; }
+.legend-swatch.net   { background: #f3e5f5; border-color: #ce93d8; }
+.legend-swatch.misc  { background: #f5f5f5; border-color: #bdbdbd; }
+</style>
+</head>
+<body>
+<div class="diagram">
+
+<div class="title">🏗️ Container Cost Architecture</div>
+<div class="subtitle">Multi-VPS Docker Container Cost Calculator — Agent &amp; Central Server (v2.0+)</div>
+
+<!-- ==================== LAYER 1: VPS NODES ==================== -->
+<div class="layer layer-infra">
+  <div class="layer-label">🖥️ VPS NODES — Docker Hosts Running Agents</div>
+  <div class="box-row">
+    <div class="box bc-infra" style="width:300px;">
+      <div class="box-title">VPS-1: Hetzner CX42</div>
+      <div class="box-desc">
+        <div class="sub-box">🐳 <strong>Agent</strong> (ghcr.io/edsuwarna/container-cost)</div>
+        <div class="sub-box">🔌 <strong>Docker Socket</strong> → CPU%, RAM, status</div>
+        <div class="sub-box" style="color:#e67700;font-size:10px;">Rp 200.000/mo · 4 CPU · 8GB RAM</div>
+      </div>
+    </div>
+    <div class="box bc-infra" style="width:300px;">
+      <div class="box-title">VPS-2: DO Droplet</div>
+      <div class="box-desc">
+        <div class="sub-box">🐳 <strong>Agent</strong> (ghcr.io/edsuwarna/container-cost)</div>
+        <div class="sub-box">🔌 <strong>Docker Socket</strong> → CPU%, RAM, status</div>
+        <div class="sub-box" style="color:#e67700;font-size:10px;">$24/mo · 2 CPU · 4GB RAM</div>
+      </div>
+    </div>
+    <div class="box bc-infra" style="width:300px;">
+      <div class="box-title">VPS-3 ... VPS-N</div>
+      <div class="box-desc">
+        <div class="sub-box">🐳 <strong>Agent</strong> (ghcr.io/edsuwarna/container-cost)</div>
+        <div class="sub-box">🔌 <strong>Docker Socket</strong> → CPU%, RAM, status</div>
+        <div class="sub-box" style="color:#888;font-size:10px;">Any VPS · Any provider · Any price</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Arrow → L2 -->
+<div class="arrows-row">
+  <div class="arrow-down">
+    <div class="stick"></div>
+    <div class="alabel">POST /api/v1/push (every 60s) · Bearer Token Auth</div>
+    <div class="head"></div>
+  </div>
+</div>
+
+<!-- ==================== LAYER 2: COMMUNICATION ==================== -->
+<div class="layer layer-net">
+  <div class="layer-label">🌐 AGENT PUSH PROTOCOL</div>
+  <div class="box-row">
+    <div class="box bc-net" style="width:940px;">
+      <div class="box-title">HTTP Push with Reliability</div>
+      <div class="box-desc" style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; margin-top:6px;">
+        <span>🔑 <strong>API Key Auth</strong> (Bearer Token)</span>
+        <span>🔄 <strong>5× Retry</strong> · Exponential Backoff</span>
+        <span>📦 <strong>JSON Payload</strong>: cost_report + container_stats</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Arrow → L3 -->
+<div class="arrows-row">
+  <div class="arrow-down">
+    <div class="stick"></div>
+    <div class="alabel">Ingested by Central Server</div>
+    <div class="head"></div>
+  </div>
+</div>
+
+<!-- ==================== LAYER 3: CENTRAL SERVER ==================== -->
+<div class="layer layer-core">
+  <div class="layer-label">⚙️ CENTRAL SERVER — Single Go Binary (API + Frontend + Logic)</div>
+  <div class="server-group" style="margin:0 10px;">
+    <div class="server-app">
+      <div class="stitle">🌎 API Server</div>
+      <div class="sdesc">net/http (stdlib) · Port :8080 · JSON REST</div>
+    </div>
+    <div class="server-app">
+      <div class="stitle">🧮 Cost Calculator</div>
+      <div class="sdesc">Weighted Formula · CPU 50% · RAM 40% · Storage 10%</div>
+    </div>
+    <div class="server-app">
+      <div class="stitle">🔐 Auth &amp; VPS Manager</div>
+      <div class="sdesc">Session-based (cookie) · bcrypt · 3 Roles<br>CRUD VPS agents · Auto API key gen</div>
+    </div>
+    <div class="server-frontend">
+      <div class="stitle">🎨 Frontend Dashboard</div>
+      <div class="sdesc">Vanilla HTML/CSS/JS · Chart.js (Doughnut, Bar, Line)<br>Dark theme · Zero build step · Responsive</div>
+    </div>
+  </div>
+</div>
+
+<!-- Arrow → L4 -->
+<div class="arrows-row">
+  <div class="arrow-down">
+    <div class="stick"></div>
+    <div class="alabel">Read/Write via Database/SQL</div>
+    <div class="head"></div>
+  </div>
+</div>
+
+<!-- ==================== LAYER 4: DATABASE ==================== -->
+<div class="layer layer-data">
+  <div class="layer-label">💾 DATA STORE — PostgreSQL 16</div>
+  <div class="box-row">
+    <div class="box bc-data" style="width:225px;">
+      <div class="box-title">📸 snapshots</div>
+      <div class="box-desc">JSONB per-VPS cost reports<br>Historical time-series data</div>
+    </div>
+    <div class="box bc-data" style="width:225px;">
+      <div class="box-title">👤 users</div>
+      <div class="box-desc">bcrypt password hashes<br>Roles &amp; session store</div>
+    </div>
+    <div class="box bc-data" style="width:225px;">
+      <div class="box-title">🖥️ vps_agents</div>
+      <div class="box-desc">VPS configs &amp; specs<br>API keys · Online/offline status</div>
+    </div>
+    <div class="box bc-data" style="width:225px;">
+      <div class="box-title">📈 cost_history</div>
+      <div class="box-desc">Daily aggregated snapshots<br>30-day trend data</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== SINGLE VPS MODE ======================== -->
+<div class="section-divider">
+  <h2>🔄 Single VPS Mode (Legacy)</h2>
+  <p>Runs directly on the Docker host — no agent needed, same binary, mode=server (default).</p>
+</div>
+
+<div class="layer layer-misc">
+  <div class="layer-label">📦 LOCAL COLLECTION PIPELINE (no agent, no HTTP push)</div>
+  <div class="box-row">
+    <div class="box bc-misc" style="width:170px;">
+      <div class="box-title">🔍 Collector</div>
+      <div class="box-desc">Reads Docker socket<br>CPU%, RAM, status</div>
+    </div>
+    <div class="box bc-misc" style="width:30px;border:none;box-shadow:none;background:transparent;padding:0;">
+      <div class="box-desc" style="font-size:18px;color:#666;">→</div>
+    </div>
+    <div class="box bc-misc" style="width:170px;">
+      <div class="box-title">🧮 Calculator</div>
+      <div class="box-desc">Weighted formula<br>Per-container cost</div>
+    </div>
+    <div class="box bc-misc" style="width:30px;border:none;box-shadow:none;background:transparent;padding:0;">
+      <div class="box-desc" style="font-size:18px;color:#666;">→</div>
+    </div>
+    <div class="box bc-misc" style="width:170px;">
+      <div class="box-title">💾 Storage</div>
+      <div class="box-desc">PostgreSQL 16<br>JSONB snapshots</div>
+    </div>
+    <div class="box bc-misc" style="width:30px;border:none;box-shadow:none;background:transparent;padding:0;">
+      <div class="box-desc" style="font-size:18px;color:#666;">→</div>
+    </div>
+    <div class="box bc-misc" style="width:170px;">
+      <div class="box-title">🌎 API (:8080)</div>
+      <div class="box-desc">net/http stdlib<br>JSON REST endpoints</div>
+    </div>
+    <div class="box bc-misc" style="width:30px;border:none;box-shadow:none;background:transparent;padding:0;">
+      <div class="box-desc" style="font-size:18px;color:#666;">→</div>
+    </div>
+    <div class="box bc-misc" style="width:170px;">
+      <div class="box-title">🎨 Frontend</div>
+      <div class="box-desc">Chart.js dashboard<br>Dark theme</div>
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch infra"></div> VPS Nodes</div>
+  <div class="legend-item"><div class="legend-swatch net"></div> Communication</div>
+  <div class="legend-item"><div class="legend-swatch core"></div> Central Server</div>
+  <div class="legend-item"><div class="legend-swatch data"></div> Database</div>
+  <div class="legend-item"><div class="legend-swatch misc"></div> Single VPS Mode</div>
+</div>
+
+<div class="footer-note">
+  Container Cost v2.0 · Go 1.22 · PostgreSQL 16 · Docker Engine API · ghcr.io/edsuwarna/container-cost
+</div>
+
+</div>
+</body>
+</html>
