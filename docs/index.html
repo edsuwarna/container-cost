@@ -83,13 +83,14 @@
         .hero .badge-green { background: #23863622; border-color: #2ea04344; color: var(--green); }
         .hero .badge-orange { background: #d2992222; border-color: #d2992244; color: #d29922; }
 
-        .hero-btns { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .hero-btns { margin-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             padding: 14px 28px; border-radius: 8px;
             font-size: 15px; font-weight: 600;
             text-decoration: none; transition: all 0.2s;
         }
+        .hero-btns .btn { width: 100%; max-width: 360px; text-align: center; }
         .btn-primary { background: var(--btn-primary-bg); color: #fff; border: 1px solid var(--btn-primary-border); }
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-secondary { background: var(--btn-secondary-bg); color: var(--text); border: 1px solid var(--btn-secondary-border); }
@@ -134,8 +135,6 @@
         @media (max-width: 640px) {
             .hero h1 { font-size: 32px; }
             .hero { padding: 48px 0 36px; }
-            .hero-btns { flex-direction: column; align-items: center; }
-            .hero-btns .btn { width: 100%; max-width: 360px; }
         }
     </style>
 </head>
