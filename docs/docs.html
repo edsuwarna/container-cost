@@ -309,12 +309,6 @@
             md = md.replace(/^(&gt;|>) (.+)$/gm, '<blockquote><p>$2</p></blockquote>');
 
             md = md.replace(/%%IC_(\d+)%%/g, (_, id) => `<code>${inlineCodes[parseInt(id)]}</code>`);
-            md = md.replace(/%%CB_(\d+)%%/g, (_, id) => {
-                const b = codeBlocks[parseInt(id)];
-                const lang = b.lang ? `<div style="font-size:11px;color:var(--text2);margin-bottom:-2px;font-family:monospace;">${b.lang}</div>` : '';
-                const encoded = encodeURIComponent(b.code);
-                return `<div class="code-block-wrap"><button class="copy-btn" data-encoded="${encoded}">📋 Copy</button><pre>${lang}<code>${escapeHtml(b.code)}</code></pre></div>`;
-            });
 
             // Tables
             md = md.replace(/^(\|.+\|)\n\|[-| :]+\|\n((?:\|.+\|\n?)*)/gm, (_, h, b) => {
@@ -334,7 +328,7 @@
             for (let i = 0; i < lines.length; i++) {
                 const l = lines[i].trim();
                 if (!l) { if (inPara) { html += '</p>'; inPara = false; } continue; }
-                if (l.startsWith('<h') || l.startsWith('<pre') || l.startsWith('<table') || l.startsWith('<hr') || l.startsWith('<blockquote') || l.startsWith('</')) {
+                if (l.startsWith('<h') || l.startsWith('<pre') || l.startsWith('<table') || l.startsWith('<hr') || l.startsWith('<blockquote') || l.startsWith('</') || l.startsWith('%%CB_')) {
                     if (inPara) { html += '</p>'; inPara = false; } html += l + '\n'; continue;
                 }
                 if (l.startsWith('•') || l.match(/^\d+\./)) { if (inPara) { html += '</p>'; inPara = false; } html += l + '\n'; continue; }
@@ -342,6 +336,15 @@
                 html += l;
             }
             if (inPara) html += '</p>';
+
+            // Code block reinsertion (AFTER paragraphs — preserves newlines inside <pre>)
+            html = html.replace(/%%CB_(\d+)%%/g, (_, id) => {
+                const b = codeBlocks[parseInt(id)];
+                const lang = b.lang ? `<div style="font-size:11px;color:var(--text2);margin-bottom:-2px;font-family:monospace;">${b.lang}</div>` : '';
+                const encoded = encodeURIComponent(b.code);
+                return `<div class="code-block-wrap"><button class="copy-btn" data-encoded="${encoded}">📋 Copy</button><pre>${lang}<code>${escapeHtml(b.code)}</code></pre></div>`;
+            });
+
             return html;
         }
 
