@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Cost Documentation 📖💰🐳 — Container Cost Docs</title>
+    <meta name="description" content="Multi-VPS Docker Container Cost Calculator documentation">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --code-bg: #151b23;
+    --inline-code-bg: #21262d;
+}
+html { scroll-behavior: smooth; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+/* ─── Layout ─── */
+.layout { display: flex; min-height: 100vh; }
+
+/* ─── Sidebar ─── */
+.sidebar {
+    width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+.sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sidebar-header .logo { font-size: 28px; line-height: 1; }
+.sidebar-header h2 {
+    font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.sidebar-header small {
+    display: block; font-size: 11px; color: var(--text2);
+    font-weight: 400; -webkit-text-fill-color: var(--text2);
+}
+.sidebar-back {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 20px; color: var(--accent);
+    text-decoration: none; font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+.sidebar-back:hover { background: var(--bg3); }
+
+/* TOC inside sidebar */
+.toc { padding: 12px 0; }
+.toc-label {
+    padding: 8px 20px 4px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2);
+}
+.toc a {
+    display: block; padding: 5px 20px 5px 24px;
+    color: var(--text2); text-decoration: none;
+    font-size: 13px; border-left: 2px solid transparent;
+    transition: all 0.15s;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.toc a:hover { color: var(--text); background: var(--bg3); }
+.toc a.level-2 { padding-left: 36px; font-size: 12.5px; }
+.toc a.level-3 { padding-left: 48px; font-size: 12px; }
+
+/* ─── Main Content ─── */
+.content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 56px;
+    max-width: 960px;
+}
+
+/* ─── Markdown Body ─── */
+.markdown-body h1 {
+    font-size: 36px; font-weight: 800; margin: 0 0 8px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.markdown-body h1 .header-anchor { display: none; }
+.markdown-body h2 {
+    font-size: 24px; font-weight: 700; margin: 40px 0 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.markdown-body h3 {
+    font-size: 18px; font-weight: 600; margin: 28px 0 8px;
+}
+.markdown-body h4 {
+    font-size: 15px; font-weight: 600; margin: 20px 0 6px;
+}
+.markdown-body p { margin: 0 0 12px; }
+.markdown-body a { color: var(--accent); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body strong { font-weight: 600; }
+.markdown-body ul, .markdown-body ol { margin: 8px 0 16px; padding-left: 24px; }
+.markdown-body li { margin-bottom: 4px; }
+.markdown-body li > ul, .markdown-body li > ol { margin: 4px 0; }
+
+/* Tables */
+.markdown-body table {
+    width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: 14px;
+}
+.markdown-body th {
+    background: var(--bg3); padding: 10px 12px; text-align: left;
+    font-weight: 600; border: 1px solid var(--border);
+}
+.markdown-body td {
+    padding: 8px 12px; border: 1px solid var(--border);
+}
+.markdown-body tr:nth-child(even) td { background: var(--bg2); }
+
+/* Inline Code */
+.markdown-body code {
+    background: var(--inline-code-bg); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px; color: #f0f6fc;
+}
+.markdown-body pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+    margin: 12px 0 20px; overflow-x: auto; line-height: 1.5;
+}
+.markdown-body pre code {
+    background: none; border: none; padding: 0;
+    color: #c9d1d9; font-size: 13px; tab-size: 2;
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px; margin: 12px 0 20px;
+    background: #1f6feb0a; border-radius: 0 8px 8px 0;
+}
+.markdown-body blockquote p { margin: 0; color: var(--text2); }
+
+/* Horizontal Rule */
+.markdown-body hr {
+    border: none; border-top: 1px solid var(--border); margin: 36px 0;
+}
+
+/* Images */
+.markdown-body img { max-width: 100%; border-radius: 8px; }
+
+/* Checklists */
+.markdown-body input[type="checkbox"] { accent-color: var(--green); margin-right: 6px; }
+
+/* Scrollbar */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Mobile */
+.sidebar-toggle {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 20px;
+}
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+@media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .sidebar-toggle { display: block; }
+    .content { margin-left: 0; padding: 24px 20px; }
+    .markdown-body h1 { font-size: 28px; }
+    .markdown-body h2 { font-size: 20px; }
+}
+
+/* Footer */
+.doc-footer {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--border); text-align: center;
+    color: var(--text2); font-size: 13px;
+}
+.doc-footer a { color: var(--accent); text-decoration: none; }
+
+/* Updated badge */
+.updated-badge {
+    display: inline-block; background: #1f6feb22;
+    border: 1px solid #1f6feb44; color: var(--accent);
+    padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    margin-bottom: 20px;
+}
+</style>
+</head>
+<body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">💰</div>
+                <div>
+                    <h2>Container Cost</h2>
+                    <small>Documentation v2.0</small>
+                </div>
+            </div>
+            <a href="index.html" class="sidebar-back">← Back to Home</a>
+            <div class="toc">
+                <div class="toc-label">Categories</div>
+                <a href="index.html" class="">🏠 Home</a>
+<a href="overview.html" class="">📖 Overview</a>
+<a href="architecture.html" class="">🏗 Architecture</a>
+<a href="quickstart.html" class="">⚡ Quick Start</a>
+<a href="deployment.html" class="">🚀 Deployment Guide</a>
+<a href="platform-variants.html" class="">🌍 Platform Variants</a>
+<a href="configuration.html" class="">⚙️ Configuration Guide</a>
+<a href="formula.html" class="">🧮 Cost Formula</a>
+<a href="api.html" class="">🔌 API Reference</a>
+<a href="frontend.html" class="">📊 Frontend Dashboard</a>
+<a href="cli.html" class="">💻 CLI Reference</a>
+<a href="development.html" class="">🛠️ Development Guide</a>
+<a href="security.html" class="">🔒 Security</a>
+<a href="troubleshooting.html" class="">🔍 Troubleshooting</a>
+<a href="faq.html" class="">❓ FAQ</a>
+<a href="roadmap.html" class="">🗺️ Roadmap</a>
+
+                <div class="toc-label" style="margin-top:12px;">On this page</div>
+                <a href="#container-cost-documentation" class="">Container Cost Documentation 📖💰🐳</a>
+<a href="#table-of-contents" class="level-2">Table of Contents</a>
+<a href="#1-overview" class="level-2">1. Overview</a>
+<a href="#1-1-what-is-container-cost" class="level-3">1.1 What is Container Cost?</a>
+<a href="#1-2-why" class="level-3">1.2 Why?</a>
+<a href="#1-3-who-is-it-for" class="level-3">1.3 Who Is It For?</a>
+<a href="#1-4-key-features" class="level-3">1.4 Key Features</a>
+<a href="#1-5-tech-stack" class="level-3">1.5 Tech Stack</a>
+<a href="#2-architecture" class="level-2">2. Architecture</a>
+<a href="#2-1-multi-vps-architecture-v2-0" class="level-3">2.1 Multi-VPS Architecture (v2.0+)</a>
+<a href="#2-2-single-vps-architecture-legacy" class="level-3">2.2 Single VPS Architecture (Legacy)</a>
+<a href="#2-3-data-flow" class="level-3">2.3 Data Flow</a>
+<a href="#3-quick-start" class="level-2">3. Quick Start</a>
+<a href="#3-1-central-server-5-minutes" class="level-3">3.1 Central Server (5 minutes)</a>
+<a href="#start-postgres-container-cost" class="">Start Postgres + Container Cost</a>
+<a href="#open-the-dashboard" class="">Open the dashboard</a>
+<a href="#3-2-add-a-vps-agent" class="level-3">3.2 Add a VPS Agent</a>
+<a href="#3-3-deploy-agent-on-another-vps" class="level-3">3.3 Deploy Agent on Another VPS</a>
+<a href="#create-config-file" class="">Create config file</a>
+<a href="#3-4-verify" class="level-3">3.4 Verify</a>
+<a href="#check-agent-logs" class="">Check agent logs</a>
+<a href="#expected-output" class="">Expected output:</a>
+<a href="#agent-push-success-vps-hetzner-cx42-containers-5-cost-200000-00" class="">[agent] push success: VPS=Hetzner CX42 containers=5 cost=200000.00</a>
+<a href="#dashboard-http-central-ip-8081" class="">Dashboard: http://CENTRAL_IP:8081</a>
+<a href="#4-deployment-guide" class="level-2">4. Deployment Guide</a>
+<a href="#4-1-central-server-production" class="level-3">4.1 Central Server (Production)</a>
+<a href="#from-source" class="">From source</a>
+<a href="#with-custom-db" class="">With custom DB</a>
+<a href="#4-2-agent-deployment" class="level-3">4.2 Agent Deployment</a>
+<a href="#1-download-the-agent-compose-file" class="">1. Download the agent compose file</a>
+<a href="#2-create-config-adjust-values-to-match-your-vps" class="">2. Create config (adjust values to match your VPS)</a>
+<a href="#3-edit-docker-compose-agent-yml-replace-change-me-with-actual-values" class="">3. Edit docker-compose.agent.yml — replace CHANGE_ME with actual values</a>
+<a href="#4-start-agent" class="">4. Start agent</a>
+<a href="#4-3-single-vps-mode-legacy-no-agent" class="level-3">4.3 Single VPS Mode (Legacy, No Agent)</a>
+<a href="#this-runs-in-server-mode-with-local-docker-socket-access" class="">This runs in server mode with local Docker socket access</a>
+<a href="#the-server-collects-stats-directly-without-needing-an-agent" class="">The server collects stats directly without needing an agent</a>
+<a href="#4-4-docker-image-details" class="level-3">4.4 Docker Image Details</a>
+<a href="#5-platform-variants" class="level-2">5. Platform Variants</a>
+<a href="#5-1-traditional-vps" class="level-3">5.1 Traditional VPS</a>
+<a href="#5-2-special-environments" class="level-3">5.2 Special Environments</a>
+<a href="#6-configuration-guide" class="level-2">6. Configuration Guide</a>
+<a href="#6-1-config-file-location" class="level-3">6.1 Config File Location</a>
+<a href="#6-2-server-mode-configuration" class="level-3">6.2 Server Mode Configuration</a>
+<a href="#6-3-agent-mode-configuration" class="level-3">6.3 Agent Mode Configuration</a>
+<a href="#6-4-environment-variables" class="level-3">6.4 Environment Variables</a>
+<a href="#6-5-weights-tuning" class="level-3">6.5 Weights Tuning</a>
+<a href="#7-cost-formula" class="level-2">7. Cost Formula</a>
+<a href="#7-1-how-allocation-works" class="level-3">7.1 How Allocation Works</a>
+<a href="#7-2-step-by-step-calculation" class="level-3">7.2 Step-by-Step Calculation</a>
+<a href="#7-3-example" class="level-3">7.3 Example</a>
+<a href="#7-4-overhead-cost" class="level-3">7.4 Overhead Cost</a>
+<a href="#7-5-unallocated-cost" class="level-3">7.5 Unallocated Cost</a>
+<a href="#7-6-multi-vps-totals" class="level-3">7.6 Multi-VPS Totals</a>
+<a href="#8-api-reference" class="level-2">8. API Reference</a>
+<a href="#8-1-base-url" class="level-3">8.1 Base URL</a>
+<a href="#8-2-endpoint-summary" class="level-3">8.2 Endpoint Summary</a>
+<a href="#8-3-detailed-endpoints" class="level-3">8.3 Detailed Endpoints</a>
+<a href="#8-4-error-response-format" class="level-3">8.4 Error Response Format</a>
+<a href="#8-5-authentication" class="level-3">8.5 Authentication</a>
+<a href="#8-6-rate-limiting" class="level-3">8.6 Rate Limiting</a>
+<a href="#9-frontend-dashboard" class="level-2">9. Frontend Dashboard</a>
+<a href="#9-1-access" class="level-3">9.1 Access</a>
+<a href="#9-2-pages" class="level-3">9.2 Pages</a>
+<a href="#9-3-chart-types" class="level-3">9.3 Chart Types</a>
+<a href="#9-4-roles-permissions" class="level-3">9.4 Roles & Permissions</a>
+<a href="#10-cli-reference" class="level-2">10. CLI Reference</a>
+<a href="#10-1-flags" class="level-3">10.1 Flags</a>
+<a href="#10-2-makefile-commands" class="level-3">10.2 Makefile Commands</a>
+<a href="#11-development-guide" class="level-2">11. Development Guide</a>
+<a href="#11-1-prerequisites" class="level-3">11.1 Prerequisites</a>
+<a href="#go-1-22" class="">Go 1.22+</a>
+<a href="#postgresql-16" class="">PostgreSQL 16+</a>
+<a href="#docker-for-agent-testing" class="">Docker (for agent testing)</a>
+<a href="#11-2-project-structure" class="level-3">11.2 Project Structure</a>
+<a href="#11-3-running-locally" class="level-3">11.3 Running Locally</a>
+<a href="#quick-start-no-postgres-setup-needed-for-some-dev-tasks" class="">Quick start (no Postgres setup needed for some dev tasks)</a>
+<a href="#or-build-first" class="">Or build first</a>
+<a href="#with-custom-port" class="">With custom port</a>
+<a href="#11-4-testing" class="level-3">11.4 Testing</a>
+<a href="#all-tests" class="">All tests</a>
+<a href="#coverage" class="">Coverage</a>
+<a href="#11-5-building-docker-image" class="level-3">11.5 Building Docker Image</a>
+<a href="#11-6-database" class="level-3">11.6 Database</a>
+<a href="#11-7-adding-tests" class="level-3">11.7 Adding Tests</a>
+<a href="#11-8-code-conventions" class="level-3">11.8 Code Conventions</a>
+<a href="#12-security" class="level-2">12. Security</a>
+<a href="#12-1-authentication" class="level-3">12.1 Authentication</a>
+<a href="#12-2-api-key-security" class="level-3">12.2 API Key Security</a>
+<a href="#12-3-docker-socket" class="level-3">12.3 Docker Socket</a>
+<a href="#12-4-network-security" class="level-3">12.4 Network Security</a>
+<a href="#12-5-database-password" class="level-3">12.5 Database Password</a>
+<a href="#12-6-secret-key" class="level-3">12.6 Secret Key</a>
+<a href="#13-troubleshooting" class="level-2">13. Troubleshooting</a>
+<a href="#13-1-agent-can-t-reach-central-server" class="level-3">13.1 Agent Can't Reach Central Server</a>
+<a href="#13-2-docker-socket-not-available" class="level-3">13.2 Docker Socket Not Available</a>
+<a href="#13-3-database-connection-failed" class="level-3">13.3 Database Connection Failed</a>
+<a href="#13-4-vps-shows-offline" class="level-3">13.4 VPS Shows Offline</a>
+<a href="#13-5-invalid-api-key" class="level-3">13.5 Invalid API Key</a>
+<a href="#13-6-config-file-issues" class="level-3">13.6 Config File Issues</a>
+<a href="#13-7-common-docker-commands" class="level-3">13.7 Common Docker Commands</a>
+<a href="#agent-logs" class="">Agent logs</a>
+<a href="#server-logs" class="">Server logs</a>
+<a href="#database" class="">Database</a>
+<a href="#restart-everything" class="">Restart everything</a>
+<a href="#reset-deletes-all-data" class="">Reset (⚠️ deletes all data)</a>
+<a href="#14-faq" class="level-2">14. FAQ</a>
+<a href="#what-s-the-difference-between-server-mode-and-agent-mode" class="level-3">What's the difference between server mode and agent mode?</a>
+<a href="#can-i-run-multiple-agents-on-the-same-vps" class="level-3">Can I run multiple agents on the same VPS?</a>
+<a href="#what-happens-if-the-central-server-goes-down" class="level-3">What happens if the central server goes down?</a>
+<a href="#how-is-storage-cost-calculated-if-disk-usage-isn-t-available" class="level-3">How is storage cost calculated if disk usage isn't available?</a>
+<a href="#can-i-change-the-currency" class="level-3">Can I change the currency?</a>
+<a href="#does-it-work-with-docker-desktop" class="level-3">Does it work with Docker Desktop?</a>
+<a href="#can-i-use-it-with-podman" class="level-3">Can I use it with Podman?</a>
+<a href="#15-roadmap" class="level-2">15. Roadmap</a>
+<a href="#v1-0-core" class="level-3">✅ v1.0 — Core</a>
+<a href="#v1-1-dashboard-auth" class="level-3">✅ v1.1 — Dashboard & Auth</a>
+<a href="#v2-0-multi-vps-scale" class="level-3">✅ v2.0 — Multi-VPS Scale</a>
+<a href="#future" class="level-3">🔜 Future</a>
+<a href="#related-resources" class="level-2">Related Resources</a>
+
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="markdown-body">
+                <h1 id="container-cost-documentation">Container Cost Documentation 📖💰🐳</h1>
+<blockquote>
+<p><strong>Multi-VPS Docker Container Cost Calculator — Agent &amp; Central Server Architecture</strong>
+Version 2.0 | Author: Endang Suwarna</p>
+</blockquote>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-overview">Overview</a></li>
+<li><a href="#2-architecture">Architecture</a></li>
+<li><a href="#3-quick-start">Quick Start</a></li>
+<li><a href="#4-deployment-guide">Deployment Guide</a></li>
+<li><a href="#5-platform-variants">Platform Variants</a></li>
+<li><a href="#6-configuration-guide">Configuration Guide</a></li>
+<li><a href="#7-cost-formula">Cost Formula</a></li>
+<li><a href="#8-api-reference">API Reference</a></li>
+<li><a href="#9-frontend-dashboard">Frontend Dashboard</a></li>
+<li><a href="#10-cli-reference">CLI Reference</a></li>
+<li><a href="#11-development-guide">Development Guide</a></li>
+<li><a href="#12-security">Security</a></li>
+<li><a href="#13-troubleshooting">Troubleshooting</a></li>
+<li><a href="#14-faq">FAQ</a></li>
+<li><a href="#15-roadmap">Roadmap</a></li>
+</ol>
+<hr>
+<h2 id="1-overview">1. Overview</h2>
+<h3 id="11-what-is-container-cost">1.1 What is Container Cost?</h3>
+<p>Container Cost is a <strong>Docker container cost allocation tool</strong> that helps you calculate and monitor how much each container costs across one or many VPS instances. It uses a weighted resource allocation formula based on actual CPU and RAM usage.</p>
+<h3 id="12-why">1.2 Why?</h3>
+<p>If you run Docker containers across multiple VPS, you&rsquo;ve probably asked:</p>
+<ul>
+<li>&ldquo;Container A is on which VPS? What&rsquo;s the total cost across all VPS?&rdquo;</li>
+<li>&ldquo;Which VPS is the most expensive? Most wasteful?&rdquo;</li>
+<li>&ldquo;How do I charge back clients whose containers run on different VPS?&rdquo;</li>
+<li>&ldquo;How do I track per-VPS costs without SSH-ing into each one?&rdquo;</li>
+</ul>
+<p>Container Cost answers all of these with a single dashboard.</p>
+<h3 id="13-who-is-it-for">1.3 Who Is It For?</h3>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Indie Developer / Solo Dev</strong></td>
+<td>Side projects on 1-3 VPS, know your cost breakdown</td>
+</tr>
+<tr>
+<td><strong>DevOps Engineer</strong></td>
+<td>Multi-tenant container deployment, chargeback to teams/clients</td>
+</tr>
+<tr>
+<td><strong>VPS Reseller</strong></td>
+<td>Selling containers to clients with data-driven pricing</td>
+</tr>
+<tr>
+<td><strong>Small Team</strong></td>
+<td>Sharing VPS, fair cost splitting</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14-key-features">1.4 Key Features</h3>
+<p><strong>Single VPS (Legacy)</strong>
+- Live Docker stats collection (CPU%, memory, status)
+- Weighted cost allocation (CPU 50%, RAM 40%, Storage 10%)
+- PostgreSQL storage with history tracking
+- Chart.js dashboard (doughnut, bar, line charts)
+- Role-based auth (admin, engineer, management)
+- Docker Compose deployment</p>
+<p><strong>Multi-VPS (v2.0)</strong>
+- VPS management — add/edit/delete VPS from dashboard
+- Agent mode — deploy a lightweight agent on each VPS
+- Push API — agents push reports to central server (API key auth)
+- Aggregated dashboard — total cost across all VPS
+- Live status — online/offline detection per VPS
+- Auto API key generation on VPS creation
+- GitHub Container Registry image
+- One-liner agent deployment</p>
+<h3 id="15-tech-stack">1.5 Tech Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>Go 1.22</td>
+<td>High performance, single binary, perfect for CLI tools</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>PostgreSQL 16</td>
+<td>Robust, JSONB for flexible report snapshots</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>net/http (stdlib)</td>
+<td>No framework — lightweight, easy to maintain</td>
+</tr>
+<tr>
+<td><strong>Docker API</strong></td>
+<td>Unix socket (HTTP)</td>
+<td>Read container stats directly from Docker Engine</td>
+</tr>
+<tr>
+<td><strong>Frontend</strong></td>
+<td>Vanilla HTML/CSS/JS + Chart.js</td>
+<td>Zero build step, dark theme</td>
+</tr>
+<tr>
+<td><strong>Auth</strong></td>
+<td>Session-based (cookie)</td>
+<td>Login/logout, bcrypt, 3 roles</td>
+</tr>
+<tr>
+<td><strong>Container Registry</strong></td>
+<td>GitHub Container Registry</td>
+<td>ghcr.io/edsuwarna/container-cost</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2-architecture">2. Architecture</h2>
+<h3 id="21-multi-vps-architecture-v20">2.1 Multi-VPS Architecture (v2.0+)</h3>
+<div class="codehilite"><pre><span></span><code>┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  VPS-1       │  │  VPS-2       │  │  VPS-3       │
+│  ┌──────────┐│  │  ┌──────────┐│  │  ┌──────────┐│
+│  │  Agent   ││  │  │  Agent   ││  │  │  Agent   ││
+│  │ (Docker) ││  │  │ (Docker) ││  │  │ (Docker) ││
+│  └────┬─────┘│  │  └────┬─────┘│  │  └────┬─────┘│
+└───────┼──────┘  └───────┼──────┘  └───────┼──────┘
+        │ POST            │ POST            │ POST
+        │ /api/v1/push    │ /api/v1/push    │ /api/v1/push
+        ▼                 ▼                 ▼
+┌───────────────────────────────────────────────────┐
+│               CENTRAL SERVER                        │
+│  ┌─────────────────────────────────────────────┐   │
+│  │  API Server (:8080) + Frontend Dashboard    │   │
+│  │  PostgreSQL (snapshots, users, vps_agents)  │   │
+│  └─────────────────────────────────────────────┘   │
+└───────────────────────────────────────────────────┘
+</code></pre></div>
+
+<p>Each agent:
+1. Reads Docker socket for container stats (CPU%, RAM)
+2. Calculates cost using its own VPS config (name, specs, price)
+3. Pushes the cost report to the central server
+4. Retries up to 5× with exponential backoff on failure</p>
+<p>The central server:
+1. Receives push reports from agents (API key auth)
+2. Stores snapshots in PostgreSQL (per VPS)
+3. Detects offline VPS (24h threshold)
+4. Serves the aggregated dashboard
+5. Can also collect locally if Docker socket is available</p>
+<h3 id="22-single-vps-architecture-legacy">2.2 Single VPS Architecture (Legacy)</h3>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│                    Docker Host (VPS)                      │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │              Container Cost                        │   │
+│  │  ┌──────────┐   ┌────────────┐   ┌───────────┐  │   │
+│  │  │Collector │──▶│ Calculator │──▶│  Storage   │  │   │
+│  │  │(Docker   │   │ (Weighted  │   │ (PostgreSQL│  │   │
+│  │  │ socket)  │   │  Formula)  │   │           │  │   │
+│  │  └──────────┘   └─────┬──────┘   └─────┬─────┘  │   │
+│  │                       │                │         │   │
+│  │                 ┌─────▼────────────────▼──────┐  │   │
+│  │                 │        REST API Server       │  │   │
+│  │                 │        (port :8080)          │  │   │
+│  │                 └─────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                          │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                  │
+│  │Container│  │Container│  │Container│                  │
+│  │   A     │  │   B     │  │   C     │                  │
+│  └─────────┘  └─────────┘  └─────────┘                  │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="23-data-flow">2.3 Data Flow</h3>
+<div class="codehilite"><pre><span></span><code>Docker Socket
+     │
+     ▼
+┌─────────────┐     ┌──────────────┐     ┌────────────────┐
+│  Collector   │────▶│  Calculator   │────▶│   Storage      │
+│ (CPU%, RAM,  │     │ (CostReport   │     │ (PostgreSQL)   │
+│  status)     │     │  w/ formula)  │     │ snapshots +    │
+└─────────────┘     └──────────────┘     │ users + agents  │
+                                         └───────┬────────┘
+                                                 │
+                                         ┌───────▼────────┐
+                                         │  API Server    │
+                                         │  :8080         │
+                                         │  JSON REST     │
+                                         └───────┬────────┘
+                                                 │
+                                         ┌───────▼────────┐
+                                         │  Frontend      │
+                                         │  (Chart.js)    │
+                                         └────────────────┘
+</code></pre></div>
+
+<hr>
+<h2 id="3-quick-start">3. Quick Start</h2>
+<h3 id="31-central-server-5-minutes">3.1 Central Server (5 minutes)</h3>
+<div class="codehilite"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/edsuwarna/container-cost.git
+<span class="nb">cd</span><span class="w"> </span>container-cost
+
+<span class="c1"># Start Postgres + Container Cost</span>
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+
+<span class="c1"># Open the dashboard</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Open http://localhost:8081&quot;</span>
+</code></pre></div>
+
+<p><strong>Default Login:</strong>
+- Username: <code>admin</code>
+- Password: <code>change-me</code></p>
+<blockquote>
+<p>Port 8081 is the external port mapped to the container&rsquo;s port 8080 (see docker-compose.yml).</p>
+</blockquote>
+<h3 id="32-add-a-vps-agent">3.2 Add a VPS Agent</h3>
+<ol>
+<li>Login to dashboard → click <strong>VPS</strong> menu (admin only)</li>
+<li>Click <strong>➕ Tambah VPS</strong></li>
+<li>Enter a name (e.g. &ldquo;Hetzner CX42&rdquo;)</li>
+<li>Click <strong>💾 Simpan &amp; Generate Key</strong></li>
+<li>Copy the API key shown</li>
+</ol>
+<h3 id="33-deploy-agent-on-another-vps">3.3 Deploy Agent on Another VPS</h3>
+<p><strong>One-liner (recommended):</strong></p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--server<span class="o">=</span>http://CENTRAL_IP:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--api-key<span class="o">=</span>dckr_xxx_generated_from_dashboard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="o">=</span><span class="s2">&quot;Hetzner CX42&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--price<span class="o">=</span><span class="m">200000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cpu<span class="o">=</span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ram<span class="o">=</span><span class="m">8</span>
+</code></pre></div>
+
+<p><strong>Or with docker-compose:</strong></p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-o<span class="w"> </span>docker-compose.agent.yml<span class="w"> </span>https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
+
+<span class="c1"># Create config file</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>container-cost-config.json<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">{</span>
+<span class="s">  &quot;vps&quot;: {</span>
+<span class="s">    &quot;name&quot;: &quot;Hetzner CX42&quot;,</span>
+<span class="s">    &quot;price_per_month&quot;: 200000,</span>
+<span class="s">    &quot;cpu_cores&quot;: 4,</span>
+<span class="s">    &quot;ram_gb&quot;: 8,</span>
+<span class="s">    &quot;currency&quot;: &quot;IDR&quot;</span>
+<span class="s">  },</span>
+<span class="s">  &quot;agent&quot;: {</span>
+<span class="s">    &quot;mode&quot;: &quot;agent&quot;,</span>
+<span class="s">    &quot;central_url&quot;: &quot;http://CENTRAL_IP:8080&quot;,</span>
+<span class="s">    &quot;agent_key&quot;: &quot;dckr_xxx&quot;,</span>
+<span class="s">    &quot;push_interval&quot;: 60,</span>
+<span class="s">    &quot;push_retries&quot;: 5</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.agent.yml<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+
+<p><strong>Or with raw docker run:</strong></p>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>container-cost-agent<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>~/.docker-cost/config.json:/root/.docker-cost/config.json:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ghcr.io/edsuwarna/container-cost:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="o">=</span>agent<span class="w"> </span>--server<span class="o">=</span>http://CENTRAL_IP:8080<span class="w"> </span>--api-key<span class="o">=</span>dckr_xxx
+</code></pre></div>
+
+<h3 id="34-verify">3.4 Verify</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Check agent logs</span>
+docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>container-cost-agent
+
+<span class="c1"># Expected output:</span>
+<span class="c1"># [agent] push success: VPS=Hetzner CX42 containers=5 cost=200000.00</span>
+
+<span class="c1"># Dashboard: http://CENTRAL_IP:8081</span>
+</code></pre></div>
+
+<hr>
+<h2 id="4-deployment-guide">4. Deployment Guide</h2>
+<h3 id="41-central-server-production">4.1 Central Server (Production)</h3>
+<h4 id="docker-compose-recommended">Docker Compose (Recommended)</h4>
+<p>The provided <code>docker-compose.yml</code> bundles:
+- <strong>PostgreSQL 16</strong> — database with health check
+- <strong>Container Cost</strong> — Go app with auto-migration</p>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+docker<span class="w"> </span>compose<span class="w"> </span>logs<span class="w"> </span>-f
+</code></pre></div>
+
+<p><strong>Environment variables</strong> you can set:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PORT</code></td>
+<td><code>8080</code></td>
+<td>HTTP server port (inside container)</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td><code>postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable</code></td>
+<td>PostgreSQL connection</td>
+</tr>
+<tr>
+<td><code>TZ</code></td>
+<td><code>Asia/Jakarta</code></td>
+<td>Timezone</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>DATABASE_URL</code> in <code>docker-compose.yml</code> already points to the <code>postgres</code> service. <strong>Make sure to change the password in production.</strong></p>
+<h4 id="standalone-binary">Standalone Binary</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># From source</span>
+make<span class="w"> </span>build
+./build/docker-cost
+
+<span class="c1"># With custom DB</span>
+<span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;postgres://user:pass@localhost:5432/docker-cost?sslmode=disable&quot;</span><span class="w"> </span>./build/docker-cost
+</code></pre></div>
+
+<h4 id="docker-run-without-compose">Docker Run (Without Compose)</h4>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>container-cost<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-p<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-e<span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;postgres://user:pass@host:5432/docker-cost?sslmode=disable&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ghcr.io/edsuwarna/container-cost:latest
+</code></pre></div>
+
+<h3 id="42-agent-deployment">4.2 Agent Deployment</h3>
+<h4 id="one-liner-script">One-liner Script</h4>
+<p>The <code>deploy/setup-agent.sh</code> script automates everything:</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--server<span class="o">=</span>http://central:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--api-key<span class="o">=</span>dckr_xxx<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="o">=</span><span class="s2">&quot;My VPS&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--price<span class="o">=</span><span class="m">200000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--cpu<span class="o">=</span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--ram<span class="o">=</span><span class="m">8</span>
+</code></pre></div>
+
+<p><strong>What the script does:</strong>
+1. Validates Docker is installed
+2. Creates <code>~/.docker-cost/config.json</code>
+3. Pulls <code>ghcr.io/edsuwarna/container-cost:latest</code>
+4. Runs the container with <code>--mode=agent</code></p>
+<h4 id="manual-docker-compose">Manual Docker Compose</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 1. Download the agent compose file</span>
+curl<span class="w"> </span>-o<span class="w"> </span>docker-compose.agent.yml<span class="w"> </span>https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
+
+<span class="c1"># 2. Create config (adjust values to match your VPS)</span>
+cat<span class="w"> </span>&gt;<span class="w"> </span>container-cost-config.json<span class="w"> </span><span class="s">&lt;&lt;EOF</span>
+<span class="s">{</span>
+<span class="s">  &quot;vps&quot;: {</span>
+<span class="s">    &quot;name&quot;: &quot;My VPS&quot;,</span>
+<span class="s">    &quot;price_per_month&quot;: 200000,</span>
+<span class="s">    &quot;cpu_cores&quot;: 4,</span>
+<span class="s">    &quot;ram_gb&quot;: 8,</span>
+<span class="s">    &quot;currency&quot;: &quot;IDR&quot;</span>
+<span class="s">  },</span>
+<span class="s">  &quot;agent&quot;: {</span>
+<span class="s">    &quot;mode&quot;: &quot;agent&quot;,</span>
+<span class="s">    &quot;central_url&quot;: &quot;http://YOUR_SERVER_IP:8080&quot;,</span>
+<span class="s">    &quot;agent_key&quot;: &quot;dckr_xxx&quot;,</span>
+<span class="s">    &quot;push_interval&quot;: 60,</span>
+<span class="s">    &quot;push_retries&quot;: 5</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="s">EOF</span>
+
+<span class="c1"># 3. Edit docker-compose.agent.yml — replace CHANGE_ME with actual values</span>
+
+<span class="c1"># 4. Start agent</span>
+docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.agent.yml<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+
+<h4 id="docker-run">Docker Run</h4>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>container-cost-agent<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--restart<span class="w"> </span>unless-stopped<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span>/var/run/docker.sock:/var/run/docker.sock:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="nv">$HOME</span>/.docker-cost/config.json:/root/.docker-cost/config.json:ro<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>ghcr.io/edsuwarna/container-cost:latest<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="o">=</span>agent<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--server<span class="o">=</span>http://CENTRAL_IP:8080<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--api-key<span class="o">=</span>dckr_xxx<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--push-interval<span class="o">=</span><span class="m">60</span>
+</code></pre></div>
+
+<h3 id="43-single-vps-mode-legacy-no-agent">4.3 Single VPS Mode (Legacy, No Agent)</h3>
+<p>If you&rsquo;re monitoring containers on the same machine as the server:</p>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+
+<span class="c1"># This runs in server mode with local Docker socket access</span>
+<span class="c1"># The server collects stats directly without needing an agent</span>
+</code></pre></div>
+
+<h3 id="44-docker-image-details">4.4 Docker Image Details</h3>
+<p><strong>Image:</strong> <code>ghcr.io/edsuwarna/container-cost:latest</code></p>
+<p><strong>Tags:</strong>
+- <code>latest</code> — most recent release
+- <code>v2.0.0</code> — Multi-VPS release</p>
+<p><strong>Multi-stage build:</strong>
+- Stage 1: <code>golang:1.22-alpine</code> — compiles static binary
+- Stage 2: <code>alpine:3.19</code> — runtime (only 15MB + binary)</p>
+<p><strong>Volumes:</strong>
+- <code>/data</code> — config directory (mount for persistence)
+- <code>/var/run/docker.sock</code> — Docker socket (read-only)</p>
+<hr>
+<h2 id="5-platform-variants">5. Platform Variants</h2>
+<p>Container Cost is designed to be <strong>platform-agnostic</strong> at the VPS level. Any VPS running Docker can host an agent.</p>
+<h3 id="51-traditional-vps">5.1 Traditional VPS</h3>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Tested</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hetzner Cloud</td>
+<td>✅</td>
+<td>CX/CX series</td>
+</tr>
+<tr>
+<td>DigitalOcean</td>
+<td>✅</td>
+<td>Droplets</td>
+</tr>
+<tr>
+<td>Linode/Akamai</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>Vultr</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>AWS EC2</td>
+<td>⚠️</td>
+<td>Must mount Docker socket</td>
+</tr>
+<tr>
+<td>Google Cloud</td>
+<td>⚠️</td>
+<td>Must mount Docker socket</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-special-environments">5.2 Special Environments</h3>
+<p><strong>Orchestrated environments (Kubernetes, Nomad):</strong> The agent reads the <em>host</em> Docker socket, so it works on any single Docker host. For Kubernetes, deploy the agent as a DaemonSet to measure node-level container costs.</p>
+<hr>
+<h2 id="6-configuration-guide">6. Configuration Guide</h2>
+<h3 id="61-config-file-location">6.1 Config File Location</h3>
+<p>Default: <code>~/.docker-cost/config.json</code> (override with <code>DOCKER_COST_CONFIG_DIR</code> env var)</p>
+<h3 id="62-server-mode-configuration">6.2 Server Mode Configuration</h3>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;My VPS&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;price_per_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cpu_cores&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ram_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;storage_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;bandwidth_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IDR&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;cpu_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ram_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.4</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;storage_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;network_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;overhead_percent&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;admin_user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;admin_pass&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;secret_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Field Reference:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td><code>"My VPS"</code></td>
+<td>Display name in dashboard</td>
+</tr>
+<tr>
+<td><code>price_per_month</code></td>
+<td>number</td>
+<td><code>200000</code></td>
+<td>Monthly VPS cost in your currency</td>
+</tr>
+<tr>
+<td><code>cpu_cores</code></td>
+<td>number</td>
+<td><code>4</code></td>
+<td>Number of CPU cores</td>
+</tr>
+<tr>
+<td><code>ram_gb</code></td>
+<td>number</td>
+<td><code>8</code></td>
+<td>RAM in GB</td>
+</tr>
+<tr>
+<td><code>storage_gb</code></td>
+<td>number</td>
+<td><code>100</code></td>
+<td>Storage in GB</td>
+</tr>
+<tr>
+<td><code>bandwidth_gb</code></td>
+<td>number</td>
+<td><code>0</code></td>
+<td>Bandwidth (reserved for future)</td>
+</tr>
+<tr>
+<td><code>currency</code></td>
+<td>string</td>
+<td><code>"IDR"</code></td>
+<td>Currency code (IDR, USD, EUR, etc.)</td>
+</tr>
+<tr>
+<td><code>cpu_weight</code></td>
+<td>0.0-1.0</td>
+<td><code>0.5</code></td>
+<td>CPU weight in cost formula</td>
+</tr>
+<tr>
+<td><code>ram_weight</code></td>
+<td>0.0-1.0</td>
+<td><code>0.4</code></td>
+<td>RAM weight in cost formula</td>
+</tr>
+<tr>
+<td><code>storage_weight</code></td>
+<td>0.0-1.0</td>
+<td><code>0.1</code></td>
+<td>Storage weight in cost formula</td>
+</tr>
+<tr>
+<td><code>network_weight</code></td>
+<td>0.0-1.0</td>
+<td><code>0.0</code></td>
+<td>Network weight (reserved)</td>
+</tr>
+<tr>
+<td><code>overhead_percent</code></td>
+<td>0-100</td>
+<td><code>15</code></td>
+<td>OS/Docker overhead percentage</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>If the config file doesn&rsquo;t exist, it&rsquo;s <strong>auto-created with defaults</strong> on first run.</p>
+</blockquote>
+<h3 id="63-agent-mode-configuration">6.3 Agent Mode Configuration</h3>
+<p>For agent mode, use the FullConfig format that wraps both VPS and agent settings:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;vps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hetzner CX42&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;price_per_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cpu_cores&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ram_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;storage_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IDR&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cpu_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ram_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;storage_weight&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;overhead_percent&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;agent&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;agent&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;central_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://central:8080&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;agent_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dckr_xxx...&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;push_interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">60</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;push_retries&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Agent config fields:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mode</code></td>
+<td>string</td>
+<td><code>"server"</code></td>
+<td>Run mode: <code>"server"</code> or <code>"agent"</code></td>
+</tr>
+<tr>
+<td><code>central_url</code></td>
+<td>string</td>
+<td><code>""</code></td>
+<td>Central server URL (e.g. <code>http://ip:8080</code>)</td>
+</tr>
+<tr>
+<td><code>agent_key</code></td>
+<td>string</td>
+<td><code>""</code></td>
+<td>API key from central dashboard</td>
+</tr>
+<tr>
+<td><code>push_interval</code></td>
+<td>int</td>
+<td><code>60</code></td>
+<td>Seconds between pushes</td>
+</tr>
+<tr>
+<td><code>push_retries</code></td>
+<td>int</td>
+<td><code>5</code></td>
+<td>Retry count on failure</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CLI flags override config file values.</strong> If both are provided, CLI wins.</p>
+<h3 id="64-environment-variables">6.4 Environment Variables</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PORT</code></td>
+<td><code>8080</code></td>
+<td>HTTP server port</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td><code>postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable</code></td>
+<td>PostgreSQL connection string</td>
+</tr>
+<tr>
+<td><code>DOCKER_HOST</code></td>
+<td><code>/var/run/docker.sock</code></td>
+<td>Docker socket path</td>
+</tr>
+<tr>
+<td><code>DOCKER_COST_CONFIG_DIR</code></td>
+<td><code>~/.docker-cost</code></td>
+<td>Config directory</td>
+</tr>
+<tr>
+<td><code>TZ</code></td>
+<td><code>Asia/Jakarta</code></td>
+<td>Timezone</td>
+</tr>
+</tbody>
+</table>
+<h3 id="65-weights-tuning">6.5 Weights Tuning</h3>
+<p>The default weights are:</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Weight</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU</td>
+<td>50%</td>
+<td>Most common bottleneck</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>40%</td>
+<td>Second most important</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>10%</td>
+<td>Relatively cheap</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>0%</td>
+<td>Reserved for future</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Tips for adjusting weights:</strong>
+- <strong>CPU-heavy workloads</strong> (compute, batch jobs) → increase CPU weight to 0.7+
+- <strong>Memory-heavy workloads</strong> (databases, caches) → increase RAM weight to 0.6+
+- <strong>Equal split</strong> → set all to 0.33
+- Weights don&rsquo;t need to sum to 1.0 (they&rsquo;re normalized internally), but it&rsquo;s recommended for clarity</p>
+<hr>
+<h2 id="7-cost-formula">7. Cost Formula</h2>
+<h3 id="71-how-allocation-works">7.1 How Allocation Works</h3>
+<p>Container Cost uses a <strong>weighted resource fraction</strong> model:</p>
+<div class="codehilite"><pre><span></span><code>Container Cost = VPS Monthly Price × Weighted Resource Fraction
+</code></pre></div>
+
+<h3 id="72-step-by-step-calculation">7.2 Step-by-Step Calculation</h3>
+<p><strong>Step 1: Available Resources (after 15% overhead)</strong></p>
+<div class="codehilite"><pre><span></span><code>Available CPU = Total CPU × (1 - Overhead%)
+Available RAM = Total RAM × (1 - Overhead%)
+</code></pre></div>
+
+<p>For a VPS with 4 CPU cores and 8GB RAM, 15% overhead:
+- Available CPU = 4 × 0.85 = <strong>3.4 cores</strong>
+- Available RAM = 8 × 0.85 = <strong>6.8 GB</strong></p>
+<p><strong>Step 2: Container Fractions</strong></p>
+<div class="codehilite"><pre><span></span><code>CPU Fraction = Container CPU Cores / Available CPU
+RAM Fraction = Container RAM (GB) / Available RAM
+Storage Fraction = 1 / Number of Containers (equal split per container)
+</code></pre></div>
+
+<p><strong>Step 3: Weighted Cost</strong></p>
+<div class="codehilite"><pre><span></span><code>Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RAM_Fraction + Storage_Weight × Storage_Fraction)
+                         / (CPU_Weight + RAM_Weight + Storage_Weight)
+</code></pre></div>
+
+<h3 id="73-example">7.3 Example</h3>
+<p><strong>VPS:</strong> Hetzner CX42 — Rp 200.000/month, 4 CPU, 8GB RAM, 3 containers</p>
+<p><strong>Weights:</strong> CPU=0.5, RAM=0.4, Storage=0.1</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>CPU%</th>
+<th>RAM</th>
+<th>CPU Cost</th>
+<th>RAM Cost</th>
+<th>Storage Cost</th>
+<th><strong>Total</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web</td>
+<td>2.5%</td>
+<td>128MB</td>
+<td>Rp 4.800</td>
+<td>Rp 1.500</td>
+<td>Rp 6.700</td>
+<td><strong>Rp 13.000</strong></td>
+</tr>
+<tr>
+<td>postgres</td>
+<td>15.2%</td>
+<td>1.2GB</td>
+<td>Rp 29.200</td>
+<td>Rp 14.100</td>
+<td>Rp 6.700</td>
+<td><strong>Rp 50.000</strong></td>
+</tr>
+<tr>
+<td>nginx</td>
+<td>0.8%</td>
+<td>64MB</td>
+<td>Rp 1.500</td>
+<td>Rp 750</td>
+<td>Rp 6.700</td>
+<td><strong>Rp 8.950</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Overhead cost (OS + Docker ~15%):</strong> Rp 30.000<br>
+<strong>Unallocated (idle resources):</strong> Rp 55.000<br>
+<strong>Total allocated:</strong> Rp 200.000 ✓</p>
+<h3 id="74-overhead-cost">7.4 Overhead Cost</h3>
+<p>The OS and Docker daemon themselves consume resources. The overhead is calculated as:</p>
+<div class="codehilite"><pre><span></span><code>Overhead CPU = Total CPU × Overhead%
+Overhead RAM = Total RAM × Overhead%
+
+Overhead Cost = Price × (overheadCPU/totalCPU + overheadRAM/totalRAM) / 2
+</code></pre></div>
+
+<p>Default overhead: <strong>15%</strong> (adjustable in config)</p>
+<h3 id="75-unallocated-cost">7.5 Unallocated Cost</h3>
+<p>Resources not used by any container or overhead:</p>
+<div class="codehilite"><pre><span></span><code>Unallocated = Price × (unusedCPUratio + unusedRAMratio) / 2
+</code></pre></div>
+
+<p>This represents <strong>idle capacity</strong> you&rsquo;re paying for but not using.</p>
+<h3 id="76-multi-vps-totals">7.6 Multi-VPS Totals</h3>
+<p>The aggregated dashboard sums costs across all VPS:</p>
+<div class="codehilite"><pre><span></span><code>Total Cost All VPS = Σ(VPS 1 Price + VPS 2 Price + ... + VPS N Price)
+Total Containers = Σ(Container Count per VPS)
+</code></pre></div>
+
+<hr>
+<h2 id="8-api-reference">8. API Reference</h2>
+<h3 id="81-base-url">8.1 Base URL</h3>
+<div class="codehilite"><pre><span></span><code>http://localhost:8080
+// Via docker-compose: http://localhost:8081
+</code></pre></div>
+
+<h3 id="82-endpoint-summary">8.2 Endpoint Summary</h3>
+<h4 id="public-no-auth">Public (No Auth)</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/health</code></td>
+<td>Health check</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/login</code></td>
+<td>Login (JSON body: username, password)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/logout</code></td>
+<td>Logout</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/auth/check</code></td>
+<td>Check session status</td>
+</tr>
+</tbody>
+</table>
+<h4 id="agent-push-api-key-auth">Agent Push (API Key Auth)</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/push</code></td>
+<td>Push cost report from agent</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Headers:</strong> <code>Authorization: Bearer dckr_xxx</code></p>
+<h4 id="dashboard-authenticated-any-role">Dashboard (Authenticated — any role)</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/dashboard</code></td>
+<td>Aggregated multi-VPS report</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/report/latest</code></td>
+<td>Latest snapshot</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/report/refresh</code></td>
+<td>Generate fresh report (local Docker only)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/report/history</code></td>
+<td>Historical reports (query: <code>?since=2024-01-01T00:00:00Z</code>)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/containers</code></td>
+<td>List all containers + current costs</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/containers/{name}</code></td>
+<td>Container cost history</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/costs/trends</code></td>
+<td>Cost trend over last 30 days</td>
+</tr>
+<tr>
+<td>GET/PUT</td>
+<td><code>/api/config</code></td>
+<td>Get/update VPS config</td>
+</tr>
+</tbody>
+</table>
+<h4 id="vps-management-admin-only">VPS Management (Admin only)</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/vps</code></td>
+<td>List all VPS agents</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/vps</code></td>
+<td>Add new VPS (generates API key)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/vps/{id}</code></td>
+<td>VPS detail + latest report</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/vps/{id}</code></td>
+<td>Update VPS name/notes</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/vps/{id}</code></td>
+<td>Remove VPS + all its data</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/vps/{id}/reset-key</code></td>
+<td>Regenerate API key</td>
+</tr>
+</tbody>
+</table>
+<h4 id="user-management-admin-only">User Management (Admin only)</h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/users</code></td>
+<td>List all users</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/users</code></td>
+<td>Create new user</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><code>/api/users/{id}</code></td>
+<td>Update user role</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/users/{id}</code></td>
+<td>Delete user</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/users/{id}/reset-password</code></td>
+<td>Reset password</td>
+</tr>
+</tbody>
+</table>
+<h3 id="83-detailed-endpoints">8.3 Detailed Endpoints</h3>
+<h4 id="get-apihealth">GET /api/health</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Response 200</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ok&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="post-apiauthlogin">POST /api/auth/login</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Request</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;change-me&quot;</span>
+<span class="p">}</span>
+
+<span class="c1">// Response 200</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;admin&quot;</span>
+<span class="p">}</span>
+
+<span class="c1">// Response 401</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;invalid credentials&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Sets a session cookie</strong> <code>session</code> (HttpOnly, SameSite=Lax, 24h expiry).</p>
+<h4 id="post-apiv1push-agent-push">POST /api/v1/push (Agent Push)</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Headers: Authorization: Bearer dckr_xxx</span>
+
+<span class="c1">// Request Body</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;vps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hetzner CX42&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;price_per_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;cpu_cores&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ram_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IDR&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;containers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;container&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;web&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;a1b2c3d4e5f6&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nginx:latest&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;cpu_percent&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;mem_usage_mb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;mem_limit_mb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;mem_percent&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">12.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;running&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-01T00:00:00Z&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;uptime&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;14 days&quot;</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;cpu_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4800</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ram_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1500</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;storage_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6700</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;total_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13000</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;overhead_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;unallocated_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">55000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;total_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;period&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;month&quot;</span>
+<span class="p">}</span>
+
+<span class="c1">// Response 200</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;accepted&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;snapshot_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="get-apidashboard-aggregated">GET /api/dashboard (Aggregated)</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Response 200</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;vps_list&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hetzner CX42&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cpu_cores&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ram_gb&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;price_per_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IDR&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;online&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;last_seen&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-15T10:28:00Z&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;reports&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;vps&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hetzner CX42&quot;</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;containers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;total_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;total_cost&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;total_vps&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;total_containers&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;currency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;IDR&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-01-15T10:30:00Z&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="84-error-response-format">8.4 Error Response Format</h3>
+<p>All errors follow this structure:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;human-readable error message&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;details&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;optional detailed message&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>HTTP Status Codes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>200</td>
+<td>Success</td>
+</tr>
+<tr>
+<td>201</td>
+<td>Created (VPS, user)</td>
+</tr>
+<tr>
+<td>400</td>
+<td>Bad request (missing/invalid fields)</td>
+</tr>
+<tr>
+<td>401</td>
+<td>Unauthorized (not logged in or invalid API key)</td>
+</tr>
+<tr>
+<td>403</td>
+<td>Forbidden (wrong role)</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Not found</td>
+</tr>
+<tr>
+<td>500</td>
+<td>Internal server error</td>
+</tr>
+</tbody>
+</table>
+<h3 id="85-authentication">8.5 Authentication</h3>
+<p>Two authentication methods:</p>
+<ol>
+<li>
+<p><strong>Session Cookie</strong> — for dashboard users:
+   - <code>POST /api/auth/login</code> sets a <code>session</code> cookie
+   - Valid for 24 hours
+   - Used for all dashboard endpoints</p>
+</li>
+<li>
+<p><strong>API Key (Bearer Token)</strong> — for agent pushes:
+   - Format: <code>Authorization: Bearer dckr_xxxxx</code>
+   - Generated per VPS from the dashboard
+   - Can be regenerated (old key invalidated immediately)</p>
+</li>
+</ol>
+<h3 id="86-rate-limiting">8.6 Rate Limiting</h3>
+<p>The API has no built-in rate limiter. Agents typically push every 60 seconds by default.</p>
+<hr>
+<h2 id="9-frontend-dashboard">9. Frontend Dashboard</h2>
+<h3 id="91-access">9.1 Access</h3>
+<p>After starting the server, open:</p>
+<div class="codehilite"><pre><span></span><code>http://your-server:8081
+</code></pre></div>
+
+<p>Default login: <code>admin</code> / <code>change-me</code></p>
+<h3 id="92-pages">9.2 Pages</h3>
+<p><strong>Dashboard</strong> — Main overview with:
+- Summary cards: Total Cost, Container Cost, Overhead, Unallocated
+- Period filter: Latest, 7 Days, 30 Days, All Time
+- Cost Distribution doughnut chart (per container)
+- Cost Breakdown bar chart (CPU vs RAM vs Storage)
+- Cost Trend line chart (over time)
+- Container table (name, image, CPU%, RAM, CPU cost, RAM cost, total)</p>
+<p><strong>Containers</strong> — Container list with click-through to detail view:
+- Individual container cost history chart
+- CPU / RAM / cost details</p>
+<p><strong>VPS Management (Admin)</strong> — CRUD for VPS agents:
+- VPS list with specs, price, status (online/offline), last seen
+- Add VPS → auto-generates API key
+- View details → latest report per VPS
+- Delete VPS → removes all associated data</p>
+<p><strong>Settings</strong> — Configure VPS specs:
+- Name, currency, price per month, overhead%
+- CPU cores, RAM, storage
+- Cost weights (CPU, RAM, Storage, Network)</p>
+<p><strong>Users (Admin)</strong> — User management:
+- Create, edit role, delete users
+- Reset password</p>
+<h3 id="93-chart-types">9.3 Chart Types</h3>
+<table>
+<thead>
+<tr>
+<th>Chart</th>
+<th>Type</th>
+<th>Data</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cost Distribution</td>
+<td>Doughnut</td>
+<td>Per-container cost share</td>
+</tr>
+<tr>
+<td>Cost Breakdown</td>
+<td>Bar</td>
+<td>CPU vs RAM vs Storage per container</td>
+</tr>
+<tr>
+<td>Cost Trend</td>
+<td>Line</td>
+<td>Total cost over time</td>
+</tr>
+<tr>
+<td>Detail History</td>
+<td>Line</td>
+<td>Single container cost over time</td>
+</tr>
+</tbody>
+</table>
+<h3 id="94-roles-permissions">9.4 Roles &amp; Permissions</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Admin</th>
+<th>Engineer</th>
+<th>Management</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>View Dashboard</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>View Containers</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>View Cost Trends</td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>View/Edit Settings</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Generate Report</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Manage VPS</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Manage Users</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="10-cli-reference">10. CLI Reference</h2>
+<h3 id="101-flags">10.1 Flags</h3>
+<div class="codehilite"><pre><span></span><code>Usage of /app/docker-cost:
+
+  -mode string
+        Run mode: &#39;server&#39; (central) or &#39;agent&#39; (default: &quot;server&quot;)
+  -server string
+        Central server URL (agent mode: http://central:8080)
+  -api-key string
+        Agent API key (agent mode, from dashboard)
+  -push-interval int
+        Push interval in seconds (agent mode, default: 60)
+</code></pre></div>
+
+<h3 id="102-makefile-commands">10.2 Makefile Commands</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>make build</code></td>
+<td>Build binary to <code>./build/docker-cost</code></td>
+</tr>
+<tr>
+<td><code>make build-static</code></td>
+<td>Static Linux binary</td>
+</tr>
+<tr>
+<td><code>make run</code></td>
+<td>Build + run</td>
+</tr>
+<tr>
+<td><code>make run-quick</code></td>
+<td>Quick run with <code>go run</code></td>
+</tr>
+<tr>
+<td><code>make test</code></td>
+<td>Run all tests with race detection</td>
+</tr>
+<tr>
+<td><code>make clean</code></td>
+<td>Remove build artifacts</td>
+</tr>
+<tr>
+<td><code>make install-deps</code></td>
+<td>Install system deps (gcc, sqlite3)</td>
+</tr>
+<tr>
+<td><code>make info</code></td>
+<td>Show project info</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="11-development-guide">11. Development Guide</h2>
+<h3 id="111-prerequisites">11.1 Prerequisites</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Go 1.22+</span>
+go<span class="w"> </span>version
+
+<span class="c1"># PostgreSQL 16+</span>
+psql<span class="w"> </span>--version
+
+<span class="c1"># Docker (for agent testing)</span>
+docker<span class="w"> </span>--version
+</code></pre></div>
+
+<h3 id="112-project-structure">11.2 Project Structure</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">container</span><span class="o">-</span><span class="n">cost</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">cmd</span><span class="o">/</span><span class="n">server</span><span class="o">/</span><span class="n">main</span><span class="o">.</span><span class="n">go</span><span class="w">              </span><span class="c1"># Entry point — server &amp; agent modes</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">internal</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">agent</span><span class="o">/</span><span class="n">client</span><span class="o">.</span><span class="n">go</span><span class="w">             </span><span class="c1"># Push client + retry logic</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">api</span><span class="o">/</span><span class="n">handler</span><span class="o">.</span><span class="n">go</span><span class="w">              </span><span class="c1"># HTTP handlers + routes + auth</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">calculator</span><span class="o">/</span><span class="n">cost</span><span class="o">.</span><span class="n">go</span><span class="w">          </span><span class="c1"># Weighted cost formula engine</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">collector</span><span class="o">/</span><span class="n">docker</span><span class="o">.</span><span class="n">go</span><span class="w">         </span><span class="c1"># Docker socket → ContainerStats</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">config</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">go</span><span class="w">            </span><span class="c1"># VPSConfig + AgentConfig loader</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">storage</span><span class="o">/</span><span class="n">postgres</span><span class="o">.</span><span class="n">go</span><span class="w">         </span><span class="c1"># PostgreSQL: migrations, users, snapshots, agents</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">web</span><span class="o">/</span><span class="n">dist</span><span class="o">/</span><span class="w">                        </span><span class="c1"># Frontend (HTML/CSS/JS + Chart.js)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">deploy</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">setup</span><span class="o">-</span><span class="n">agent</span><span class="o">.</span><span class="n">sh</span><span class="w">              </span><span class="c1"># One-liner agent deployment script</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">Dockerfile</span><span class="w">                       </span><span class="c1"># Multi-stage build → ghcr.io</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span><span class="w">               </span><span class="c1"># Central server (Go app + PostgreSQL)</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">yml</span><span class="w">         </span><span class="c1"># Agent deployment</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">Makefile</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">PRD</span><span class="o">.</span><span class="n">md</span><span class="w">                           </span><span class="c1"># Product Requirements Document</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">README</span><span class="o">.</span><span class="n">md</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">DOCS</span><span class="o">.</span><span class="n">md</span><span class="w">                          </span><span class="c1"># This documentation</span>
+</code></pre></div>
+
+<h3 id="113-running-locally">11.3 Running Locally</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Quick start (no Postgres setup needed for some dev tasks)</span>
+make<span class="w"> </span>run-quick
+
+<span class="c1"># Or build first</span>
+make<span class="w"> </span>build
+./build/docker-cost
+
+<span class="c1"># With custom port</span>
+<span class="nv">PORT</span><span class="o">=</span><span class="m">9000</span><span class="w"> </span>./build/docker-cost
+</code></pre></div>
+
+<h3 id="114-testing">11.4 Testing</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># All tests</span>
+go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>-race<span class="w"> </span>./...
+
+<span class="c1"># Coverage</span>
+go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-coverprofile<span class="o">=</span>coverage.out<span class="w"> </span>./...
+go<span class="w"> </span>tool<span class="w"> </span>cover<span class="w"> </span>-html<span class="o">=</span>coverage.out<span class="w"> </span>-o<span class="w"> </span>coverage.html
+</code></pre></div>
+
+<h3 id="115-building-docker-image">11.5 Building Docker Image</h3>
+<div class="codehilite"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>container-cost:latest<span class="w"> </span>.
+docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>-p<span class="w"> </span><span class="m">8080</span>:8080<span class="w"> </span>container-cost:latest
+</code></pre></div>
+
+<h3 id="116-database">11.6 Database</h3>
+<p><strong>Auto-migration:</strong> On startup, the app creates all tables automatically:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">-- VPS Agents</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="n">vps_agents</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w">              </span><span class="nb">SERIAL</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w">            </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">api_key</span><span class="w">         </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span><span class="w"> </span><span class="k">UNIQUE</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cpu</span><span class="w">             </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ram_gb</span><span class="w">          </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">storage_gb</span><span class="w">      </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">price_per_month</span><span class="w"> </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">currency</span><span class="w">        </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;IDR&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cpu_weight</span><span class="w">      </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ram_weight</span><span class="w">      </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="n">storage_weight</span><span class="w">  </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">overhead_percent</span><span class="w"> </span><span class="n">DOUBLE</span><span class="w"> </span><span class="k">PRECISION</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">15</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">notes</span><span class="w">           </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">status</span><span class="w">          </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_seen</span><span class="w">       </span><span class="k">TIMESTAMP</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w">      </span><span class="k">TIMESTAMP</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="n">NOW</span><span class="p">()</span>
+<span class="p">);</span>
+
+<span class="c1">-- Users</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="n">users</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w">              </span><span class="nb">SERIAL</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">username</span><span class="w">        </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="k">UNIQUE</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">password_hash</span><span class="w">   </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">display_name</span><span class="w">    </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">role</span><span class="w">            </span><span class="nb">VARCHAR</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;engineer&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w">      </span><span class="k">TIMESTAMP</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="n">NOW</span><span class="p">()</span>
+<span class="p">);</span>
+
+<span class="c1">-- Snapshots</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">EXISTS</span><span class="w"> </span><span class="n">snapshots</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w">          </span><span class="nb">SERIAL</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">vps_id</span><span class="w">      </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">vps_agents</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w">  </span><span class="k">TIMESTAMP</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="n">NOW</span><span class="p">(),</span>
+<span class="w">    </span><span class="n">report_json</span><span class="w"> </span><span class="n">JSONB</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+</code></pre></div>
+
+<p><strong>Default seeding:</strong> On first startup, creates initial users:
+- <code>admin</code> / <code>change-me</code> (role: admin)
+- <code>eng</code> / <code>change-me</code> (role: engineer)
+- <code>mgt</code> / <code>change-me</code> (role: management)</p>
+<h3 id="117-adding-tests">11.7 Adding Tests</h3>
+<p>Tests use Go&rsquo;s standard <code>testing</code> package. The calculator package has deterministic logic — add test cases in <code>internal/calculator/</code> for new cost scenarios.</p>
+<h3 id="118-code-conventions">11.8 Code Conventions</h3>
+<ul>
+<li><strong>No external frameworks</strong> — pure Go standard library (net/http, database/sql)</li>
+<li><strong>Docker API</strong> — communicate via Unix socket HTTP</li>
+<li><strong>Password hashing</strong> — bcrypt via <code>golang.org/x/crypto/bcrypt</code></li>
+<li><strong>PostgreSQL driver</strong> — pgx v5 via <code>github.com/jackc/pgx/v5/stdlib</code></li>
+<li><strong>JSON storage</strong> — report snapshots stored as JSONB</li>
+</ul>
+<hr>
+<h2 id="12-security">12. Security</h2>
+<h3 id="121-authentication">12.1 Authentication</h3>
+<ul>
+<li><strong>Dashboard:</strong> Session-based auth with HttpOnly cookies, 24h expiry</li>
+<li><strong>Agents:</strong> API key auth (Bearer token), auto-generated per VPS</li>
+<li><strong>Passwords:</strong> Hashed with bcrypt</li>
+</ul>
+<h3 id="122-api-key-security">12.2 API Key Security</h3>
+<p>API keys are:
+- Generated with <code>crypto/rand</code> (32 bytes → hex → prefixed with <code>dckr_</code>)
+- Stored hashed in PostgreSQL
+- Displayed once on creation (copy it immediately)
+- Regenerable from dashboard (old key invalidated immediately)</p>
+<h3 id="123-docker-socket">12.3 Docker Socket</h3>
+<p>The Docker socket is mounted <strong>read-only</strong> (<code>ro</code>):
+- Agents and server can only <em>read</em> stats
+- No container modification possible</p>
+<h3 id="124-network-security">12.4 Network Security</h3>
+<ul>
+<li>The default setup exposes port 8080/8081</li>
+<li><strong>Recommendation:</strong> Run behind a reverse proxy (nginx, Caddy, Traefik) with:</li>
+<li>TLS (HTTPS)</li>
+<li>IP whitelisting for agent push endpoint</li>
+<li>Rate limiting</li>
+</ul>
+<h3 id="125-database-password">12.5 Database Password</h3>
+<p>Change the default PostgreSQL password in docker-compose.yml for production:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">environment</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">POSTGRES_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your_secure_password_here</span>
+<span class="w">  </span><span class="nt">POSTGRES_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">container-cost</span>
+<span class="w">  </span><span class="nt">POSTGRES_DB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">container-cost</span>
+</code></pre></div>
+
+<p>Update <code>DATABASE_URL</code> accordingly.</p>
+<h3 id="126-secret-key">12.6 Secret Key</h3>
+<p>The server auto-generates a random 32-byte secret key for session signing. For production, set it in config.json:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;secret_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;your-64-char-hex-secret&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr>
+<h2 id="13-troubleshooting">13. Troubleshooting</h2>
+<h3 id="131-agent-cant-reach-central-server">13.1 Agent Can&rsquo;t Reach Central Server</h3>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">agent</span><span class="o">]</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">failed</span><span class="w"> </span><span class="k">after</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="nl">retries</span><span class="p">:</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="nl">failed</span><span class="p">:</span><span class="w"> </span><span class="p">...</span>
+</code></pre></div>
+
+<p><strong>Check:</strong>
+1. Is the central server URL correct? <code>http://IP:8080</code> not <code>https://</code>
+2. Is the port open? <code>telnet CENTRAL_IP 8080</code>
+3. Firewall rules? Cloud security group?
+4. Agent logs: <code>docker logs container-cost-agent</code></p>
+<h3 id="132-docker-socket-not-available">13.2 Docker Socket Not Available</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">Warning</span><span class="o">:</span><span class="w"> </span><span class="n">Docker</span><span class="w"> </span><span class="n">collector</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">available</span><span class="o">:</span><span class="w"> </span><span class="n">docker</span><span class="w"> </span><span class="n">socket</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">found</span><span class="w"> </span><span class="n">at</span><span class="w"> </span><span class="sr">/var/run/</span><span class="n">docker</span><span class="o">.</span><span class="na">sock</span>
+</code></pre></div>
+
+<p><strong>Fixes:</strong>
+- For server mode: not critical — the server waits for agent pushes
+- For agent mode: the agent requires Docker. Mount the socket: <code>-v /var/run/docker.sock:/var/run/docker.sock:ro</code></p>
+<h3 id="133-database-connection-failed">13.3 Database Connection Failed</h3>
+<div class="codehilite"><pre><span></span><code>Failed to open database: failed to ping database: ...
+</code></pre></div>
+
+<p><strong>Check:</strong>
+1. Is PostgreSQL running? <code>docker ps | grep postgres</code>
+2. Is the DATABASE_URL correct?
+3. Can the app reach the DB host? (in Docker Compose, service name <code>postgres</code>)</p>
+<h3 id="134-vps-shows-offline">13.4 VPS Shows Offline</h3>
+<p>By default, a VPS is marked offline if no push received for <strong>24 hours</strong>.</p>
+<p><strong>Check:</strong>
+1. Is the agent running? <code>docker ps | grep container-cost-agent</code>
+2. Agent logs: <code>docker logs container-cost-agent</code>
+3. API key still valid? Try regenerating from dashboard</p>
+<h3 id="135-invalid-api-key">13.5 Invalid API Key</h3>
+<div class="codehilite"><pre><span></span><code>push rejected (HTTP 401): invalid api key
+</code></pre></div>
+
+<p><strong>Fix:</strong>
+1. Regenerate key from dashboard: <code>POST /api/vps/{id}/reset-key</code>
+2. Update the agent with the new key</p>
+<h3 id="136-config-file-issues">13.6 Config File Issues</h3>
+<p>If config.json doesn&rsquo;t exist, it&rsquo;s auto-created with defaults. Check:
+- Path: <code>~/.docker-cost/config.json</code>
+- Or set <code>DOCKER_COST_CONFIG_DIR</code> env var</p>
+<h3 id="137-common-docker-commands">13.7 Common Docker Commands</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Agent logs</span>
+docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>container-cost-agent
+
+<span class="c1"># Server logs</span>
+docker<span class="w"> </span>logs<span class="w"> </span>-f<span class="w"> </span>container-cost
+
+<span class="c1"># Database</span>
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>docker-cost-postgres<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>docker-cost<span class="w"> </span>-d<span class="w"> </span>docker-cost
+
+<span class="c1"># Restart everything</span>
+docker<span class="w"> </span>compose<span class="w"> </span>restart
+
+<span class="c1"># Reset (⚠️ deletes all data)</span>
+docker<span class="w"> </span>compose<span class="w"> </span>down<span class="w"> </span>-v
+docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+
+<hr>
+<h2 id="14-faq">14. FAQ</h2>
+<h3 id="whats-the-difference-between-server-mode-and-agent-mode">What&rsquo;s the difference between server mode and agent mode?</h3>
+<p><strong>Server mode</strong> (<code>--mode=server</code>, default): Runs the API server, database connection, frontend, and optionally collects local Docker stats. This is your central dashboard.</p>
+<p><strong>Agent mode</strong> (<code>--mode=agent</code>): A lightweight process that collects Docker stats, calculates costs, and pushes reports to the central server. No database, no frontend.</p>
+<h3 id="can-i-run-multiple-agents-on-the-same-vps">Can I run multiple agents on the same VPS?</h3>
+<p>You can, but it&rsquo;s not useful — one agent per VPS is sufficient. Each agent represents a VPS in the dashboard.</p>
+<h3 id="what-happens-if-the-central-server-goes-down">What happens if the central server goes down?</h3>
+<p>Agents detect connection failures and <strong>retry up to 5 times</strong> with 10-second delays. If still down, they log the error and try again on the next push interval. No data is lost on the agent side — it simply skips that cycle.</p>
+<h3 id="how-is-storage-cost-calculated-if-disk-usage-isnt-available">How is storage cost calculated if disk usage isn&rsquo;t available?</h3>
+<p>Storage cost is allocated <strong>equally</strong> across all running containers: <code>Price × Storage_Weight / Container_Count</code>. This is a simplification — true per-container disk monitoring requires volume-level tracking.</p>
+<h3 id="can-i-change-the-currency">Can I change the currency?</h3>
+<p>Yes. Set <code>currency</code> in config.json to any code (IDR, USD, EUR, SGD, etc.). The dashboard displays it as-is.</p>
+<h3 id="does-it-work-with-docker-desktop">Does it work with Docker Desktop?</h3>
+<p>Yes, if Docker Desktop exposes the socket at <code>/var/run/docker.sock</code>. On macOS, this is usually a symlink.</p>
+<h3 id="can-i-use-it-with-podman">Can I use it with Podman?</h3>
+<p>Podman with Docker-compatible socket (<code>podman system service</code>) should work, but is not officially tested.</p>
+<hr>
+<h2 id="15-roadmap">15. Roadmap</h2>
+<h3 id="v10-core">✅ v1.0 — Core</h3>
+<ul>
+<li>[x] Docker stats collector</li>
+<li>[x] Weighted cost allocation formula</li>
+<li>[x] PostgreSQL storage + auto-migration</li>
+<li>[x] REST API (health, report, containers, config)</li>
+<li>[x] VPS config from JSON file</li>
+</ul>
+<h3 id="v11-dashboard-auth">✅ v1.1 — Dashboard &amp; Auth</h3>
+<ul>
+<li>[x] Frontend dashboard (Chart.js)</li>
+<li>[x] Cost charts + container detail</li>
+<li>[x] Auth system (login, sessions, roles)</li>
+<li>[x] User management (CRUD)</li>
+<li>[x] Dockerfile + docker-compose.yml</li>
+</ul>
+<h3 id="v20-multi-vps-scale">✅ v2.0 — Multi-VPS Scale</h3>
+<ul>
+<li>[x] Multi-VPS agent mode (<code>--mode=agent</code>)</li>
+<li>[x] Agent push API (<code>POST /api/v1/push</code>)</li>
+<li>[x] VPS management (CRUD from dashboard)</li>
+<li>[x] Aggregated dashboard (all VPS)</li>
+<li>[x] Offline detection per VPS</li>
+<li>[x] GitHub Container Registry</li>
+<li>[x] One-liner agent deployment</li>
+</ul>
+<h3 id="future">🔜 Future</h3>
+<ul>
+<li>[ ] Cost alerts (Telegram / webhook)</li>
+<li>[ ] Export CSV / PDF reports</li>
+<li>[ ] Cost comparison chart across VPS</li>
+<li>[ ] Telegram bot for daily reports</li>
+<li>[ ] Per-container disk usage tracking</li>
+<li>[ ] Time-range cost projections</li>
+<li>[ ] Multi-currency support</li>
+</ul>
+<hr>
+<h2 id="related-resources">Related Resources</h2>
+<ul>
+<li><a href="./README.html">README.md</a> — Quick start guide</li>
+<li><a href="./PRD.html">PRD.md</a> — Product Requirements Document (full specs)</li>
+<li><a href="https://docs.docker.com/engine/api/v1.43/">Docker Engine API</a> — Docker stats API reference</li>
+<li><a href="https://github.com/edsuwarna/container-cost/pkgs/container/container-cost">GitHub Container Registry</a> — Docker images</li>
+<li><a href="https://www.chartjs.org/">Chart.js</a> — Frontend charting library</li>
+</ul>
+<hr>
+<blockquote>
+<p>Built with ❤️ by <strong>Endang Suwarna</strong> — DevOps Engineer &amp; AI Infrastructure Enthusiast</p>
+</blockquote>
+            </div>
+            <div class="doc-footer">
+                Built with ❤️ by <a href="https://github.com/edsuwarna">Endang Suwarna</a> ·
+                <a href="https://github.com/edsuwarna/container-cost">GitHub</a> ·
+                <a href="https://github.com/edsuwarna/container-cost/blob/main/docs/DOCS.md">Edit on GitHub</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        // Highlight current section in TOC based on scroll position
+        document.addEventListener('DOMContentLoaded', function() {
+            var headings = document.querySelectorAll('h2, h3');
+            var links = document.querySelectorAll('.toc a');
+            if (headings.length === 0) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        links.forEach(function(l) { l.classList.remove('active'); });
+                        var id = entry.target.id;
+                        links.forEach(function(l) {
+                            if (l.getAttribute('href') === '#' + id) {
+                                l.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-80px 0px -80% 0px' });
+            headings.forEach(function(h) { observer.observe(h); });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Cost Documentation 📖💰🐳 — Container Cost Docs</title>
+    <meta name="description" content="Multi-VPS Docker Container Cost Calculator documentation">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --code-bg: #151b23;
+    --inline-code-bg: #21262d;
+}
+html { scroll-behavior: smooth; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+/* ─── Layout ─── */
+.layout { display: flex; min-height: 100vh; }
+
+/* ─── Sidebar ─── */
+.sidebar {
+    width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+.sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sidebar-header .logo { font-size: 28px; line-height: 1; }
+.sidebar-header h2 {
+    font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.sidebar-header small {
+    display: block; font-size: 11px; color: var(--text2);
+    font-weight: 400; -webkit-text-fill-color: var(--text2);
+}
+.sidebar-back {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 20px; color: var(--accent);
+    text-decoration: none; font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+.sidebar-back:hover { background: var(--bg3); }
+
+/* TOC inside sidebar */
+.toc { padding: 12px 0; }
+.toc-label {
+    padding: 8px 20px 4px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2);
+}
+.toc a {
+    display: block; padding: 5px 20px 5px 24px;
+    color: var(--text2); text-decoration: none;
+    font-size: 13px; border-left: 2px solid transparent;
+    transition: all 0.15s;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.toc a:hover { color: var(--text); background: var(--bg3); }
+.toc a.level-2 { padding-left: 36px; font-size: 12.5px; }
+.toc a.level-3 { padding-left: 48px; font-size: 12px; }
+
+/* ─── Main Content ─── */
+.content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 56px;
+    max-width: 960px;
+}
+
+/* ─── Markdown Body ─── */
+.markdown-body h1 {
+    font-size: 36px; font-weight: 800; margin: 0 0 8px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.markdown-body h1 .header-anchor { display: none; }
+.markdown-body h2 {
+    font-size: 24px; font-weight: 700; margin: 40px 0 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.markdown-body h3 {
+    font-size: 18px; font-weight: 600; margin: 28px 0 8px;
+}
+.markdown-body h4 {
+    font-size: 15px; font-weight: 600; margin: 20px 0 6px;
+}
+.markdown-body p { margin: 0 0 12px; }
+.markdown-body a { color: var(--accent); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body strong { font-weight: 600; }
+.markdown-body ul, .markdown-body ol { margin: 8px 0 16px; padding-left: 24px; }
+.markdown-body li { margin-bottom: 4px; }
+.markdown-body li > ul, .markdown-body li > ol { margin: 4px 0; }
+
+/* Tables */
+.markdown-body table {
+    width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: 14px;
+}
+.markdown-body th {
+    background: var(--bg3); padding: 10px 12px; text-align: left;
+    font-weight: 600; border: 1px solid var(--border);
+}
+.markdown-body td {
+    padding: 8px 12px; border: 1px solid var(--border);
+}
+.markdown-body tr:nth-child(even) td { background: var(--bg2); }
+
+/* Inline Code */
+.markdown-body code {
+    background: var(--inline-code-bg); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px; color: #f0f6fc;
+}
+.markdown-body pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+    margin: 12px 0 20px; overflow-x: auto; line-height: 1.5;
+}
+.markdown-body pre code {
+    background: none; border: none; padding: 0;
+    color: #c9d1d9; font-size: 13px; tab-size: 2;
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px; margin: 12px 0 20px;
+    background: #1f6feb0a; border-radius: 0 8px 8px 0;
+}
+.markdown-body blockquote p { margin: 0; color: var(--text2); }
+
+/* Horizontal Rule */
+.markdown-body hr {
+    border: none; border-top: 1px solid var(--border); margin: 36px 0;
+}
+
+/* Images */
+.markdown-body img { max-width: 100%; border-radius: 8px; }
+
+/* Checklists */
+.markdown-body input[type="checkbox"] { accent-color: var(--green); margin-right: 6px; }
+
+/* Scrollbar */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Mobile */
+.sidebar-toggle {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 20px;
+}
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+@media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .sidebar-toggle { display: block; }
+    .content { margin-left: 0; padding: 24px 20px; }
+    .markdown-body h1 { font-size: 28px; }
+    .markdown-body h2 { font-size: 20px; }
+}
+
+/* Footer */
+.doc-footer {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--border); text-align: center;
+    color: var(--text2); font-size: 13px;
+}
+.doc-footer a { color: var(--accent); text-decoration: none; }
+
+/* Updated badge */
+.updated-badge {
+    display: inline-block; background: #1f6feb22;
+    border: 1px solid #1f6feb44; color: var(--accent);
+    padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    margin-bottom: 20px;
+}
+</style>
+</head>
+<body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">💰</div>
+                <div>
+                    <h2>Container Cost</h2>
+                    <small>Documentation v2.0</small>
+                </div>
+            </div>
+            <a href="index.html" class="sidebar-back">← Back to Home</a>
+            <div class="toc">
+                <div class="toc-label">Categories</div>
+                <a href="index.html" class="">🏠 Home</a>
+<a href="overview.html" class="active">📖 Overview</a>
+<a href="architecture.html" class="">🏗 Architecture</a>
+<a href="quickstart.html" class="">⚡ Quick Start</a>
+<a href="deployment.html" class="">🚀 Deployment Guide</a>
+<a href="platform-variants.html" class="">🌍 Platform Variants</a>
+<a href="configuration.html" class="">⚙️ Configuration Guide</a>
+<a href="formula.html" class="">🧮 Cost Formula</a>
+<a href="api.html" class="">🔌 API Reference</a>
+<a href="frontend.html" class="">📊 Frontend Dashboard</a>
+<a href="cli.html" class="">💻 CLI Reference</a>
+<a href="development.html" class="">🛠️ Development Guide</a>
+<a href="security.html" class="">🔒 Security</a>
+<a href="troubleshooting.html" class="">🔍 Troubleshooting</a>
+<a href="faq.html" class="">❓ FAQ</a>
+<a href="roadmap.html" class="">🗺️ Roadmap</a>
+
+                <div class="toc-label" style="margin-top:12px;">On this page</div>
+                <a href="#container-cost-documentation" class="">Container Cost Documentation 📖💰🐳</a>
+<a href="#1-overview" class="level-2">1. Overview</a>
+<a href="#1-1-what-is-container-cost" class="level-3">1.1 What is Container Cost?</a>
+<a href="#1-2-why" class="level-3">1.2 Why?</a>
+<a href="#1-3-who-is-it-for" class="level-3">1.3 Who Is It For?</a>
+<a href="#1-4-key-features" class="level-3">1.4 Key Features</a>
+<a href="#1-5-tech-stack" class="level-3">1.5 Tech Stack</a>
+
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="markdown-body">
+                <h1 id="container-cost-documentation">Container Cost Documentation 📖💰🐳</h1>
+<blockquote>
+<p><strong>Multi-VPS Docker Container Cost Calculator — Agent &amp; Central Server Architecture</strong>
+Version 2.0 | Author: Endang Suwarna</p>
+</blockquote>
+<hr>
+<h2 id="1-overview">1. Overview</h2>
+<h3 id="11-what-is-container-cost">1.1 What is Container Cost?</h3>
+<p>Container Cost is a <strong>Docker container cost allocation tool</strong> that helps you calculate and monitor how much each container costs across one or many VPS instances. It uses a weighted resource allocation formula based on actual CPU and RAM usage.</p>
+<h3 id="12-why">1.2 Why?</h3>
+<p>If you run Docker containers across multiple VPS, you&rsquo;ve probably asked:</p>
+<ul>
+<li>&ldquo;Container A is on which VPS? What&rsquo;s the total cost across all VPS?&rdquo;</li>
+<li>&ldquo;Which VPS is the most expensive? Most wasteful?&rdquo;</li>
+<li>&ldquo;How do I charge back clients whose containers run on different VPS?&rdquo;</li>
+<li>&ldquo;How do I track per-VPS costs without SSH-ing into each one?&rdquo;</li>
+</ul>
+<p>Container Cost answers all of these with a single dashboard.</p>
+<h3 id="13-who-is-it-for">1.3 Who Is It For?</h3>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Indie Developer / Solo Dev</strong></td>
+<td>Side projects on 1-3 VPS, know your cost breakdown</td>
+</tr>
+<tr>
+<td><strong>DevOps Engineer</strong></td>
+<td>Multi-tenant container deployment, chargeback to teams/clients</td>
+</tr>
+<tr>
+<td><strong>VPS Reseller</strong></td>
+<td>Selling containers to clients with data-driven pricing</td>
+</tr>
+<tr>
+<td><strong>Small Team</strong></td>
+<td>Sharing VPS, fair cost splitting</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14-key-features">1.4 Key Features</h3>
+<p><strong>Single VPS (Legacy)</strong>
+- Live Docker stats collection (CPU%, memory, status)
+- Weighted cost allocation (CPU 50%, RAM 40%, Storage 10%)
+- PostgreSQL storage with history tracking
+- Chart.js dashboard (doughnut, bar, line charts)
+- Role-based auth (admin, engineer, management)
+- Docker Compose deployment</p>
+<p><strong>Multi-VPS (v2.0)</strong>
+- VPS management — add/edit/delete VPS from dashboard
+- Agent mode — deploy a lightweight agent on each VPS
+- Push API — agents push reports to central server (API key auth)
+- Aggregated dashboard — total cost across all VPS
+- Live status — online/offline detection per VPS
+- Auto API key generation on VPS creation
+- GitHub Container Registry image
+- One-liner agent deployment</p>
+<h3 id="15-tech-stack">1.5 Tech Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>Go 1.22</td>
+<td>High performance, single binary, perfect for CLI tools</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>PostgreSQL 16</td>
+<td>Robust, JSONB for flexible report snapshots</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>net/http (stdlib)</td>
+<td>No framework — lightweight, easy to maintain</td>
+</tr>
+<tr>
+<td><strong>Docker API</strong></td>
+<td>Unix socket (HTTP)</td>
+<td>Read container stats directly from Docker Engine</td>
+</tr>
+<tr>
+<td><strong>Frontend</strong></td>
+<td>Vanilla HTML/CSS/JS + Chart.js</td>
+<td>Zero build step, dark theme</td>
+</tr>
+<tr>
+<td><strong>Auth</strong></td>
+<td>Session-based (cookie)</td>
+<td>Login/logout, bcrypt, 3 roles</td>
+</tr>
+<tr>
+<td><strong>Container Registry</strong></td>
+<td>GitHub Container Registry</td>
+<td>ghcr.io/edsuwarna/container-cost</td>
+</tr>
+</tbody>
+</table>
+<hr>
+            </div>
+            <div class="doc-footer">
+                Built with ❤️ by <a href="https://github.com/edsuwarna">Endang Suwarna</a> ·
+                <a href="https://github.com/edsuwarna/container-cost">GitHub</a> ·
+                <a href="https://github.com/edsuwarna/container-cost/blob/main/docs/DOCS.md">Edit on GitHub</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        // Highlight current section in TOC based on scroll position
+        document.addEventListener('DOMContentLoaded', function() {
+            var headings = document.querySelectorAll('h2, h3');
+            var links = document.querySelectorAll('.toc a');
+            if (headings.length === 0) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        links.forEach(function(l) { l.classList.remove('active'); });
+                        var id = entry.target.id;
+                        links.forEach(function(l) {
+                            if (l.getAttribute('href') === '#' + id) {
+                                l.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-80px 0px -80% 0px' });
+            headings.forEach(function(h) { observer.observe(h); });
+        });
+    </script>
+</body>
+</html>

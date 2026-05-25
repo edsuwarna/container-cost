@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Cost Documentation 📖💰🐳 — Container Cost Docs</title>
+    <meta name="description" content="Multi-VPS Docker Container Cost Calculator documentation">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --code-bg: #151b23;
+    --inline-code-bg: #21262d;
+}
+html { scroll-behavior: smooth; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+/* ─── Layout ─── */
+.layout { display: flex; min-height: 100vh; }
+
+/* ─── Sidebar ─── */
+.sidebar {
+    width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 0;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+}
+.sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sidebar-header .logo { font-size: 28px; line-height: 1; }
+.sidebar-header h2 {
+    font-size: 16px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.sidebar-header small {
+    display: block; font-size: 11px; color: var(--text2);
+    font-weight: 400; -webkit-text-fill-color: var(--text2);
+}
+.sidebar-back {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 20px; color: var(--accent);
+    text-decoration: none; font-size: 13px; font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+.sidebar-back:hover { background: var(--bg3); }
+
+/* TOC inside sidebar */
+.toc { padding: 12px 0; }
+.toc-label {
+    padding: 8px 20px 4px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2);
+}
+.toc a {
+    display: block; padding: 5px 20px 5px 24px;
+    color: var(--text2); text-decoration: none;
+    font-size: 13px; border-left: 2px solid transparent;
+    transition: all 0.15s;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.toc a:hover { color: var(--text); background: var(--bg3); }
+.toc a.level-2 { padding-left: 36px; font-size: 12.5px; }
+.toc a.level-3 { padding-left: 48px; font-size: 12px; }
+
+/* ─── Main Content ─── */
+.content {
+    flex: 1;
+    margin-left: 280px;
+    padding: 40px 56px;
+    max-width: 960px;
+}
+
+/* ─── Markdown Body ─── */
+.markdown-body h1 {
+    font-size: 36px; font-weight: 800; margin: 0 0 8px;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.markdown-body h1 .header-anchor { display: none; }
+.markdown-body h2 {
+    font-size: 24px; font-weight: 700; margin: 40px 0 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.markdown-body h3 {
+    font-size: 18px; font-weight: 600; margin: 28px 0 8px;
+}
+.markdown-body h4 {
+    font-size: 15px; font-weight: 600; margin: 20px 0 6px;
+}
+.markdown-body p { margin: 0 0 12px; }
+.markdown-body a { color: var(--accent); text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
+.markdown-body strong { font-weight: 600; }
+.markdown-body ul, .markdown-body ol { margin: 8px 0 16px; padding-left: 24px; }
+.markdown-body li { margin-bottom: 4px; }
+.markdown-body li > ul, .markdown-body li > ol { margin: 4px 0; }
+
+/* Tables */
+.markdown-body table {
+    width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: 14px;
+}
+.markdown-body th {
+    background: var(--bg3); padding: 10px 12px; text-align: left;
+    font-weight: 600; border: 1px solid var(--border);
+}
+.markdown-body td {
+    padding: 8px 12px; border: 1px solid var(--border);
+}
+.markdown-body tr:nth-child(even) td { background: var(--bg2); }
+
+/* Inline Code */
+.markdown-body code {
+    background: var(--inline-code-bg); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px; color: #f0f6fc;
+}
+.markdown-body pre {
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 20px;
+    margin: 12px 0 20px; overflow-x: auto; line-height: 1.5;
+}
+.markdown-body pre code {
+    background: none; border: none; padding: 0;
+    color: #c9d1d9; font-size: 13px; tab-size: 2;
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px; margin: 12px 0 20px;
+    background: #1f6feb0a; border-radius: 0 8px 8px 0;
+}
+.markdown-body blockquote p { margin: 0; color: var(--text2); }
+
+/* Horizontal Rule */
+.markdown-body hr {
+    border: none; border-top: 1px solid var(--border); margin: 36px 0;
+}
+
+/* Images */
+.markdown-body img { max-width: 100%; border-radius: 8px; }
+
+/* Checklists */
+.markdown-body input[type="checkbox"] { accent-color: var(--green); margin-right: 6px; }
+
+/* Scrollbar */
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Mobile */
+.sidebar-toggle {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 20px;
+}
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+@media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .sidebar-toggle { display: block; }
+    .content { margin-left: 0; padding: 24px 20px; }
+    .markdown-body h1 { font-size: 28px; }
+    .markdown-body h2 { font-size: 20px; }
+}
+
+/* Footer */
+.doc-footer {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--border); text-align: center;
+    color: var(--text2); font-size: 13px;
+}
+.doc-footer a { color: var(--accent); text-decoration: none; }
+
+/* Updated badge */
+.updated-badge {
+    display: inline-block; background: #1f6feb22;
+    border: 1px solid #1f6feb44; color: var(--accent);
+    padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;
+    margin-bottom: 20px;
+}
+</style>
+</head>
+<body>
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">💰</div>
+                <div>
+                    <h2>Container Cost</h2>
+                    <small>Documentation v2.0</small>
+                </div>
+            </div>
+            <a href="index.html" class="sidebar-back">← Back to Home</a>
+            <div class="toc">
+                <div class="toc-label">Categories</div>
+                <a href="index.html" class="">🏠 Home</a>
+<a href="overview.html" class="">📖 Overview</a>
+<a href="architecture.html" class="">🏗 Architecture</a>
+<a href="quickstart.html" class="">⚡ Quick Start</a>
+<a href="deployment.html" class="">🚀 Deployment Guide</a>
+<a href="platform-variants.html" class="">🌍 Platform Variants</a>
+<a href="configuration.html" class="">⚙️ Configuration Guide</a>
+<a href="formula.html" class="">🧮 Cost Formula</a>
+<a href="api.html" class="">🔌 API Reference</a>
+<a href="frontend.html" class="">📊 Frontend Dashboard</a>
+<a href="cli.html" class="">💻 CLI Reference</a>
+<a href="development.html" class="">🛠️ Development Guide</a>
+<a href="security.html" class="active">🔒 Security</a>
+<a href="troubleshooting.html" class="">🔍 Troubleshooting</a>
+<a href="faq.html" class="">❓ FAQ</a>
+<a href="roadmap.html" class="">🗺️ Roadmap</a>
+
+                <div class="toc-label" style="margin-top:12px;">On this page</div>
+                <a href="#container-cost-documentation" class="">Container Cost Documentation 📖💰🐳</a>
+<a href="#12-security" class="level-2">12. Security</a>
+<a href="#12-1-authentication" class="level-3">12.1 Authentication</a>
+<a href="#12-2-api-key-security" class="level-3">12.2 API Key Security</a>
+<a href="#12-3-docker-socket" class="level-3">12.3 Docker Socket</a>
+<a href="#12-4-network-security" class="level-3">12.4 Network Security</a>
+<a href="#12-5-database-password" class="level-3">12.5 Database Password</a>
+<a href="#12-6-secret-key" class="level-3">12.6 Secret Key</a>
+
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="markdown-body">
+                <h1 id="container-cost-documentation">Container Cost Documentation 📖💰🐳</h1>
+<blockquote>
+<p><strong>Multi-VPS Docker Container Cost Calculator — Agent &amp; Central Server Architecture</strong>
+Version 2.0 | Author: Endang Suwarna</p>
+</blockquote>
+<hr>
+<h2 id="12-security">12. Security</h2>
+<h3 id="121-authentication">12.1 Authentication</h3>
+<ul>
+<li><strong>Dashboard:</strong> Session-based auth with HttpOnly cookies, 24h expiry</li>
+<li><strong>Agents:</strong> API key auth (Bearer token), auto-generated per VPS</li>
+<li><strong>Passwords:</strong> Hashed with bcrypt</li>
+</ul>
+<h3 id="122-api-key-security">12.2 API Key Security</h3>
+<p>API keys are:
+- Generated with <code>crypto/rand</code> (32 bytes → hex → prefixed with <code>dckr_</code>)
+- Stored hashed in PostgreSQL
+- Displayed once on creation (copy it immediately)
+- Regenerable from dashboard (old key invalidated immediately)</p>
+<h3 id="123-docker-socket">12.3 Docker Socket</h3>
+<p>The Docker socket is mounted <strong>read-only</strong> (<code>ro</code>):
+- Agents and server can only <em>read</em> stats
+- No container modification possible</p>
+<h3 id="124-network-security">12.4 Network Security</h3>
+<ul>
+<li>The default setup exposes port 8080/8081</li>
+<li><strong>Recommendation:</strong> Run behind a reverse proxy (nginx, Caddy, Traefik) with:</li>
+<li>TLS (HTTPS)</li>
+<li>IP whitelisting for agent push endpoint</li>
+<li>Rate limiting</li>
+</ul>
+<h3 id="125-database-password">12.5 Database Password</h3>
+<p>Change the default PostgreSQL password in docker-compose.yml for production:</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">environment</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">POSTGRES_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your_secure_password_here</span>
+<span class="w">  </span><span class="nt">POSTGRES_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">container-cost</span>
+<span class="w">  </span><span class="nt">POSTGRES_DB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">container-cost</span>
+</code></pre></div>
+
+<p>Update <code>DATABASE_URL</code> accordingly.</p>
+<h3 id="126-secret-key">12.6 Secret Key</h3>
+<p>The server auto-generates a random 32-byte secret key for session signing. For production, set it in config.json:</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;secret_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;your-64-char-hex-secret&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr>
+            </div>
+            <div class="doc-footer">
+                Built with ❤️ by <a href="https://github.com/edsuwarna">Endang Suwarna</a> ·
+                <a href="https://github.com/edsuwarna/container-cost">GitHub</a> ·
+                <a href="https://github.com/edsuwarna/container-cost/blob/main/docs/DOCS.md">Edit on GitHub</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        // Highlight current section in TOC based on scroll position
+        document.addEventListener('DOMContentLoaded', function() {
+            var headings = document.querySelectorAll('h2, h3');
+            var links = document.querySelectorAll('.toc a');
+            if (headings.length === 0) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        links.forEach(function(l) { l.classList.remove('active'); });
+                        var id = entry.target.id;
+                        links.forEach(function(l) {
+                            if (l.getAttribute('href') === '#' + id) {
+                                l.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-80px 0px -80% 0px' });
+            headings.forEach(function(h) { observer.observe(h); });
+        });
+    </script>
+</body>
+</html>
