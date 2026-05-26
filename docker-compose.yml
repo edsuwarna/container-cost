@@ -34,7 +34,8 @@ services:
       - DOCKER_COST_CONFIG_DIR=/data
       - DATABASE_URL=postgres://docker-cost:docker-cost@postgres:5432/docker-cost?sslmode=disable
       - TZ=Asia/Jakarta
-      - ADMIN_PASSWORD=change-me
+      # Admin credentials — set DOCKER_COST_ADMIN_PASSWORD env var in production
+      - DOCKER_COST_ADMIN_PASSWORD=${DOCKER_COST_ADMIN_PASSWORD:-change-me}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
       interval: 30s

@@ -182,8 +182,9 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   true,
 		MaxAge:   86400,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 	})
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
@@ -208,7 +209,9 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   true,
 		MaxAge:   -1,
+		SameSite: http.SameSiteStrictMode,
 	})
 	writeJSON(w, http.StatusOK, map[string]string{"success": "logged out"})
 }
@@ -248,8 +251,8 @@ func (s *Server) handleUserDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		s.handleUpdateUser(w, r, id)
 	case http.MethodPost:
-		if len(parts) > 1 && parts[1] == "reset-password" {
-			s.handleResetPassword(w, r, id)
+		if len(parts) > 1 && parts[1] == "reset-key" {
+			s.handleResetVPSKey(w, r, id)
 			return
 		}
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -281,6 +284,10 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	if body.Username == "" || body.Password == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username and password required"})
+		return
+	}
+	if len(body.Password) < 8 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be at least 8 characters"})
 		return
 	}
 
@@ -336,6 +343,10 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request, id 
 	}
 	if body.Password == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password required"})
+		return
+	}
+	if len(body.Password) < 8 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be at least 8 characters"})
 		return
 	}
 
@@ -453,24 +464,7 @@ func (s *Server) handleVPSDetail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleResetVPSKey(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Extract ID: /api/vps/{id}/reset-key
-	path := strings.TrimPrefix(r.URL.Path, "/api/vps/")
-	parts := strings.Split(path, "/")
-	if len(parts) < 2 || parts[0] == "" {
-		http.Error(w, "vps id required", http.StatusBadRequest)
-		return
-	}
-	id, err := strconv.Atoi(parts[0])
-	if err != nil {
-		http.Error(w, "invalid vps id", http.StatusBadRequest)
-		return
-	}
+func (s *Server) handleResetVPSKey(w http.ResponseWriter, r *http.Request, id int) {
 
 	key, err := s.store.RegenerateVPSKey(id)
 	if err != nil {
@@ -579,7 +573,6 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// VPS Management (admin only)
 	mux.HandleFunc("/api/vps", s.requireRole(storage.RoleAdmin)(s.handleListVPS))
 	mux.HandleFunc("/api/vps/", s.requireRole(storage.RoleAdmin)(s.handleVPSDetail))
-	mux.HandleFunc("/api/vps/reset-key", s.requireRole(storage.RoleAdmin)(s.handleResetVPSKey))
 
 	// Dashboard (any authenticated)
 	mux.HandleFunc("/api/report/latest", s.requireAuth(s.handleLatestReport))
@@ -700,6 +693,10 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&newCfg); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 			return
+		}
+		// Preserve existing secret key if not provided in the update
+		if newCfg.SecretKey == "" {
+			newCfg.SecretKey = s.cfg.SecretKey
 		}
 		s.cfg = newCfg
 		writeJSON(w, http.StatusOK, map[string]string{"status": "config updated"})

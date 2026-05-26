@@ -2,10 +2,13 @@ package storage
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/endangsuwarna/docker-cost/internal/calculator"
@@ -163,7 +166,16 @@ func (s *Store) seed() error {
 		return nil
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte("change-me"), bcrypt.DefaultCost)
+	adminPassword := os.Getenv("DOCKER_COST_ADMIN_PASSWORD")
+	if adminPassword == "" {
+		b := make([]byte, 16)
+		rand.Read(b)
+		adminPassword = hex.EncodeToString(b)
+		log.Printf("⚠️  DOCKER_COST_ADMIN_PASSWORD not set. Generated random admin password: %s", adminPassword)
+		log.Printf("   Set DOCKER_COST_ADMIN_PASSWORD env var to use a custom password.")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
@@ -175,24 +187,34 @@ func (s *Store) seed() error {
 	if err != nil {
 		return fmt.Errorf("failed to create default admin: %w", err)
 	}
+	log.Printf("✅ Created default admin user (username: admin)")
 
-	demoUsers := []struct {
-		username, displayName string
-		role                  Role
-		password              string
-	}{
-		{"eng", "Engineer User", RoleEngineer, "change-me"},
-		{"mgt", "Management User", RoleManagement, "change-me"},
-	}
-	for _, u := range demoUsers {
-		h, _ := bcrypt.GenerateFromPassword([]byte(u.password), bcrypt.DefaultCost)
+	// Demo users — only created if corresponding env vars are set
+	// Usage: DOCKER_COST_DEMO_PASSWORD_ENG=<pass> DOCKER_COST_DEMO_PASSWORD_MGT=<pass>
+	demoPasswordEng := os.Getenv("DOCKER_COST_DEMO_PASSWORD_ENG")
+	if demoPasswordEng != "" {
+		h, _ := bcrypt.GenerateFromPassword([]byte(demoPasswordEng), bcrypt.DefaultCost)
 		_, err = s.db.Exec(
 			`INSERT INTO users (username, password_hash, display_name, role) VALUES ($1, $2, $3, $4)`,
-			u.username, string(h), u.displayName, u.role,
+			"eng", string(h), "Engineer User", RoleEngineer,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to create user %s: %w", u.username, err)
+			return fmt.Errorf("failed to create engineer user: %w", err)
 		}
+		log.Printf("✅ Created demo user: eng")
+	}
+
+	demoPasswordMgt := os.Getenv("DOCKER_COST_DEMO_PASSWORD_MGT")
+	if demoPasswordMgt != "" {
+		h, _ := bcrypt.GenerateFromPassword([]byte(demoPasswordMgt), bcrypt.DefaultCost)
+		_, err = s.db.Exec(
+			`INSERT INTO users (username, password_hash, display_name, role) VALUES ($1, $2, $3, $4)`,
+			"mgt", string(h), "Management User", RoleManagement,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create management user: %w", err)
+		}
+		log.Printf("✅ Created demo user: mgt")
 	}
 
 	return nil
@@ -335,6 +357,14 @@ func (s *Store) UpdateUserPassword(id int, newPassword string) error {
 
 // ─── VPS Agent Methods ───────────────────────────────
 
+// hashAPIKey returns a SHA-256 hex digest of the API key for secure storage.
+// API keys are high-entropy random tokens (32 bytes + prefix), so SHA-256
+// is sufficient and allows efficient database lookups.
+func hashAPIKey(key string) string {
+	h := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(h[:])
+}
+
 func generateAPIKey() string {
 	buf := make([]byte, 32)
 	rand.Read(buf)
@@ -342,21 +372,25 @@ func generateAPIKey() string {
 }
 
 func (s *Store) CreateVPS(name string, notes string) (*VPSAgent, error) {
-	key := generateAPIKey()
+	rawKey := generateAPIKey()
+	hashedKey := hashAPIKey(rawKey)
 	agent := &VPSAgent{}
 	err := s.db.QueryRow(
 		`INSERT INTO vps_agents (name, api_key, notes) VALUES ($1, $2, $3)
-		 RETURNING id, name, api_key, cpu, ram_gb, storage_gb, price_per_month, currency,
+		 RETURNING id, name, cpu, ram_gb, storage_gb, price_per_month, currency,
 		           cpu_weight, ram_weight, storage_weight, overhead_percent,
 		           notes, status, last_seen, created_at`,
-		name, key, notes,
-	).Scan(&agent.ID, &agent.Name, &agent.APIKey, &agent.CPU, &agent.RAMGB,
+		name, hashedKey, notes,
+	).Scan(&agent.ID, &agent.Name,
+		&agent.CPU, &agent.RAMGB,
 		&agent.StorageGB, &agent.PricePerMonth, &agent.Currency,
 		&agent.CPUWeight, &agent.RAMWeight, &agent.StorageWeight, &agent.OverheadPercent,
 		&agent.Notes, &agent.Status, &agent.LastSeen, &agent.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPS: %w", err)
 	}
+	// Return the raw key to the caller so it can be displayed once
+	agent.APIKey = rawKey
 	return agent, nil
 }
 
@@ -388,14 +422,15 @@ func (s *Store) ListVPS() ([]VPSAgent, error) {
 
 func (s *Store) GetVPSByID(id int) (*VPSAgent, error) {
 	row := s.db.QueryRow(
-		`SELECT id, name, api_key, cpu, ram_gb, storage_gb, price_per_month, currency,
+		`SELECT id, name, cpu, ram_gb, storage_gb, price_per_month, currency,
 		        cpu_weight, ram_weight, storage_weight, overhead_percent,
 		        notes, status, last_seen, created_at
 		 FROM vps_agents WHERE id = $1`,
 		id,
 	)
 	var a VPSAgent
-	if err := row.Scan(&a.ID, &a.Name, &a.APIKey, &a.CPU, &a.RAMGB,
+	if err := row.Scan(&a.ID, &a.Name,
+		&a.CPU, &a.RAMGB,
 		&a.StorageGB, &a.PricePerMonth, &a.Currency,
 		&a.CPUWeight, &a.RAMWeight, &a.StorageWeight, &a.OverheadPercent,
 		&a.Notes, &a.Status, &a.LastSeen, &a.CreatedAt); err != nil {
@@ -408,15 +443,17 @@ func (s *Store) GetVPSByID(id int) (*VPSAgent, error) {
 }
 
 func (s *Store) GetVPSByAPIKey(apiKey string) (*VPSAgent, error) {
+	hashedKey := hashAPIKey(apiKey)
 	row := s.db.QueryRow(
-		`SELECT id, name, api_key, cpu, ram_gb, storage_gb, price_per_month, currency,
+		`SELECT id, name, cpu, ram_gb, storage_gb, price_per_month, currency,
 		        cpu_weight, ram_weight, storage_weight, overhead_percent,
 		        notes, status, last_seen, created_at
 		 FROM vps_agents WHERE api_key = $1`,
-		apiKey,
+		hashedKey,
 	)
 	var a VPSAgent
-	if err := row.Scan(&a.ID, &a.Name, &a.APIKey, &a.CPU, &a.RAMGB,
+	if err := row.Scan(&a.ID, &a.Name,
+		&a.CPU, &a.RAMGB,
 		&a.StorageGB, &a.PricePerMonth, &a.Currency,
 		&a.CPUWeight, &a.RAMWeight, &a.StorageWeight, &a.OverheadPercent,
 		&a.Notes, &a.Status, &a.LastSeen, &a.CreatedAt); err != nil {
@@ -445,15 +482,16 @@ func (s *Store) UpdateVPSAgent(id int, name, notes string) error {
 }
 
 func (s *Store) RegenerateVPSKey(id int) (string, error) {
-	key := generateAPIKey()
+	rawKey := generateAPIKey()
+	hashedKey := hashAPIKey(rawKey)
 	_, err := s.db.Exec(
 		`UPDATE vps_agents SET api_key = $1 WHERE id = $2`,
-		key, id,
+		hashedKey, id,
 	)
 	if err != nil {
 		return "", err
 	}
-	return key, nil
+	return rawKey, nil
 }
 
 func (s *Store) DeleteVPS(id int) error {

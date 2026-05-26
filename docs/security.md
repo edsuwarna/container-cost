@@ -17,9 +17,10 @@
 
 API keys are:
 - Generated with `crypto/rand` (32 bytes → hex → prefixed with `dckr_`)
-- Stored hashed in PostgreSQL
-- Displayed once on creation (copy it immediately)
+- **Stored hashed** in PostgreSQL using SHA-256 (never in plaintext)
+- Displayed **only once** on creation (copy it immediately)
 - Regenerable from dashboard (old key invalidated immediately)
+- APIs use key lookup via SHA-256 hash for both security and performance
 
 ### Docker Socket
 
@@ -57,5 +58,23 @@ The server auto-generates a random 32-byte secret key for session signing. For p
   "secret_key": "your-64-char-hex-secret"
 }
 ```
+
+### Configuration File Permissions
+
+The configuration file (`config.json`) is created with `0600` permissions (owner read/write only) to protect any stored secrets.
+
+### Password Policy
+
+- All passwords are hashed with bcrypt before storage
+- Minimum password length is **8 characters** (enforced at API level)
+- Default seed accounts (`admin`, `eng`, `mgt`) use bcrypt-hashed passwords
+
+### Cookie Security
+
+Session cookies use:
+- `HttpOnly` flag (inaccessible to JavaScript)
+- `Secure` flag (only sent over HTTPS)
+- `SameSite=Strict` mode (prevents CSRF)
+- 24-hour expiration
 
 ---

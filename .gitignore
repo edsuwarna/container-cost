@@ -11,3 +11,25 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+secrets/
+credentials*
+*secret*
+
+# Config files with embedded secrets
+config.json
+config.local.json
+
+# Logs
+*.log
+
+# Temporary files
+*.swp
+*.swo
+*~

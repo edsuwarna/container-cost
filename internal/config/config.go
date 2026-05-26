@@ -20,9 +20,7 @@ type VPSConfig struct {
 	StorageWeight  float64 `json:"storage_weight"`
 	NetworkWeight  float64 `json:"network_weight"`
 	OverheadPercent float64 `json:"overhead_percent"`
-	AdminUser      string  `json:"admin_user"`
-	AdminPass      string  `json:"admin_pass"`
-	SecretKey      string  `json:"secret_key"`
+	SecretKey      string  `json:"secret_key,omitempty"`
 }
 
 // AgentConfig holds configuration for agent mode
@@ -53,8 +51,6 @@ func DefaultConfig() VPSConfig {
 		StorageWeight:   0.1,
 		NetworkWeight:   0.0,
 		OverheadPercent: 15.0,
-		AdminUser:       "admin",
-		AdminPass:       "",
 		SecretKey:       "",
 	}
 }
@@ -125,5 +121,5 @@ func (c VPSConfig) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
 }
