@@ -1546,24 +1546,32 @@ function renderVPSTable(vpsList) {
         return;
     }
 
-    // Update stats bar
-    statsBar.style.display = 'flex';
+    // Update metric chips
+    statsBar.style.display = 'grid';
     document.getElementById('vpsTotalCount').textContent = vpsList.length;
     const online = vpsList.filter(v => v.status === 'online').length;
     document.getElementById('vpsOnlineCount').textContent = online;
     const totalCost = vpsList.reduce((sum, v) => sum + (v.price_per_month || 0), 0);
     document.getElementById('vpsTotalCost').textContent = formatCurrency(totalCost, 'IDR');
 
-    tbody.innerHTML = vpsList.map(v => `
+    const colors = ['blue', 'green', 'yellow', 'purple', 'blue', 'green'];
+    tbody.innerHTML = vpsList.map((v, i) => `
         <tr>
-            <td><a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a></td>
-            <td style="color:var(--ash);font-size:13px;">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</td>
+            <td>
+                <div class="vps-name-cell">
+                    <div class="vps-name-dot ${colors[i % colors.length]}"></div>
+                    <a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a>
+                </div>
+            </td>
+            <td><span class="vps-spec-tag">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</span></td>
             <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
-            <td><span class="vps-status-${v.status}">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span></td>
+            <td><span class="vps-status-badge ${v.status}"><svg class="icon-sm"><use href="#icon-${v.status === 'online' ? 'zap' : 'eye-off'}"/></svg> ${v.status === 'online' ? 'Live' : 'Off'}</span></td>
             <td style="color:var(--ash);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
             <td>
-                <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details">👁️</button>
-                <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--accent-red);">🗑️</button>
+                <div class="vps-table-actions">
+                    <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
+                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -1589,63 +1597,114 @@ async function viewVPS(id) {
         const currency = v.currency || 'IDR';
 
         content.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
+            <div class="vps-detail-header">
                 <div>
-                    <h2 style="margin:0 0 4px 0;">🖥️ ${v.name}</h2>
-                    <span class="vps-status-${v.status}" style="font-size:14px;">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span>
-                    <span style="color:var(--mute);font-size:13px;margin-left:8px;">
+                    <div class="vps-detail-title">
+                        <svg class="icon-lg"><use href="#icon-server"/></svg>
+                        <h2>${v.name}</h2>
+                        <span class="vps-status-badge ${v.status}"><svg class="icon-sm"><use href="#icon-${v.status === 'online' ? 'zap' : 'eye-off'}"/></svg> ${v.status === 'online' ? 'Live' : 'Off'}</span>
+                    </div>
+                    <div class="vps-detail-meta">
+                        <svg class="icon-sm"><use href="#icon-clock"/></svg>
                         Last seen: ${v.last_seen ? formatTime(v.last_seen) : 'Never'}
-                    </span>
+                    </div>
                 </div>
-                <div>
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);">🗑️ Hapus</button>
+                <div class="vps-detail-actions">
+                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg> Hapus</button>
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">CPU Cores</span>
-                        <span class="info-value">${v.cpu_cores || '-'}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">RAM</span>
-                        <span class="info-value">${v.ram_gb || '-'} GB</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Harga</span>
-                        <span class="info-value">${formatCurrency(v.price_per_month, currency)}</span>
-                    </div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:8px;padding:12px;">
-                        <div style="font-size:11px;color:var(--mute);text-transform:uppercase;margin-bottom:6px;">🔑 API Key</div>
-                        <div class="key-display" style="margin-bottom:6px;">
-                            <code>${v.api_key || '********'}</code>
+
+            <div class="vps-detail-layout">
+                <div class="vps-info-card">
+                    <h4>Spesifikasi</h4>
+                    <div class="vps-info-grid">
+                        <div class="vps-info-item">
+                            <span class="info-label">CPU Cores</span>
+                            <span class="info-value">${v.cpu_cores || '-'}</span>
                         </div>
-                        <button class="btn-secondary btn-sm" onclick="regenerateKey(${v.id})">🔄 Regenerate Key</button>
+                        <div class="vps-info-item">
+                            <span class="info-label">RAM</span>
+                            <span class="info-value">${v.ram_gb || '-'} GB</span>
+                        </div>
+                        <div class="vps-info-item">
+                            <span class="info-label">Harga</span>
+                            <span class="info-value">${formatCurrency(v.price_per_month, currency)}</span>
+                        </div>
                     </div>
                 </div>
+
+                <div class="vps-key-card">
+                    <h4><svg class="icon-sm"><use href="#icon-key"/></svg> API Key</h4>
+                    <div class="vps-key-display">
+                        <code>${v.api_key || '********'}</code>
+                        <button class="btn-secondary btn-sm" onclick="copyVPSKey('${v.id}')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                    </div>
+                    <button class="btn-secondary btn-sm" style="align-self:flex-start;" onclick="regenerateKey(${v.id})"><svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Regenerate Key</button>
+                </div>
             </div>
-            <div style="font-size:13px;color:var(--ash);background:var(--surface-elevated);border:1px solid var(--hairline);border-radius:8px;padding:12px;">
-                <strong>📋 Setup Agent:</strong><br>
-                SSH ke VPS ini, jalanin:<br>
-                <code style="display:block;margin-top:6px;padding:8px;background:var(--surface);border-radius:6px;color:var(--accent-blue);">
-                docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}
-                </code>
+
+            <div class="vps-setup-card">
+                <h4><svg class="icon-sm"><use href="#icon-terminal"/></svg> Setup Agent</h4>
+                <p>SSH ke VPS ini, lalu jalankan perintah berikut:</p>
+                <div class="vps-setup-code">
+                    <code>docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}</code>
+                    <button class="btn-secondary btn-sm" onclick="copySetupCmd()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                </div>
             </div>
+
             ${report ? `
-            <div style="margin-top:20px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:16px;">
-                <h3 style="margin:0 0 12px 0;font-size:15px;">📊 Latest Cost Report</h3>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-                    <div><span style="color:var(--mute);font-size:12px;">Containers</span><br><span style="font-size:18px;font-weight:700;">${(report.containers || []).length}</span></div>
-                    <div><span style="color:var(--mute);font-size:12px;">Total Cost</span><br><span style="font-size:18px;font-weight:700;color:var(--accent-blue);">${formatCurrency(report.total_cost, currency)}</span></div>
-                    <div><span style="color:var(--mute);font-size:12px;">Overhead</span><br><span style="font-size:18px;font-weight:700;color:var(--accent-yellow);">${formatCurrency(report.overhead_cost, currency)}</span></div>
+            <div class="vps-report-card">
+                <h4>📊 Latest Cost Report</h4>
+                <div class="vps-report-grid">
+                    <div class="vps-report-item">
+                        <div class="report-label">Containers</div>
+                        <div class="report-value">${(report.containers || []).length}</div>
+                    </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Total Cost</div>
+                        <div class="report-value blue">${formatCurrency(report.total_cost, currency)}</div>
+                    </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Overhead</div>
+                        <div class="report-value yellow">${formatCurrency(report.overhead_cost, currency)}</div>
+                    </div>
                 </div>
             </div>` : ''}
         `;
     } catch (err) {
         content.innerHTML = `<div class="empty-state">❌ Failed to load VPS detail: ${err.message}</div>`;
     }
+}
+
+function copyVPSKey(id) {
+    // Since API key is shown masked, fetch it
+    const codeEl = document.querySelector('.vps-key-display code');
+    const key = codeEl.textContent;
+    if (key && key !== '********') {
+        navigator.clipboard.writeText(key).then(() => {
+            alert('✅ API Key copied to clipboard!');
+        }).catch(() => fallbackCopy(key));
+    }
+}
+
+function copySetupCmd() {
+    const codeEl = document.querySelector('.vps-setup-code code');
+    const cmd = codeEl.textContent;
+    navigator.clipboard.writeText(cmd).then(() => {
+        // visual feedback
+        const btn = document.querySelector('.vps-setup-code .btn-sm');
+        if (btn) { btn.textContent = '✓ Copied'; setTimeout(() => { btn.innerHTML = '<svg class=\"icon-sm\"><use href=\"#icon-copy\"/></svg> Copy'; }, 2000); }
+    }).catch(() => fallbackCopy(cmd));
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    alert('✅ Copied to clipboard!');
 }
 
 document.getElementById('btnBackToVPSList').addEventListener('click', () => {
@@ -1692,13 +1751,13 @@ function openAddVPSModal() {
     document.getElementById('vpsForm').reset();
     document.getElementById('vpsKeyGroup').style.display = 'none';
     document.getElementById('vpsFormError').style.display = 'none';
-    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Simpan & Generate Key';
     document.getElementById('vpsModal').style.display = 'flex';
 }
 
 document.getElementById('btnCancelVPS').addEventListener('click', () => {
     document.getElementById('vpsModal').style.display = 'none';
-    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Simpan & Generate Key';
     document.getElementById('vpsSaveBtn').onclick = null;
     document.getElementById('btnCancelVPS').textContent = 'Cancel';
     document.getElementById('vpsNameInput').disabled = false;
@@ -1716,7 +1775,7 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
         // Show the generated API key — modal stays open until user closes
         document.getElementById('vpsKeyGroup').style.display = 'block';
         document.getElementById('vpsApiKey').textContent = result.api_key;
-        document.getElementById('vpsSaveBtn').textContent = '📋 Copied? Click to copy again';
+        document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-copy"/></svg> Copied? Click to copy again';
         document.getElementById('vpsSaveBtn').onclick = () => copyKey();
         document.getElementById('vpsNameInput').disabled = true;
         document.getElementById('vpsNotesInput').disabled = true;

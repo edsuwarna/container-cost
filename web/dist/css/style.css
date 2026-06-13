@@ -655,18 +655,6 @@ th.sorted-desc .icon-sm { color: var(--accent-blue); }
 .users-header h3,
 .permissions-header h3 { margin-bottom: 0; }
 
-.vps-stats-bar {
-  display: flex; gap: var(--space-xl);
-  margin-bottom: var(--space-lg);
-  padding: var(--space-md);
-  background: var(--surface-elevated);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-}
-.vps-stat-item { text-align: center; }
-.vps-stat-value { font-size: 18px; font-weight: 600; color: var(--ink); display: block; }
-.vps-stat-label { font-size: 11px; color: var(--ash); }
-
 /* ─── Container List ─── */
 .container-list {
   display: grid;
@@ -839,6 +827,301 @@ th.sorted-desc .icon-sm { color: var(--accent-blue); }
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
 }
+
+/* ─── VPS Metric Chips ─── */
+.vps-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+.vps-chip {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vps-chip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+.vps-chip-header .icon-sm {
+  width: 14px;
+  height: 14px;
+}
+.vps-chip-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  font-feature-settings: "tnum";
+  line-height: 1.1;
+}
+.vps-chip-sub {
+  font-size: 11px;
+  color: var(--ash);
+}
+.vps-chip.vps-chip-blue .vps-chip-header .icon-sm { color: var(--accent-blue); }
+.vps-chip.vps-chip-green .vps-chip-header .icon-sm { color: var(--accent-green); }
+.vps-chip.vps-chip-yellow .vps-chip-header .icon-sm { color: var(--accent-yellow); }
+
+/* ─── VPS Table Enhancements ─── */
+#vpsTable { width: 100%; border-collapse: collapse; }
+#vpsTable th {
+  font-size: 10px; font-weight: 600; color: var(--ash);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 10px 12px; text-align: left;
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+#vpsTable td {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--body);
+  border-bottom: 1px solid var(--surface-elevated);
+  vertical-align: middle;
+}
+#vpsTable tbody tr { transition: background 0.1s; }
+#vpsTable tbody tr:hover { background: var(--surface-hover); }
+.vps-name-cell {
+  display: flex; align-items: center; gap: 10px;
+}
+.vps-name-dot {
+  width: 3px; height: 24px;
+  border-radius: 2px; flex-shrink: 0;
+}
+.vps-name-dot.blue { background: var(--accent-blue); }
+.vps-name-dot.green { background: var(--accent-green); }
+.vps-name-dot.yellow { background: var(--accent-yellow); }
+.vps-name-dot.purple { background: #a78bfa; }
+.vps-name-dot.red { background: var(--accent-red); }
+.vps-status-badge {
+  font-size: 11px; padding: 3px 10px;
+  border-radius: var(--radius-full); font-weight: 500;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.vps-status-badge.online {
+  background: var(--accent-green-soft);
+  color: var(--accent-green);
+}
+.vps-status-badge.offline {
+  background: var(--accent-red-soft);
+  color: var(--accent-red);
+}
+.vps-status-badge .icon-sm { width: 12px; height: 12px; }
+.vps-spec-tag {
+  font-size: 12px; color: var(--ash);
+  background: var(--surface);
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  display: inline-block;
+}
+.vps-table-actions {
+  display: flex; gap: 6px;
+}
+
+/* ─── VPS Detail Redesign ─── */
+.vps-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+.vps-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-xl);
+}
+.vps-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.vps-detail-title .icon-lg {
+  width: 28px; height: 28px;
+  color: var(--accent-blue);
+}
+.vps-detail-title h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.vps-detail-title .vps-status-badge { margin-left: 8px; }
+.vps-detail-meta {
+  font-size: 12px;
+  color: var(--mute);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.vps-detail-actions {
+  display: flex; gap: var(--space-sm);
+}
+.vps-info-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.vps-info-card h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--space-md) 0;
+}
+.vps-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+.vps-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.vps-info-item .info-label {
+  font-size: 10px;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.vps-info-item .info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.vps-key-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.vps-key-card h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vps-key-card h4 .icon-sm { width: 14px; height: 14px; color: var(--accent-yellow); }
+.vps-key-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.vps-key-display code {
+  font-size: 12px;
+  color: var(--accent-blue);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vps-key-display .btn-sm {
+  flex-shrink: 0;
+}
+.vps-setup-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+.vps-setup-card h4 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--space-sm) 0;
+}
+.vps-setup-card p {
+  font-size: 12px;
+  color: var(--mute);
+  margin: 0 0 var(--space-sm) 0;
+}
+.vps-setup-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.vps-setup-code code {
+  flex: 1;
+  font-size: 12px;
+  color: var(--accent-blue);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.vps-report-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+.vps-report-card h4 {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 var(--space-md) 0;
+}
+.vps-report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+.vps-report-item {
+  text-align: center;
+  padding: var(--space-md);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+}
+.vps-report-item .report-label {
+  font-size: 11px;
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.vps-report-item .report-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.vps-report-item .report-value.blue { color: var(--accent-blue); }
+.vps-report-item .report-value.green { color: var(--accent-green); }
+.vps-report-item .report-value.yellow { color: var(--accent-yellow); }
 
 /* ─── Permissions ─── */
 .permissions-grid {
