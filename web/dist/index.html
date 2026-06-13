@@ -117,6 +117,26 @@
             <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
             </symbol>
+            <!-- Container Card Icons -->
+            <symbol id="icon-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <rect x="9" y="9" width="6" height="6"/>
+                <path d="M15 2v2M15 20v2M2 9h2M20 9h2M2 15h2M20 15h2M9 2v2M9 20v2"/>
+            </symbol>
+            <symbol id="icon-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+                <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+            </symbol>
+            <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </symbol>
+            <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+            </symbol>
         </defs>
     </svg>
     <!-- ═══ Loading Overlay ═══ -->
@@ -375,23 +395,92 @@
 
                 <!-- ═══ Containers Page ═══ -->
                 <section class="page" id="page-containers">
+                    <!-- Toolbar: Search + Sort -->
+                    <div class="container-toolbar">
+                        <input type="text" class="container-search" id="containerSearch" placeholder="Search containers..." spellcheck="false">
+                        <select class="container-sort" id="containerSort">
+                            <option value="cost">Highest Cost</option>
+                            <option value="name">Name A-Z</option>
+                            <option value="cpu">Highest CPU</option>
+                        </select>
+                        <span class="container-count" id="containerListCount"></span>
+                    </div>
                     <div class="container-list" id="containerList">
                         <!-- populated by JS -->
                     </div>
+                    <!-- ═══ Container Detail View ═══ -->
                     <div class="detail-view" id="containerDetail" style="display:none;">
-                        <button class="btn-back" id="btnBackToList">← Back to list</button>
-                        <div style="margin-bottom:12px;">
-                            <h3 id="containerDetailName" style="margin:0;font-weight:600;font-size:16px;"></h3>
-                        </div>
-                        <div class="detail-chart-card">
-                            <h3>Cost History</h3>
-                            <div class="chart-container" style="height:300px">
-                                <canvas id="historyChart"></canvas>
+                        <!-- Back + Prev/Next -->
+                        <div class="detail-topbar">
+                            <button class="btn-back" id="btnBackToList">← Back to list</button>
+                            <div class="detail-nav">
+                                <button class="btn-nav" id="btnPrevContainer">← Previous</button>
+                                <button class="btn-nav" id="btnNextContainer">Next →</button>
                             </div>
                         </div>
-                        <div class="detail-info">
-                            <div class="info-grid" id="detailInfo">
-                                <!-- populated by JS -->
+                        <!-- Container Identity -->
+                        <div class="detail-header" id="detailHeader">
+                            <h2 id="containerDetailName"></h2>
+                            <div class="detail-header-meta" id="detailHeaderMeta"></div>
+                        </div>
+                        <!-- Stats row -->
+                        <div class="detail-stats-row" id="detailStatsRow"></div>
+                        <!-- Charts row -->
+                        <div class="detail-charts-row" id="detailChartsRow">
+                            <div class="detail-chart-card">
+                                <h3>Cost History</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="historyChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>CPU Trend</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="cpuTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>Memory Trend</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="memTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bottom row: Breakdown + Info -->
+                        <div class="detail-bottom-row">
+                            <div class="detail-chart-card">
+                                <h3>Cost Breakdown</h3>
+                                <div class="breakdown-wrap">
+                                    <div class="breakdown-vis">
+                                        <canvas id="breakdownDonut"></canvas>
+                                    </div>
+                                    <div class="breakdown-legend" id="breakdownLegendDetail"></div>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>Container Info</h3>
+                                <div class="info-grid" id="detailInfo">
+                                    <!-- populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- History Table -->
+                        <div class="detail-chart-card">
+                            <h3>Snapshot History</h3>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>CPU</th>
+                                            <th>Memory</th>
+                                            <th>Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                        <tr><td colspan="4" class="empty-state">Loading history...</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
