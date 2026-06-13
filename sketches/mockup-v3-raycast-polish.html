@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContainerCost — Mockup v3 (Raycast + Lucide + Polish)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&display=swap" rel="stylesheet">
+
+<svg aria-hidden="true" style="display:none">
+  <defs>
+    <!-- Nav Icons -->
+    <symbol id="icon-layout-dashboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="7" height="9" x="3" y="3" rx="1"/>
+      <rect width="7" height="5" x="14" y="3" rx="1"/>
+      <rect width="7" height="9" x="14" y="12" rx="1"/>
+      <rect width="7" height="5" x="3" y="16" rx="1"/>
+    </symbol>
+    <symbol id="icon-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m7.5 4.27 9 5.15"/>
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+      <path d="m3.3 7 8.7 5 8.7-5"/>
+      <path d="M12 22V12"/>
+    </symbol>
+    <symbol id="icon-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+      <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+      <line x1="6" x2="6.01" y1="6" y2="6"/>
+      <line x1="6" x2="6.01" y1="18" y2="18"/>
+    </symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </symbol>
+    <!-- Action Icons -->
+    <symbol id="icon-refresh-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+      <path d="M21 3v5h-5"/>
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+      <path d="M3 21v-5h5"/>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" x2="12" y1="5" y2="19"/>
+      <line x1="5" x2="19" y1="12" y2="12"/>
+    </symbol>
+    <symbol id="icon-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </symbol>
+    <!-- Summary Card Icons -->
+    <symbol id="icon-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" x2="12" y1="2" y2="22"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
+    <symbol id="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </symbol>
+    <!-- Improved: Archive icon for Unallocated (was duplicate package) -->
+    <symbol id="icon-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="20" height="5" x="2" y="3" rx="1"/>
+      <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+      <path d="M10 12h4"/>
+    </symbol>
+    <!-- Sort icons -->
+    <symbol id="icon-arrow-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m21 16-4 4-4-4"/>
+      <path d="M17 20V4"/>
+      <path d="m3 8 4-4 4 4"/>
+      <path d="M7 4v16"/>
+    </symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </symbol>
+    <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"/>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+  </defs>
+</svg>
+
+<style>
+/* ═══════════════════════════════════════════════════
+   ContainerCost — Raycast v3 (Final Polish)
+   Tokens: Raycast DESIGN.md | Icons: Lucide
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  --canvas: #07080a;
+  --surface: #0d0d0d;
+  --surface-elevated: #101111;
+  --surface-card: #121212;
+  --surface-hover: #161718;
+  --hairline: #242728;
+  --hairline-soft: rgba(255,255,255,0.08);
+  --hairline-strong: rgba(255,255,255,0.16);
+  --ink: #f4f4f6;
+  --body: #cdcdcd;
+  --mute: #9c9c9d;
+  --ash: #6a6b6c;
+  --stone: #434345;
+  --accent-blue: #57c1ff;
+  --accent-blue-soft: rgba(87,193,255,0.12);
+  --accent-green: #59d499;
+  --accent-green-soft: rgba(89,212,153,0.12);
+  --accent-red: #ff6161;
+  --accent-red-soft: rgba(255,97,97,0.12);
+  --accent-yellow: #ffc533;
+  --accent-yellow-soft: rgba(255,197,51,0.12);
+  --primary: #ffffff;
+  --primary-pressed: #e8e8e8;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+  --sidebar-w: 228px;
+  --topbar-h: 52px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  background: var(--canvas);
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Icon sizing */
+.icon { width: 16px; height: 16px; flex-shrink: 0; }
+.icon-sm { width: 14px; height: 14px; }
+.icon-lg { width: 18px; height: 18px; }
+.icon-btn { width: 15px; height: 15px; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 3px; }
+
+.app { display: flex; min-height: 100vh; }
+
+/* ═══ Sidebar ═══ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+
+.logo-mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent-blue), #2d7cd6);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.logo-text {
+  font-size: 15px; font-weight: 600;
+  color: var(--ink); letter-spacing: -0.2px;
+}
+.logo-sub {
+  font-size: 11px; color: var(--mute); display: block; margin-top: -1px;
+}
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  padding: var(--space-md) var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--mute);
+  text-decoration: none;
+  font-size: 13.5px; font-weight: 450;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.nav-item:hover { background: var(--surface-hover); color: var(--ink); }
+.nav-item.active {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+.nav-item .icon { color: var(--ash); transition: color 0.15s; }
+.nav-item:hover .icon { color: var(--mute); }
+.nav-item.active .icon { color: var(--accent-blue); }
+
+.nav-divider { height: 1px; background: var(--hairline); margin: var(--space-sm) var(--space-md); }
+.nav-section-label {
+  font-size: 10px; font-weight: 600; color: var(--ash);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  padding: var(--space-md) var(--space-md) var(--space-xs);
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--hairline);
+}
+.footer-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); flex-shrink: 0; }
+.status-label { font-size: 12px; color: var(--mute); flex: 1; }
+.user-badge {
+  width: 24px; height: 24px; border-radius: var(--radius-full);
+  background: var(--accent-blue-soft); color: var(--accent-blue);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+}
+
+/* ═══ Main ═══ */
+.main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+
+/* Topbar */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-xl);
+  position: sticky; top: 0; z-index: 5;
+}
+.topbar-left { display: flex; align-items: center; gap: var(--space-md); }
+.topbar-title { font-size: 14px; font-weight: 550; color: var(--ink); }
+.topbar-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full);
+  background: var(--surface-card); color: var(--mute);
+  border: 1px solid var(--hairline); font-weight: 450;
+}
+.topbar-right { display: flex; align-items: center; gap: var(--space-sm); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px; font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+}
+.btn:hover { background: var(--surface-hover); border-color: var(--stone); }
+.btn-primary { background: var(--primary); color: #000; border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-pressed); border-color: var(--primary-pressed); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* Content */
+.content { padding: var(--space-xl); max-width: 1280px; }
+
+/* ─── Summary Cards ─── */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+.summary-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  transition: all 0.2s ease;
+}
+.summary-card:hover { border-color: var(--stone); }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-sm); }
+.card-icon-box {
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+}
+.card-icon-box.blue { background: var(--accent-blue-soft); }
+.card-icon-box.green { background: var(--accent-green-soft); }
+.card-icon-box.yellow { background: var(--accent-yellow-soft); }
+.card-icon-box.red { background: var(--accent-red-soft); }
+.card-icon-box .icon { color: var(--accent-blue); }
+.card-icon-box.green .icon { color: var(--accent-green); }
+.card-icon-box.yellow .icon { color: var(--accent-yellow); }
+.card-icon-box.red .icon { color: var(--accent-red); }
+.card-change {
+  font-size: 11px; font-weight: 550;
+  padding: 2px 8px; border-radius: var(--radius-full);
+}
+.card-change.up { background: var(--accent-green-soft); color: var(--accent-green); }
+.card-change.down { background: var(--accent-red-soft); color: var(--accent-red); }
+.card-change.neutral { background: var(--surface-elevated); color: var(--mute); }
+.card-label { font-size: 12px; color: var(--mute); font-weight: 450; margin-bottom: var(--space-xs); }
+.card-value { font-size: 28px; font-weight: 600; color: var(--ink); letter-spacing: -0.5px; margin-bottom: 2px; }
+.card-sub { font-size: 12px; color: var(--ash); }
+
+/* ─── VPS Strip (Active State Added) ─── */
+.vps-strip {
+  display: flex; gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-sm);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  align-items: center;
+  overflow-x: auto;
+}
+.vps-item {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.vps-item:hover { background: var(--surface-hover); }
+.vps-item.active {
+  background: var(--accent-blue-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-blue-soft);
+}
+.vps-item.active .vps-name { color: var(--accent-blue); }
+.vps-name { font-size: 12px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.vps-cost { font-size: 12px; color: var(--mute); white-space: nowrap; }
+.vps-item.active .vps-cost { color: var(--mute); }
+.vps-bar { width: 3px; height: 24px; border-radius: 2px; flex-shrink: 0; }
+.vps-bar.blue { background: var(--accent-blue); }
+.vps-bar.green { background: var(--accent-green); }
+.vps-bar.yellow { background: var(--accent-yellow); }
+
+/* ─── Period Bar ─── */
+.period-bar {
+  display: flex; align-items: center; gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-sm);
+  background: var(--surface-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+.period-btn {
+  padding: 5px 12px; font-size: 12px; font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  border-radius: var(--radius-xs); border: none;
+  background: transparent; color: var(--mute); cursor: pointer;
+  transition: all 0.15s ease;
+}
+.period-btn:hover { color: var(--ink); }
+.period-btn.active { background: var(--surface-card); color: var(--ink); box-shadow: 0 0 0 1px var(--hairline); }
+
+/* ─── Charts ─── */
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-xl); }
+.chart-card { background: var(--surface-card); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: var(--space-xl); }
+.chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); }
+.chart-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.chart-period { font-size: 11px; color: var(--mute); }
+.chart-area { height: 200px; display: flex; align-items: flex-end; gap: 4px; padding-top: var(--space-sm); }
+
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; max-width: 40px; border-radius: var(--radius-xs) var(--radius-xs) 0 0; min-height: 4px; }
+.bar.blue { background: var(--accent-blue); }
+.bar.green { background: var(--accent-green); }
+.bar.purple { background: #a78bfa; }
+.bar.orange { background: #fb923c; }
+.bar.red { background: var(--accent-red); }
+.bar.teal { background: #2dd4bf; }
+.bar-label { font-size: 10px; color: var(--ash); white-space: nowrap; }
+
+/* Donut */
+.donut-wrap { display: flex; align-items: center; gap: var(--space-xl); padding: var(--space-sm) 0; }
+.donut-vis { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+.donut-vis svg { transform: rotate(-90deg); }
+.donut-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.donut-center-val { font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.3px; }
+.donut-center-lbl { font-size: 10px; color: var(--mute); margin-top: -1px; }
+.donut-legend { display: flex; flex-direction: column; gap: var(--space-sm); flex: 1; }
+.legend-item {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: 6px 10px; border-radius: var(--radius-sm);
+}
+.legend-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.legend-lbl { font-size: 12px; color: var(--mute); flex: 1; }
+.legend-val { font-size: 12px; color: var(--ink); font-weight: 500; }
+.legend-pct { font-size: 11px; color: var(--ash); min-width: 32px; text-align: right; }
+
+/* ─── Trend Chart (with Y-axis labels) ─── */
+.trend-card { background: var(--surface-card); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: var(--space-xl); margin-bottom: var(--space-xl); }
+.trend-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); }
+.trend-ttl { font-size: 13px; font-weight: 500; color: var(--ink); }
+.trend-period { font-size: 11px; color: var(--mute); }
+
+.trend-viz {
+  display: flex;
+  gap: var(--space-sm);
+  height: 170px;
+  position: relative;
+}
+
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0 4px 12px 0;
+  min-width: 38px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.y-label {
+  font-size: 10px;
+  color: var(--ash);
+  font-weight: 450;
+  font-feature-settings: "tnum";
+  line-height: 1;
+}
+
+.chart-viewport {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+.chart-viewport svg { width: 100%; height: 100%; display: block; }
+.chart-grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.chart-grid-line { width: 100%; height: 1px; background: var(--hairline); }
+
+/* ─── Table (with sort indicator) ─── */
+.table-section { background: var(--surface-card); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: var(--space-xl); }
+.thdr { padding: var(--space-lg) var(--space-xl); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--hairline); }
+.thdr-left { display: flex; align-items: center; gap: var(--space-sm); }
+.thdr-ttl { font-size: 13px; font-weight: 500; color: var(--ink); }
+.thdr-count { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--surface-elevated); color: var(--mute); border: 1px solid var(--hairline); }
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; padding: 10px var(--space-xl);
+  font-size: 11px; font-weight: 600; color: var(--ash);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--surface); border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+  user-select: none;
+}
+th.sortable { cursor: pointer; }
+th.sortable:hover { color: var(--mute); }
+
+th .th-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+th.sortable .icon { color: var(--stone); }
+
+th.sortable:hover .icon { color: var(--mute); }
+th.sorted .th-inner { color: var(--ink); }
+th.sorted .icon { color: var(--accent-blue); }
+
+td { padding: 12px var(--space-xl); font-size: 13px; color: var(--body); border-bottom: 1px solid var(--hairline); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-hover); }
+.cell-name { display: flex; align-items: center; gap: 8px; }
+.dot { width: 6px; height: 6px; border-radius: var(--radius-full); flex-shrink: 0; }
+.dot.run { background: var(--accent-green); }
+.dot.pause { background: var(--accent-yellow); }
+.cell-label { font-weight: 450; color: var(--ink); }
+.text-muted { color: var(--mute); font-size: 12px; }
+.cost-val { font-weight: 500; color: var(--ink); font-feature-settings: "tnum"; }
+
+/* Sort indicator on Monthly Cost — visually active showing cost sorted desc */
+th.sorted-desc .icon { color: var(--accent-blue); }
+
+.pill { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 450; display: inline-block; }
+.pill-green { background: var(--accent-green-soft); color: var(--accent-green); }
+.pill-yellow { background: var(--accent-yellow-soft); color: var(--accent-yellow); }
+
+/* Mockup badge */
+.mkb {
+  position: fixed; bottom: var(--space-lg); right: var(--space-lg);
+  background: var(--surface-card); border: 1px solid var(--hairline);
+  border-radius: var(--radius-md); padding: 8px 14px;
+  font-size: 11px; color: var(--mute); z-index: 100;
+  display: flex; align-items: center; gap: 6px;
+}
+
+@media (max-width: 1024px) {
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-text">ContainerCost</div>
+          <span class="logo-sub">Cost Analyzer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <a class="nav-item active">
+        <svg class="icon"><use href="#icon-layout-dashboard"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item">
+        <svg class="icon"><use href="#icon-package"/></svg>
+        Containers
+      </a>
+      <a class="nav-item">
+        <svg class="icon"><use href="#icon-server"/></svg>
+        VPS
+      </a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Administration</div>
+
+      <a class="nav-item">
+        <svg class="icon"><use href="#icon-settings"/></svg>
+        Settings
+      </a>
+      <a class="nav-item">
+        <svg class="icon"><use href="#icon-users"/></svg>
+        Users
+      </a>
+      <a class="nav-item">
+        <svg class="icon"><use href="#icon-shield"/></svg>
+        Permissions
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="footer-row">
+        <div class="status-dot"></div>
+        <span class="status-label">Connected</span>
+        <div class="user-badge">ES</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-badge">mini-vps</span>
+        <span class="topbar-badge">Updated 2m ago</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn">
+          <svg class="icon-btn"><use href="#icon-refresh-cw"/></svg>
+          Generate Report
+        </button>
+        <button class="btn btn-primary">
+          <svg class="icon-btn"><use href="#icon-plus"/></svg>
+          Add VPS
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═══ VPS Strip — "mini-vps" active ═══ -->
+      <div class="vps-strip">
+        <div class="vps-item active">
+          <div class="vps-bar blue"></div>
+          <div>
+            <div class="vps-name">mini-vps</div>
+            <div class="vps-cost">$14.29/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-bar green"></div>
+          <div>
+            <div class="vps-name">app-server-1</div>
+            <div class="vps-cost">$49.99/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-bar yellow"></div>
+          <div>
+            <div class="vps-name">db-server-1</div>
+            <div class="vps-cost">$79.99/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-bar blue"></div>
+          <div>
+            <div class="vps-name">staging-01</div>
+            <div class="vps-cost">$24.99/mo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Summary Cards ═══ -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon-box blue">
+              <svg class="icon-lg"><use href="#icon-dollar"/></svg>
+            </div>
+            <span class="card-change up">+12%</span>
+          </div>
+          <div class="card-label">Total Cost</div>
+          <div class="card-value">$169.26</div>
+          <div class="card-sub">per month</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon-box green">
+              <svg class="icon-lg"><use href="#icon-box"/></svg>
+            </div>
+            <span class="card-change up">+8%</span>
+          </div>
+          <div class="card-label">Container Cost</div>
+          <div class="card-value">$112.45</div>
+          <div class="card-sub">18 containers across 4 VPS</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon-box yellow">
+              <svg class="icon-lg"><use href="#icon-zap"/></svg>
+            </div>
+            <span class="card-change neutral">±0%</span>
+          </div>
+          <div class="card-label">Overhead</div>
+          <div class="card-value">$34.82</div>
+          <div class="card-sub">OS + Docker layer</div>
+        </div>
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon-box red">
+              <!-- Fixed: Archive icon instead of duplicate package -->
+              <svg class="icon-lg"><use href="#icon-archive"/></svg>
+            </div>
+            <span class="card-change down">-5%</span>
+          </div>
+          <div class="card-label">Unallocated</div>
+          <div class="card-value">$21.99</div>
+          <div class="card-sub">idle resources</div>
+        </div>
+      </div>
+
+      <!-- ═══ Period Filter ═══ -->
+      <div class="period-bar">
+        <button class="period-btn active">Latest</button>
+        <button class="period-btn">7 Days</button>
+        <button class="period-btn">30 Days</button>
+        <button class="period-btn">All Time</button>
+      </div>
+
+      <!-- ═══ Charts Row ═══ -->
+      <div class="charts-row">
+
+        <!-- Cost Distribution -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Cost Distribution</span>
+            <span class="chart-period">· per month</span>
+          </div>
+          <div class="chart-area">
+            <div class="bar-group">
+              <div class="bar blue" style="height:100%"></div>
+              <span class="bar-label">mini</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar purple" style="height:72%"></div>
+              <span class="bar-label">app-1</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar orange" style="height:55%"></div>
+              <span class="bar-label">db-1</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar teal" style="height:38%"></div>
+              <span class="bar-label">staging</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar blue" style="height:28%"></div>
+              <span class="bar-label">dev-01</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar green" style="height:22%"></div>
+              <span class="bar-label">cache</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar red" style="height:15%"></div>
+              <span class="bar-label">worker</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar purple" style="height:10%"></div>
+              <span class="bar-label">queue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost Breakdown -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Cost Breakdown</span>
+            <span class="chart-period">· $169.26 total</span>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut-vis">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--hairline)" stroke-width="20"/>
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-blue)" stroke-width="20"
+                  stroke-dasharray="239.0 364.4"/>
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-yellow)" stroke-width="20"
+                  stroke-dasharray="74.2 364.4" stroke-dashoffset="-239.0"/>
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-red)" stroke-width="20"
+                  stroke-dasharray="46.8 364.4" stroke-dashoffset="-313.2"/>
+              </svg>
+              <div class="donut-center">
+                <span class="donut-center-val">$169</span>
+                <span class="donut-center-lbl">total</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <div class="legend-sq" style="background:var(--accent-blue)"></div>
+                <span class="legend-lbl">Container Cost</span>
+                <span class="legend-val">$112.45</span>
+                <span class="legend-pct">66.4%</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-sq" style="background:var(--accent-yellow)"></div>
+                <span class="legend-lbl">Overhead</span>
+                <span class="legend-val">$34.82</span>
+                <span class="legend-pct">20.6%</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-sq" style="background:var(--accent-red)"></div>
+                <span class="legend-lbl">Unallocated</span>
+                <span class="legend-val">$21.99</span>
+                <span class="legend-pct">13.0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Cost Trend (with Y-axis) ═══ -->
+      <div class="trend-card">
+        <div class="trend-hdr">
+          <span class="trend-ttl">Cost Trend</span>
+          <span class="trend-period">Last 30 days</span>
+        </div>
+        <div class="trend-viz">
+          <!-- Y-axis labels -->
+          <div class="y-axis">
+            <span class="y-label">$200</span>
+            <span class="y-label">$150</span>
+            <span class="y-label">$100</span>
+            <span class="y-label">$50</span>
+            <span class="y-label">$0</span>
+          </div>
+          <div class="chart-viewport">
+            <div class="chart-grid">
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+              <div class="chart-grid-line"></div>
+            </div>
+            <svg viewBox="0 0 900 160" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent-blue)" stop-opacity="0.20"/>
+                  <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,155 L0,135 C30,133 60,120 90,110 C120,100 150,105 180,90 C210,75 240,65 270,58 C300,50 330,45 360,40 C390,35 420,38 450,32 C480,26 510,30 540,28 C570,26 600,20 630,18 C660,16 690,14 720,12 C750,10 780,8 810,7 C840,6 870,7 900,5 L900,160 Z" fill="url(#tg)"/>
+              <path d="M0,135 C30,133 60,120 90,110 C120,100 150,105 180,90 C210,75 240,65 270,58 C300,50 330,45 360,40 C390,35 420,38 450,32 C480,26 510,30 540,28 C570,26 600,20 630,18 C660,16 690,14 720,12 C750,10 780,8 810,7 C840,6 870,7 900,5" fill="none" stroke="var(--accent-blue)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+              <circle cx="0" cy="135" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+              <circle cx="180" cy="90" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+              <circle cx="360" cy="40" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+              <circle cx="540" cy="28" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+              <circle cx="720" cy="12" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+              <circle cx="900" cy="5" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Table (with sort indicator on Monthly Cost) ═══ -->
+      <div class="table-section">
+        <div class="thdr">
+          <div class="thdr-left">
+            <span class="thdr-ttl">Running Containers</span>
+            <span class="thdr-count">18 total</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm">
+              <svg class="icon-sm"><use href="#icon-filter"/></svg>
+              Filter
+            </button>
+            <button class="btn btn-sm">
+              <svg class="icon-sm"><use href="#icon-download"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th><span class="th-inner">Container</span></th>
+              <th><span class="th-inner">VPS</span></th>
+              <th><span class="th-inner">CPU</span></th>
+              <th><span class="th-inner">Memory</span></th>
+              <th><span class="th-inner">Status</span></th>
+              <th class="sortable sorted-desc"><span class="th-inner">Monthly Cost <svg class="icon-sm"><use href="#icon-chevron-down"/></svg></span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">postgres-16</span></div></td>
+              <td><span class="text-muted">db-server-1</span></td>
+              <td>2.0 cores</td>
+              <td>2 GB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$15.80</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">arus-api</span></div></td>
+              <td><span class="text-muted">app-server-1</span></td>
+              <td>1.2 cores</td>
+              <td>768 MB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$8.35</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">anjungan-api</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.8 cores</td>
+              <td>512 MB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$4.52</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">anjungan-frontend</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.4 cores</td>
+              <td>256 MB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$2.18</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">redis-cache</span></div></td>
+              <td><span class="text-muted">app-server-1</span></td>
+              <td>0.3 cores</td>
+              <td>128 MB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$1.45</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot run"></div><span class="cell-label">nginx-proxy</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.2 cores</td>
+              <td>64 MB</td>
+              <td><span class="pill pill-green">Running</span></td>
+              <td class="cost-val">$0.92</td>
+            </tr>
+            <tr>
+              <td><div class="cell-name"><div class="dot pause"></div><span class="cell-label">staging-api</span></div></td>
+              <td><span class="text-muted">staging-01</span></td>
+              <td>0.5 cores</td>
+              <td>256 MB</td>
+              <td><span class="pill pill-yellow">Paused</span></td>
+              <td class="cost-val">$0.48</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<div class="mkb">
+  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20h9"/>
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+  </svg>
+  <span>Raycast v3 · Final Polish</span>
+</div>
+
+</body>
+</html>

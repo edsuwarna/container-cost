@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContainerCost — Design Mockup v1 (Raycast)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   ContainerCost — Raycast-Inspired Design Mockup v1
+   Tokens from getdesign.md → Raycast DESIGN.md
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  /* Raycast Canvas */
+  --canvas: #07080a;
+  --surface: #0d0d0d;
+  --surface-elevated: #101111;
+  --surface-card: #121212;
+  --surface-hover: #161718;
+
+  /* Raycast Borders */
+  --hairline: #242728;
+  --hairline-soft: rgba(255,255,255,0.08);
+  --hairline-strong: rgba(255,255,255,0.16);
+  --border: #1e1f20;
+
+  /* Raycast Text */
+  --ink: #f4f4f6;
+  --body: #cdcdcd;
+  --charcoal: #d3d3d4;
+  --mute: #9c9c9d;
+  --ash: #6a6b6c;
+  --stone: #434345;
+
+  /* Raycast Accents */
+  --accent-blue: #57c1ff;
+  --accent-blue-soft: rgba(87,193,255,0.12);
+  --accent-green: #59d499;
+  --accent-green-soft: rgba(89,212,153,0.12);
+  --accent-red: #ff6161;
+  --accent-red-soft: rgba(255,97,97,0.12);
+  --accent-yellow: #ffc533;
+  --accent-yellow-soft: rgba(255,197,51,0.12);
+
+  /* Raycast Primary (White) */
+  --primary: #ffffff;
+  --primary-pressed: #e8e8e8;
+
+  /* Raycast Rounded */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Layout */
+  --sidebar-w: 228px;
+  --topbar-h: 52px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 96px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  background: var(--canvas);
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ash); }
+
+/* ─── App Layout ─── */
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ═══ Sidebar ═══ */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--accent-blue), #2d7cd6);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.logo-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.logo-sub {
+  font-size: 11px;
+  color: var(--mute);
+  font-weight: 400;
+  display: block;
+  margin-top: -1px;
+}
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  padding: var(--space-md) var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--mute);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 450;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.nav-item.active {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 15px;
+  width: 20px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.nav-item.active .nav-icon {
+  opacity: 1;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--hairline);
+  margin: var(--space-sm) var(--space-md);
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: var(--space-md) var(--space-md) var(--space-xs);
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--hairline);
+}
+
+.sidebar-user-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: 12px;
+  color: var(--mute);
+  flex: 1;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ═══ Main Content ═══ */
+.main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+}
+
+/* Topbar */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-xl);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.topbar-title {
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.topbar-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-card);
+  color: var(--mute);
+  border: 1px solid var(--hairline);
+  font-weight: 450;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.btn-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hairline);
+  background: var(--surface-elevated);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+}
+
+.btn-header:hover {
+  background: var(--surface-hover);
+  border-color: var(--stone);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-pressed);
+  border-color: var(--primary-pressed);
+}
+
+/* ─── Content Area ─── */
+.content {
+  padding: var(--space-xl);
+  max-width: 1280px;
+}
+
+/* ═══ Summary Cards ═══ */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.summary-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+  border-color: var(--stone);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.card-icon.blue { background: var(--accent-blue-soft); }
+.card-icon.green { background: var(--accent-green-soft); }
+.card-icon.yellow { background: var(--accent-yellow-soft); }
+.card-icon.red { background: var(--accent-red-soft); }
+
+.card-change {
+  font-size: 11px;
+  font-weight: 550;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.card-change.up {
+  background: var(--accent-green-soft);
+  color: var(--accent-green);
+}
+
+.card-change.down {
+  background: var(--accent-red-soft);
+  color: var(--accent-red);
+}
+
+.card-change.neutral {
+  background: var(--surface-elevated);
+  color: var(--mute);
+}
+
+.card-label {
+  font-size: 12px;
+  color: var(--mute);
+  font-weight: 450;
+  margin-bottom: var(--space-xs);
+}
+
+.card-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--ash);
+}
+
+/* ═══ Dashboard Sections ═══ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.section-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Period filter */
+.period-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-sm);
+  background: var(--surface-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.period-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.period-btn:hover {
+  color: var(--ink);
+}
+
+.period-btn.active {
+  background: var(--surface-card);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--hairline);
+}
+
+/* ═══ Charts Row ═══ */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.chart-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.chart-period {
+  font-size: 11px;
+  color: var(--mute);
+  font-weight: 400;
+}
+
+.chart-area {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding-top: var(--space-sm);
+}
+
+/* Bar Chart Simulation */
+.bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  max-width: 40px;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+  position: relative;
+}
+
+.bar.blue { background: var(--accent-blue); }
+.bar.green { background: var(--accent-green); }
+.bar.purple { background: #a78bfa; }
+.bar.orange { background: #fb923c; }
+.bar.red { background: var(--accent-red); }
+.bar.teal { background: #2dd4bf; }
+
+.bar-label {
+  font-size: 10px;
+  color: var(--ash);
+  white-space: nowrap;
+}
+
+/* Donut Chart */
+.donut-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-sm) 0;
+}
+
+.donut-visual {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+
+.donut-visual svg {
+  transform: rotate(-90deg);
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.donut-center-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+
+.donut-center-label {
+  font-size: 10px;
+  color: var(--mute);
+  margin-top: -1px;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  font-size: 12px;
+  color: var(--mute);
+  flex: 1;
+}
+
+.legend-value {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.legend-pct {
+  font-size: 11px;
+  color: var(--ash);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ═══ Trend Card ═══ */
+.trend-card {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.trend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.trend-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.trend-period-label {
+  font-size: 11px;
+  color: var(--mute);
+}
+
+.trend-chart {
+  height: 160px;
+  position: relative;
+}
+
+.trend-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Grid lines */
+.grid-lines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  pointer-events: none;
+}
+
+.grid-line {
+  width: 100%;
+  height: 1px;
+  background: var(--hairline);
+}
+
+/* ═══ Container Table ═══ */
+.table-section {
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-xl);
+}
+
+.table-header {
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.table-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.table-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.table-count {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-elevated);
+  color: var(--mute);
+  border: 1px solid var(--hairline);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 10px var(--space-xl);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+}
+
+td {
+  padding: 12px var(--space-xl);
+  font-size: 13px;
+  color: var(--body);
+  border-bottom: 1px solid var(--hairline);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: var(--surface-hover);
+}
+
+.container-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.container-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.container-dot.running { background: var(--accent-green); }
+.container-dot.stopped { background: var(--ash); }
+.container-dot.paused { background: var(--accent-yellow); }
+
+.container-name-text {
+  font-weight: 450;
+  color: var(--ink);
+}
+
+.text-muted {
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.text-green { color: var(--accent-green); }
+.text-red { color: var(--accent-red); }
+.text-blue { color: var(--accent-blue); }
+.text-yellow { color: var(--accent-yellow); }
+
+.cost-cell {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 450;
+  display: inline-block;
+}
+
+.badge-blue {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+}
+
+.badge-green {
+  background: var(--accent-green-soft);
+  color: var(--accent-green);
+}
+
+.badge-yellow {
+  background: var(--accent-yellow-soft);
+  color: var(--accent-yellow);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Mockup Badge ─── */
+.mockup-badge {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 11px;
+  color: var(--mute);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ═══ VPS Summary Row ═══ */
+.vps-strip {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--surface-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  align-items: center;
+  overflow-x: auto;
+}
+
+.vps-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding-right: var(--space-lg);
+  border-right: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+
+.vps-item:last-child {
+  border-right: none;
+}
+
+.vps-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.vps-cost {
+  font-size: 12px;
+  color: var(--mute);
+}
+
+.vps-indicator {
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+}
+
+.vps-indicator.blue { background: var(--accent-blue); }
+.vps-indicator.green { background: var(--accent-green); }
+.vps-indicator.yellow { background: var(--accent-yellow); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">💰</div>
+        <div>
+          <div class="logo-text">ContainerCost</div>
+          <span class="logo-sub">Cost Analyzer</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <a class="nav-item active">
+        <span class="nav-icon">📊</span>
+        Dashboard
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon">🐳</span>
+        Containers
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon">🖥</span>
+        VPS
+      </a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Administration</div>
+
+      <a class="nav-item">
+        <span class="nav-icon">⚙</span>
+        Settings
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon">👥</span>
+        Users
+      </a>
+      <a class="nav-item">
+        <span class="nav-icon">🔒</span>
+        Permissions
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-row">
+        <div class="status-dot"></div>
+        <span class="status-text">Connected</span>
+        <div class="user-avatar">ES</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-badge">mini-vps</span>
+        <span class="topbar-badge">Updated 2m ago</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-header">🔄 Generate Report</button>
+        <button class="btn-header btn-primary">+ Add VPS</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═══ VPS Strip ═══ -->
+      <div class="vps-strip">
+        <div class="vps-item">
+          <div class="vps-indicator blue"></div>
+          <div>
+            <div class="vps-name">mini-vps</div>
+            <div class="vps-cost">$14.29/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-indicator green"></div>
+          <div>
+            <div class="vps-name">app-server-1</div>
+            <div class="vps-cost">$49.99/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-indicator yellow"></div>
+          <div>
+            <div class="vps-name">db-server-1</div>
+            <div class="vps-cost">$79.99/mo</div>
+          </div>
+        </div>
+        <div class="vps-item">
+          <div class="vps-indicator blue"></div>
+          <div>
+            <div class="vps-name">staging-01</div>
+            <div class="vps-cost">$24.99/mo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Summary Cards ═══ -->
+      <div class="summary-grid">
+        <!-- Total Cost -->
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon blue">💰</div>
+            <span class="card-change up">+12%</span>
+          </div>
+          <div class="card-label">Total Cost</div>
+          <div class="card-value">$169.26</div>
+          <div class="card-sub">per month</div>
+        </div>
+        <!-- Container Cost -->
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon green">🐳</div>
+            <span class="card-change up">+8%</span>
+          </div>
+          <div class="card-label">Container Cost</div>
+          <div class="card-value">$112.45</div>
+          <div class="card-sub">18 containers across 4 VPS</div>
+        </div>
+        <!-- Overhead -->
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon yellow">⚡</div>
+            <span class="card-change neutral">±0%</span>
+          </div>
+          <div class="card-label">Overhead</div>
+          <div class="card-value">$34.82</div>
+          <div class="card-sub">OS + Docker layer</div>
+        </div>
+        <!-- Unallocated -->
+        <div class="summary-card">
+          <div class="card-top">
+            <div class="card-icon red">📦</div>
+            <span class="card-change down">-5%</span>
+          </div>
+          <div class="card-label">Unallocated</div>
+          <div class="card-value">$21.99</div>
+          <div class="card-sub">idle resources</div>
+        </div>
+      </div>
+
+      <!-- ═══ Period Filter ═══ -->
+      <div class="period-bar">
+        <button class="period-btn active">Latest</button>
+        <button class="period-btn">7 Days</button>
+        <button class="period-btn">30 Days</button>
+        <button class="period-btn">All Time</button>
+      </div>
+
+      <!-- ═══ Charts Row ═══ -->
+      <div class="charts-row">
+
+        <!-- Cost Distribution (Bar) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Cost Distribution</span>
+            <span class="chart-period">· per month</span>
+          </div>
+          <div class="chart-area">
+            <div class="bar-group">
+              <div class="bar blue" style="height:100%"></div>
+              <span class="bar-label">mini</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar purple" style="height:72%"></div>
+              <span class="bar-label">app-1</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar orange" style="height:55%"></div>
+              <span class="bar-label">db-1</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar teal" style="height:38%"></div>
+              <span class="bar-label">staging</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar blue" style="height:28%"></div>
+              <span class="bar-label">dev-01</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar green" style="height:22%"></div>
+              <span class="bar-label">cache</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar red" style="height:15%"></div>
+              <span class="bar-label">worker</span>
+            </div>
+            <div class="bar-group">
+              <div class="bar purple" style="height:10%"></div>
+              <span class="bar-label">queue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost Breakdown (Donut) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Cost Breakdown</span>
+            <span class="chart-period">· $169.26 total</span>
+          </div>
+          <div class="donut-container">
+            <div class="donut-visual">
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--hairline)" stroke-width="20"/>
+                <!-- Container slice: 66.4% -->
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-blue)" stroke-width="20"
+                  stroke-dasharray="239.0 364.4" stroke-dashoffset="0"/>
+                <!-- Overhead slice: 20.6% -->
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-yellow)" stroke-width="20"
+                  stroke-dasharray="74.2 364.4" stroke-dashoffset="-239.0"/>
+                <!-- Unallocated slice: 13.0% -->
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--accent-red)" stroke-width="20"
+                  stroke-dasharray="46.8 364.4" stroke-dashoffset="-313.2"/>
+              </svg>
+              <div class="donut-center">
+                <span class="donut-center-value">$169</span>
+                <span class="donut-center-label">total</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--accent-blue)"></div>
+                <span class="legend-label">Container Cost</span>
+                <span class="legend-value">$112.45</span>
+                <span class="legend-pct">66.4%</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--accent-yellow)"></div>
+                <span class="legend-label">Overhead</span>
+                <span class="legend-value">$34.82</span>
+                <span class="legend-pct">20.6%</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--accent-red)"></div>
+                <span class="legend-label">Unallocated</span>
+                <span class="legend-value">$21.99</span>
+                <span class="legend-pct">13.0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Cost Trend ═══ -->
+      <div class="trend-card">
+        <div class="trend-header">
+          <span class="trend-title">Cost Trend</span>
+          <span class="trend-period-label">Last 30 days</span>
+        </div>
+        <div class="trend-chart">
+          <!-- Grid lines -->
+          <div class="grid-lines">
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+          </div>
+          <!-- Line SVG -->
+          <svg viewBox="0 0 900 160" preserveAspectRatio="none" style="width:100%;height:100%">
+            <!-- Area fill -->
+            <defs>
+              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent-blue)" stop-opacity="0.20"/>
+                <stop offset="100%" stop-color="var(--accent-blue)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,140 L0,120 C30,118 60,110 90,100 C120,90 150,95 180,85 C210,75 240,60 270,55 C300,50 330,45 360,40 C390,35 420,38 450,32 C480,26 510,30 540,28 C570,26 600,20 630,22 C660,24 690,18 720,15 C750,12 780,10 810,8 C840,6 870,8 900,5 L900,160 Z"
+              fill="url(#trendGrad)"/>
+            <path d="M0,120 C30,118 60,110 90,100 C120,90 150,95 180,85 C210,75 240,60 270,55 C300,50 330,45 360,40 C390,35 420,38 450,32 C480,26 510,30 540,28 C570,26 600,20 630,22 C660,24 690,18 720,15 C750,12 780,10 810,8 C840,6 870,8 900,5"
+              fill="none" stroke="var(--accent-blue)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+            <!-- Dots -->
+            <circle cx="0" cy="120" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            <circle cx="180" cy="85" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            <circle cx="360" cy="40" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            <circle cx="540" cy="28" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            <circle cx="720" cy="15" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+            <circle cx="900" cy="5" r="3" fill="var(--accent-blue)" stroke="var(--surface-card)" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ═══ Container Table ═══ -->
+      <div class="table-section">
+        <div class="table-header">
+          <div class="table-header-left">
+            <span class="table-title">Running Containers</span>
+            <span class="table-count">18 total</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-header" style="padding:4px 10px;font-size:11px;">Filter</button>
+            <button class="btn-header" style="padding:4px 10px;font-size:11px;">Export</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Container</th>
+              <th>VPS</th>
+              <th>CPU</th>
+              <th>Memory</th>
+              <th>Status</th>
+              <th>Monthly Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">anjungan-api</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.8 cores</td>
+              <td>512 MB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$4.52</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">anjungan-frontend</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.4 cores</td>
+              <td>256 MB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$2.18</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">arus-api</span></div></td>
+              <td><span class="text-muted">app-server-1</span></td>
+              <td>1.2 cores</td>
+              <td>768 MB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$8.35</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">postgres-16</span></div></td>
+              <td><span class="text-muted">db-server-1</span></td>
+              <td>2.0 cores</td>
+              <td>2 GB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$15.80</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">redis-cache</span></div></td>
+              <td><span class="text-muted">app-server-1</span></td>
+              <td>0.3 cores</td>
+              <td>128 MB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$1.45</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot running"></div><span class="container-name-text">nginx-proxy</span></div></td>
+              <td><span class="text-muted">mini-vps</span></td>
+              <td>0.2 cores</td>
+              <td>64 MB</td>
+              <td><span class="badge badge-green">Running</span></td>
+              <td class="cost-cell">$0.92</td>
+            </tr>
+            <tr>
+              <td><div class="container-name"><div class="container-dot paused"></div><span class="container-name-text">staging-api</span></div></td>
+              <td><span class="text-muted">staging-01</span></td>
+              <td>0.5 cores</td>
+              <td>256 MB</td>
+              <td><span class="badge badge-yellow">Paused</span></td>
+              <td class="cost-cell">$0.48</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-content -->
+</div><!-- /app -->
+
+<!-- Mockup badge -->
+<div class="mockup-badge">
+  <span>🎨</span>
+  <span>Raycast-inspired mockup v1 · ContainerCost</span>
+</div>
+
+</body>
+</html>

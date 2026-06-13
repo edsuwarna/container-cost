@@ -158,10 +158,10 @@ function setStatus(type, text) {
     const dot = document.getElementById('statusDot');
     const txt = document.getElementById('statusText');
     if (type === 'ok') {
-        dot.style.background = 'var(--green)';
+        dot.style.background = 'var(--accent-green)';
         txt.textContent = text || 'Connected';
     } else {
-        dot.style.background = 'var(--red)';
+        dot.style.background = 'var(--accent-red)';
         txt.textContent = text || 'Error';
     }
 }
@@ -244,7 +244,7 @@ async function loadCostTrend() {
         const data = await API.get('/costs/trends');
         renderTrendChart(data);
         if (data.vps_name) {
-            document.getElementById('vpsName').textContent = data.vps_name;
+            document.getElementById('vpsNameBadge').textContent = data.vps_name;
         }
         if (data.budget > 0 && data.current_month > 0) {
             const pct = ((data.current_month / data.budget) * 100).toFixed(1);
@@ -282,28 +282,28 @@ function renderTrendChart(data) {
             datasets: [{
                 label: 'Total Cost',
                 data: costs,
-                borderColor: '#58a6ff',
-                backgroundColor: 'rgba(88,166,255,0.08)',
+                borderColor: '#57c1ff',
+                backgroundColor: 'rgba(87,193,255,0.08)',
                 fill: true,
                 tension: 0.3,
                 pointRadius: 5,
                 pointHoverRadius: 8,
-                pointBackgroundColor: '#58a6ff',
-                pointBorderColor: '#0b0f1a',
+                pointBackgroundColor: '#57c1ff',
+                pointBorderColor: '#07080a',
                 pointBorderWidth: 2,
                 borderWidth: 3,
                 yAxisID: 'y',
             }, {
                 label: 'Containers',
                 data: containers,
-                borderColor: '#3fb950',
-                backgroundColor: 'rgba(63,185,80,0.05)',
+                borderColor: '#59d499',
+                backgroundColor: 'rgba(89,212,153,0.05)',
                 fill: false,
                 tension: 0.3,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#3fb950',
-                pointBorderColor: '#0b0f1a',
+                pointBackgroundColor: '#59d499',
+                pointBorderColor: '#07080a',
                 pointBorderWidth: 2,
                 borderWidth: 2,
                 borderDash: [5, 3],
@@ -317,9 +317,9 @@ function renderTrendChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(48,54,61,0.5)' },
+                    grid: { color: '#242728' },
                     ticks: {
-                        color: '#b0b6c4',
+                        color: '#cdcdcd',
                         callback: (v) => data.currency === 'IDR' ? 'Rp' + Math.round(v).toLocaleString('id-ID') : '$' + v.toFixed(0),
                     }
                 },
@@ -334,12 +334,12 @@ function renderTrendChart(data) {
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { color: '#b0b6c4', maxTicksLimit: 10 }
+                    ticks: { color: '#cdcdcd', maxTicksLimit: 10 }
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: '#d4d8e0', font: { size: 11 }, padding: 12 }
+                    labels: { color: '#f4f4f6', font: { size: 11 }, padding: 12 }
                 },
                 tooltip: {
                     callbacks: {
@@ -422,29 +422,84 @@ function getPeriodSince() {
 
 // ─── Main Load ─────────────────────────────────────────────
 async function loadDashboard() {
-    await reloadDashboard();
+    await Promise.all([reloadDashboard(), renderVPSStrip()]);
+}
+
+// ─── VPS Strip ──────────────────────────────────────────────
+let activeVPSId = null;
+
+async function renderVPSStrip() {
+    const strip = document.getElementById('vpsStrip');
+    if (!strip) return;
+
+    try {
+        const vpsList = await API.get('/vps').catch(() => []);
+        const config = await API.get('/config').catch(() => null);
+
+        if (!vpsList || vpsList.length === 0) {
+            // Show single config VPS if no agents registered
+            if (config && config.name) {
+                strip.innerHTML = `
+                    <div class="vps-item active">
+                        <div class="vps-bar blue"></div>
+                        <div>
+                            <div class="vps-name">${config.name}</div>
+                            <div class="vps-cost">${config.currency || 'IDR'}</div>
+                        </div>
+                    </div>`;
+            } else {
+                strip.style.display = 'none';
+            }
+            return;
+        }
+
+        strip.style.display = 'flex';
+        const colors = ['blue', 'green', 'yellow', 'purple', 'blue', 'green'];
+        strip.innerHTML = vpsList.map((v, i) => `
+            <div class="vps-item${activeVPSId === v.id ? ' active' : (activeVPSId === null && i === 0 ? ' active' : '')}" data-vps-id="${v.id}">
+                <div class="vps-bar ${colors[i % colors.length]}"></div>
+                <div>
+                    <div class="vps-name">${v.name}</div>
+                    <div class="vps-cost">${formatCurrency(v.price_per_month, v.currency || 'IDR')}/mo</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Click handlers
+        strip.querySelectorAll('.vps-item').forEach(item => {
+            item.addEventListener('click', () => {
+                strip.querySelectorAll('.vps-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                activeVPSId = parseInt(item.dataset.vpsId);
+                // TODO: reload dashboard with selected VPS
+            });
+        });
+    } catch (err) {
+        strip.style.display = 'none';
+    }
 }
 
 // ─── Dashboard Render ──────────────────────────────────────
 function renderDashboard() {
     const r = state.report;
     if (!r || !r.vps) {
-        document.getElementById('vpsName').textContent = 'No data yet · click refresh';
-        document.getElementById('lastUpdated').textContent = '-';
+        document.getElementById('vpsNameBadge').textContent = 'No data yet';
+        document.getElementById('lastUpdatedBadge').textContent = 'click refresh';
         document.getElementById('totalCost').textContent = '-';
         document.getElementById('containerCount').textContent = '0';
         document.getElementById('overheadCost').textContent = '-';
         document.getElementById('unallocCost').textContent = '-';
         document.getElementById('tableCount').textContent = '0 containers';
         document.getElementById('containerTableBody').innerHTML =
-            '<tr><td colspan="8" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>';
+            '<tr><td colspan="6" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>';
         return;
     }
 
     const currency = r.vps.currency || 'IDR';
 
-    document.getElementById('vpsName').textContent = (r.vps.name || 'VPS') + ' · ' + document.getElementById('periodInfo').textContent;
-    document.getElementById('lastUpdated').textContent = r.vps.currency || 'IDR';
+    document.getElementById('vpsNameBadge').textContent = r.vps.name || 'VPS';
+    const minutes = Math.floor((Date.now() - new Date(r.vps.last_seen || r.created_at || Date.now()).getTime()) / 60000);
+    document.getElementById('lastUpdatedBadge').textContent = minutes < 1 ? 'Updated just now' : minutes < 60 ? `Updated ${minutes}m ago` : `Updated ${Math.floor(minutes/60)}h ago`;
 
     document.getElementById('totalCost').textContent = formatCurrency(r.total_cost, currency);
     const totalContainerCost = (r.containers || []).reduce((sum, c) => sum + (c.total_cost || 0), 0);
@@ -461,18 +516,20 @@ function renderDashboard() {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No containers running</td></tr>';
         document.getElementById('tableCount').textContent = '0 containers';
     } else {
-        tbody.innerHTML = containers.map(c => `
+        const vpsName = r.vps?.name || 'VPS';
+        tbody.innerHTML = containers.map(c => {
+            const status = c.container.status || 'running';
+            const statusPill = status === 'running' ? 'pill-green' : status === 'paused' ? 'pill-yellow' : 'pill-red';
+            return `
             <tr>
-                <td><a href="#" class="container-name" data-name="${c.container.name}">${c.container.name}</a></td>
-                <td style="color:var(--text-secondary)">${c.container.image || '-'}</td>
+                <td><div class="cell-name"><div class="dot ${status === 'running' ? 'run' : status === 'paused' ? 'pause' : 'stop'}"></div><a href="#" class="container-name" data-name="${c.container.name}">${c.container.name}</a></div></td>
+                <td><span class="text-muted">${vpsName}</span></td>
                 <td>${formatPercent(c.container.cpu_percent)}</td>
                 <td>${formatBytes(c.container.mem_usage_mb)}</td>
-                <td><span class="status-${c.container.status || 'running'}">${c.container.status || 'running'}</span></td>
-                <td>${formatCurrency(c.cpu_cost, currency)}</td>
-                <td>${formatCurrency(c.ram_cost, currency)}</td>
-                <td style="color:var(--accent);font-weight:600">${formatCurrency(c.total_cost, currency)}</td>
+                <td><span class="pill ${statusPill}">${status}</span></td>
+                <td class="cost-val">${formatCurrency(c.total_cost, currency)}</td>
             </tr>
-        `).join('');
+        `}).join('');
         document.getElementById('tableCount').textContent = containers.length + ' containers';
 
         tbody.querySelectorAll('.container-name').forEach(el => {
@@ -490,42 +547,94 @@ function renderDashboard() {
     loadCostTrend();
 }
 
-// ─── Cost Distribution Chart (Doughnut) ────────────────────
+// ─── Cost Distribution Chart (Horizontal Bar, scrollable) ───
 function renderCostChart(containers, currency) {
     const ctx = document.getElementById('costChart').getContext('2d');
     if (state.charts.cost) { state.charts.cost.destroy(); }
 
-    const labels = containers.map(c => c.container.name);
-    const data = containers.map(c => c.total_cost || 0);
-    const colors = generateColors(containers.length);
+    // Sort by cost descending
+    const sorted = [...containers].sort((a, b) => (b.total_cost || 0) - (a.total_cost || 0));
+
+    // Show top 15, group rest into "Others"
+    const MAX_SHOWN = 15;
+    const shown = sorted.slice(0, MAX_SHOWN);
+    const rest = sorted.slice(MAX_SHOWN);
+    const othersCost = rest.reduce((s, c) => s + (c.total_cost || 0), 0);
+
+    // Horizontal bar: container names as y-axis labels (no truncation needed)
+    const labels = shown.map(c => c.container.name);
+    const data = shown.map(c => c.total_cost || 0);
+    const colors = generateColors(shown.length);
+
+    // Append "Others" if there are hidden containers
+    if (rest.length > 0) {
+        labels.push(`+ Others (${rest.length} containers)`);
+        data.push(othersCost);
+        colors.push('#6a6b6c');
+    }
+
+    const barCount = labels.length;
+    // 36px per bar for horizontal layout, 180px min, 540px max
+    const chartH = Math.max(180, Math.min(540, barCount * 36));
+    const containerEl = document.getElementById('costChartContainer');
+    if (containerEl) {
+        containerEl.style.height = chartH + 'px';
+        // Enable scroll when bar count exceeds ~12
+        containerEl.style.overflowY = barCount > 12 ? 'auto' : 'hidden';
+    }
+
+    // Update header with count info
+    const headerLabel = document.querySelector('#page-dashboard .chart-card:first-child .chart-period-label');
+    if (headerLabel) {
+        headerLabel.textContent = `· ${containers.length} containers`;
+    }
 
     state.charts.cost = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
             labels,
             datasets: [{
                 data,
-                backgroundColor: colors,
-                borderColor: 'var(--bg-card)',
-                borderWidth: 2,
+                backgroundColor: colors.map(c => c + 'cc'),
+                borderColor: colors,
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#d4d8e0',
-                        font: { size: 12 },
-                        padding: 16,
-                        usePointStyle: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: '#242728' },
+                    ticks: {
+                        color: '#cdcdcd',
+                        callback: (v) => formatCurrency(v, currency),
+                        font: { size: 10 },
                     }
                 },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#6a6b6c',
+                        font: { size: 11 },
+                        // Truncate long names in y-axis labels
+                        callback: (val) => {
+                            const label = labels[val] || '';
+                            return label.length > 24 ? label.substring(0, 22) + '…' : label;
+                        },
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed, currency)}`
+                        label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed.x, currency)}`
                     }
                 }
             }
@@ -533,58 +642,75 @@ function renderCostChart(containers, currency) {
     });
 }
 
-// ─── Cost Breakdown Chart (Bar) ────────────────────────────
+// Truncate long container names for chart labels
+function truncateLabel(name, maxLen) {
+    if (!name) return '';
+    return name.length > maxLen ? name.substring(0, maxLen - 1) + '…' : name;
+}
+
+// ─── Cost Breakdown Chart (Doughnut) ────────────────────────
 function renderBreakdownChart(report, currency) {
     const ctx = document.getElementById('breakdownChart').getContext('2d');
     if (state.charts.breakdown) { state.charts.breakdown.destroy(); }
 
-    const labels = ['Containers', 'Overhead', 'Unallocated'];
-    const data = [
-        (report.containers || []).reduce((s, c) => s + (c.total_cost || 0), 0),
-        report.overhead_cost || 0,
-        report.unallocated_cost || 0,
-    ];
+    const containerCost = (report.containers || []).reduce((s, c) => s + (c.total_cost || 0), 0);
+    const overheadCost = report.overhead_cost || 0;
+    const unallocCost = report.unallocated_cost || 0;
+    const total = containerCost + overheadCost + unallocCost;
+
+    const labels = ['Container Cost', 'Overhead', 'Unallocated'];
+    const data = [containerCost, overheadCost, unallocCost];
+    const bgColors = ['rgba(87,193,255,0.85)', 'rgba(255,197,51,0.85)', 'rgba(255,97,97,0.85)'];
+    const borderColors = ['#57c1ff', '#ffc533', '#ff6161'];
 
     state.charts.breakdown = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels,
             datasets: [{
-                label: 'Cost per Month',
                 data,
-                backgroundColor: ['rgba(88,166,255,0.7)', 'rgba(210,153,34,0.7)', 'rgba(72,79,88,0.7)'],
-                borderColor: ['rgba(88,166,255,1)', 'rgba(210,153,34,1)', 'rgba(72,79,88,1)'],
-                borderWidth: 1,
-                borderRadius: 4,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                hoverBorderColor: '#f4f4f6',
+                hoverBorderWidth: 2,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(48,54,61,0.5)' },
-                    ticks: {
-                        color: '#b0b6c4',
-                        callback: (v) => formatCurrency(v, currency),
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#d4d8e0' }
-                }
-            },
+            cutout: '62%',
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => formatCurrency(ctx.parsed.y, currency)
+                        label: (ctx) => {
+                            const val = ctx.parsed;
+                            const pct = total > 0 ? (val / total * 100).toFixed(1) : '0';
+                            return `${ctx.label}: ${formatCurrency(val, currency)} (${pct}%)`;
+                        }
                     }
                 }
             }
         }
     });
+
+    // ── Custom HTML legend (matches mockup v3 .donut-legend) ──
+    const legendEl = document.getElementById('breakdownLegend');
+    const totalEl = document.getElementById('donutTotal');
+    if (totalEl) totalEl.textContent = formatCurrency(total, currency).replace('Rp ', '$');
+    if (legendEl) {
+        legendEl.innerHTML = labels.map((label, i) => {
+            const pct = total > 0 ? (data[i] / total * 100).toFixed(1) : '0';
+            return `
+                <div class="legend-item">
+                    <div class="legend-sq" style="background:${borderColors[i]}"></div>
+                    <span class="legend-lbl">${label}</span>
+                    <span class="legend-val">${formatCurrency(data[i], currency).replace('Rp ', '$')}</span>
+                    <span class="legend-pct">${pct}%</span>
+                </div>`;
+        }).join('');
+    }
 }
 
 // ─── Container List ────────────────────────────────────────
@@ -673,7 +799,7 @@ async function showContainerDetail(name) {
             </div>
             <div class="info-item">
                 <span class="info-label">Total Cost</span>
-                <span class="info-value" style="color:var(--accent)">${formatCurrency(container.total_cost, currency)}</span>
+                <span class="info-value" style="color:var(--accent-blue)">${formatCurrency(container.total_cost, currency)}</span>
             </div>
         `;
     }
@@ -686,7 +812,7 @@ async function showContainerDetail(name) {
     // Show loading state
     const loadingDiv = document.createElement('div');
     loadingDiv.id = 'historyLoading';
-    loadingDiv.style.cssText = 'text-align:center;padding:48px;color:var(--text-muted);font-size:13px;';
+    loadingDiv.style.cssText = 'text-align:center;padding:48px;color:var(--mute);font-size:13px;';
     loadingDiv.textContent = '🔄 Loading history...';
     chartCard.appendChild(loadingDiv);
 
@@ -707,7 +833,7 @@ async function showContainerDetail(name) {
             const total = history.reduce((s, h) => s + (h.total_cost || 0), 0);
             const avg = total / history.length;
             const summary = document.createElement('div');
-            summary.style.cssText = 'text-align:center;padding:0 0 12px;color:var(--text-muted);font-size:11px;';
+            summary.style.cssText = 'text-align:center;padding:0 0 12px;color:var(--mute);font-size:11px;';
             summary.textContent = `📊 ${history.length} snapshots · Avg: ${formatCurrency(avg, currency)} · Latest: ${formatCurrency(history[0].total_cost || 0, currency)}`;
             newChartContainer.appendChild(summary);
 
@@ -723,7 +849,7 @@ async function showContainerDetail(name) {
         } else {
             // No data
             const emptyMsg = document.createElement('div');
-            emptyMsg.style.cssText = 'text-align:center;padding:48px;color:var(--text-muted);font-size:12px;';
+            emptyMsg.style.cssText = 'text-align:center;padding:48px;color:var(--mute);font-size:12px;';
             emptyMsg.textContent = '📊 Collecting more data points — click Generate Report a few times';
             newChartContainer.appendChild(emptyMsg);
             chartCard.appendChild(newChartContainer);
@@ -731,7 +857,7 @@ async function showContainerDetail(name) {
     } catch (err) {
         loadingDiv.remove();
         const errMsg = document.createElement('div');
-        errMsg.style.cssText = 'text-align:center;padding:48px;color:var(--red);font-size:12px;';
+        errMsg.style.cssText = 'text-align:center;padding:48px;color:var(--accent-red);font-size:12px;';
         errMsg.textContent = '❌ Failed to load history: ' + (err.message || 'unknown error');
         chartCard.appendChild(errMsg);
     }
@@ -782,8 +908,8 @@ function renderHistoryChart(history, currency) {
                 datasets: [{
                     label: 'Cost',
                     data: costs,
-                    borderColor: 'rgba(88,166,255,1)',
-                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    borderColor: '#57c1ff',
+                    backgroundColor: 'rgba(87,193,255,0.1)',
                     fill: true,
                     tension: 0.3,
                     pointRadius: 3,
@@ -797,15 +923,15 @@ function renderHistoryChart(history, currency) {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(48,54,61,0.5)' },
+                        grid: { color: '#242728' },
                         ticks: {
-                            color: '#b0b6c4',
+                            color: '#cdcdcd',
                             callback: (v) => formatCurrency(v, currency),
                         }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#b0b6c4', maxTicksLimit: 8 }
+                        ticks: { color: '#cdcdcd', maxTicksLimit: 8 }
                     }
                 },
                 plugins: {
@@ -873,9 +999,9 @@ function showConfigStatus(msg, type) {
 // ─── Color Generator ───────────────────────────────────────
 function generateColors(n) {
     const palette = [
-        '#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff',
-        '#56d4dd', '#f778ba', '#e3b341', '#7ee787', '#a5d6ff',
-        '#ff7b72', '#d2a8ff', '#79c0ff', '#aff5b4', '#ffd78c',
+        '#57c1ff', '#a78bfa', '#fb923c', '#2dd4bf', '#59d499',
+        '#ff6161', '#ffc533', '#f472b6', '#818cf8', '#34d399',
+        '#fbbf24', '#c084fc', '#38bdf8', '#4ade80', '#facc15',
     ];
     return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
 }
@@ -1106,13 +1232,13 @@ function renderVPSTable(vpsList) {
     tbody.innerHTML = vpsList.map(v => `
         <tr>
             <td><a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a></td>
-            <td style="color:var(--text-secondary);font-size:13px;">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</td>
+            <td style="color:var(--ash);font-size:13px;">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</td>
             <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
             <td><span class="vps-status-${v.status}">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span></td>
-            <td style="color:var(--text-secondary);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
+            <td style="color:var(--ash);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
             <td>
                 <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details">👁️</button>
-                <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--red);">🗑️</button>
+                <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--accent-red);">🗑️</button>
             </td>
         </tr>
     `).join('');
@@ -1142,12 +1268,12 @@ async function viewVPS(id) {
                 <div>
                     <h2 style="margin:0 0 4px 0;">🖥️ ${v.name}</h2>
                     <span class="vps-status-${v.status}" style="font-size:14px;">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span>
-                    <span style="color:var(--text-muted);font-size:13px;margin-left:8px;">
+                    <span style="color:var(--mute);font-size:13px;margin-left:8px;">
                         Last seen: ${v.last_seen ? formatTime(v.last_seen) : 'Never'}
                     </span>
                 </div>
                 <div>
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--red);">🗑️ Hapus</button>
+                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);">🗑️ Hapus</button>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
@@ -1166,8 +1292,8 @@ async function viewVPS(id) {
                     </div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:12px;">
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">🔑 API Key</div>
+                    <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:8px;padding:12px;">
+                        <div style="font-size:11px;color:var(--mute);text-transform:uppercase;margin-bottom:6px;">🔑 API Key</div>
                         <div class="key-display" style="margin-bottom:6px;">
                             <code>${v.api_key || '********'}</code>
                         </div>
@@ -1175,20 +1301,20 @@ async function viewVPS(id) {
                     </div>
                 </div>
             </div>
-            <div style="font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:12px;">
+            <div style="font-size:13px;color:var(--ash);background:var(--surface-elevated);border:1px solid var(--hairline);border-radius:8px;padding:12px;">
                 <strong>📋 Setup Agent:</strong><br>
                 SSH ke VPS ini, jalanin:<br>
-                <code style="display:block;margin-top:6px;padding:8px;background:var(--bg-primary);border-radius:6px;color:var(--accent);">
+                <code style="display:block;margin-top:6px;padding:8px;background:var(--surface);border-radius:6px;color:var(--accent-blue);">
                 docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}
                 </code>
             </div>
             ${report ? `
-            <div style="margin-top:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+            <div style="margin-top:20px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--radius-md);padding:16px;">
                 <h3 style="margin:0 0 12px 0;font-size:15px;">📊 Latest Cost Report</h3>
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-                    <div><span style="color:var(--text-muted);font-size:12px;">Containers</span><br><span style="font-size:18px;font-weight:700;">${(report.containers || []).length}</span></div>
-                    <div><span style="color:var(--text-muted);font-size:12px;">Total Cost</span><br><span style="font-size:18px;font-weight:700;color:var(--accent);">${formatCurrency(report.total_cost, currency)}</span></div>
-                    <div><span style="color:var(--text-muted);font-size:12px;">Overhead</span><br><span style="font-size:18px;font-weight:700;color:var(--yellow);">${formatCurrency(report.overhead_cost, currency)}</span></div>
+                    <div><span style="color:var(--mute);font-size:12px;">Containers</span><br><span style="font-size:18px;font-weight:700;">${(report.containers || []).length}</span></div>
+                    <div><span style="color:var(--mute);font-size:12px;">Total Cost</span><br><span style="font-size:18px;font-weight:700;color:var(--accent-blue);">${formatCurrency(report.total_cost, currency)}</span></div>
+                    <div><span style="color:var(--mute);font-size:12px;">Overhead</span><br><span style="font-size:18px;font-weight:700;color:var(--accent-yellow);">${formatCurrency(report.overhead_cost, currency)}</span></div>
                 </div>
             </div>` : ''}
         `;
@@ -1229,13 +1355,21 @@ async function regenerateKey(id) {
 }
 
 // ─── Add VPS Modal ────────────────────────────────────
-document.getElementById('btnAddVPS').addEventListener('click', () => {
+document.getElementById('btnAddVPS').addEventListener('click', openAddVPSModal);
+
+// Topbar "Add VPS" button — same handler
+const btnAddVPSFromTopbar = document.getElementById('btnAddVPSFromTopbar');
+if (btnAddVPSFromTopbar) {
+    btnAddVPSFromTopbar.addEventListener('click', openAddVPSModal);
+}
+
+function openAddVPSModal() {
     document.getElementById('vpsForm').reset();
     document.getElementById('vpsKeyGroup').style.display = 'none';
     document.getElementById('vpsFormError').style.display = 'none';
     document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
     document.getElementById('vpsModal').style.display = 'flex';
-});
+}
 
 document.getElementById('btnCancelVPS').addEventListener('click', () => {
     document.getElementById('vpsModal').style.display = 'none';

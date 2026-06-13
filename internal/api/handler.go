@@ -182,7 +182,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		MaxAge:   86400,
 		SameSite: http.SameSiteStrictMode,
 	})
