@@ -246,18 +246,45 @@ async function loadCostTrend() {
         if (data.vps_name) {
             document.getElementById('vpsNameBadge').textContent = data.vps_name;
         }
-        if (data.budget > 0 && data.current_month > 0) {
-            const pct = ((data.current_month / data.budget) * 100).toFixed(1);
-            document.getElementById('totalPeriod').textContent = `${pct}% of budget`;
-            const indicator = document.getElementById('budgetIndicator');
-            if (indicator) {
-                const numPct = parseFloat(pct);
-                if (numPct > 90) { indicator.textContent = '⚠ ' + pct + '%'; indicator.className = 'card-change down'; }
-                else if (numPct > 70) { indicator.textContent = '📊 ' + pct + '%'; indicator.className = 'card-change up'; }
-                else { indicator.textContent = '✅ ' + pct + '%'; indicator.className = 'card-change up'; }
-            }
+
+        // Compute month-over-month change from trends
+        if (data.trends && data.trends.length >= 2) {
+            const trends = [...data.trends].sort((a, b) => a.date.localeCompare(b.date));
+            const latest = trends[trends.length - 1];
+            const prev = trends[trends.length - 2];
+
+            // Total cost change
+            const totalChange = prev.total_cost > 0
+                ? ((latest.total_cost - prev.total_cost) / prev.total_cost) * 100
+                : 0;
+
+            // Set change badge for Total Cost
+            updateChangeBadge('budgetIndicator', totalChange);
+
+            // For container/overhead/unalloc, compute proportional changes
+            // Use container count change as a proxy
+            const containerChange = prev.containers > 0
+                ? ((latest.containers - prev.containers) / prev.containers) * 100
+                : 0;
+
+            updateChangeBadge('containerChange', containerChange);
+            updateChangeBadge('overheadChange', 0);
+            updateChangeBadge('unallocChange', -(totalChange > 0 ? totalChange : -totalChange));
         }
     } catch {}
+}
+
+function updateChangeBadge(elId, change) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (change === 0 || isNaN(change) || !isFinite(change)) {
+        el.textContent = '±0%';
+        el.className = 'card-change neutral';
+        return;
+    }
+    const prefix = change > 0 ? '+' : '';
+    el.textContent = prefix + change.toFixed(1) + '%';
+    el.className = 'card-change ' + (change > 0 ? 'up' : 'down');
 }
 
 function renderTrendChart(data) {
@@ -504,9 +531,13 @@ function renderDashboard() {
     document.getElementById('totalCost').textContent = formatCurrency(r.total_cost, currency);
     const totalContainerCost = (r.containers || []).reduce((sum, c) => sum + (c.total_cost || 0), 0);
     document.getElementById('containerCount').textContent = formatCurrency(totalContainerCost, currency);
-    document.getElementById('containerSub').textContent = (r.containers || []).length + ' containers';
+    const containerCount = (r.containers || []).length;
+    document.getElementById('containerSub').textContent = containerCount + ' containers';
     document.getElementById('overheadCost').textContent = formatCurrency(r.overhead_cost, currency);
     document.getElementById('unallocCost').textContent = formatCurrency(r.unallocated_cost, currency);
+
+    // Keep "per month" as card subtitle
+    document.getElementById('totalPeriod').textContent = 'per month';
 
     // Table
     const tbody = document.getElementById('containerTableBody');
@@ -583,11 +614,7 @@ function renderCostChart(containers, currency) {
         containerEl.style.overflowY = barCount > 12 ? 'auto' : 'hidden';
     }
 
-    // Update header with count info
-    const headerLabel = document.querySelector('#page-dashboard .chart-card:first-child .chart-period-label');
-    if (headerLabel) {
-        headerLabel.textContent = `· ${containers.length} containers`;
-    }
+    // Update header with count info — mockup style
 
     state.charts.cost = new Chart(ctx, {
         type: 'bar',
@@ -698,7 +725,7 @@ function renderBreakdownChart(report, currency) {
     // ── Custom HTML legend (matches mockup v3 .donut-legend) ──
     const legendEl = document.getElementById('breakdownLegend');
     const totalEl = document.getElementById('donutTotal');
-    if (totalEl) totalEl.textContent = formatCurrency(total, currency).replace('Rp ', '$');
+    if (totalEl) totalEl.textContent = formatCurrency(total, currency);
     if (legendEl) {
         legendEl.innerHTML = labels.map((label, i) => {
             const pct = total > 0 ? (data[i] / total * 100).toFixed(1) : '0';
@@ -706,7 +733,7 @@ function renderBreakdownChart(report, currency) {
                 <div class="legend-item">
                     <div class="legend-sq" style="background:${borderColors[i]}"></div>
                     <span class="legend-lbl">${label}</span>
-                    <span class="legend-val">${formatCurrency(data[i], currency).replace('Rp ', '$')}</span>
+                    <span class="legend-val">${formatCurrency(data[i], currency)}</span>
                     <span class="legend-pct">${pct}%</span>
                 </div>`;
         }).join('');

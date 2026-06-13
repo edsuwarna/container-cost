@@ -254,6 +254,7 @@
                                 <div class="card-icon-box green">
                                     <svg class="icon-lg"><use href="#icon-box"/></svg>
                                 </div>
+                                <span class="card-change up" id="containerChange"></span>
                             </div>
                             <div class="card-label">Container Cost</div>
                             <div class="card-value" id="containerCount">-</div>
@@ -265,6 +266,7 @@
                                 <div class="card-icon-box yellow">
                                     <svg class="icon-lg"><use href="#icon-zap"/></svg>
                                 </div>
+                                <span class="card-change neutral" id="overheadChange"></span>
                             </div>
                             <div class="card-label">Overhead</div>
                             <div class="card-value" id="overheadCost">-</div>
@@ -276,6 +278,7 @@
                                 <div class="card-icon-box red">
                                     <svg class="icon-lg"><use href="#icon-archive"/></svg>
                                 </div>
+                                <span class="card-change neutral" id="unallocChange"></span>
                             </div>
                             <div class="card-label">Unallocated</div>
                             <div class="card-value" id="unallocCost">-</div>
@@ -343,8 +346,12 @@
                     <!-- Table -->
                     <div class="table-card">
                         <div class="table-card-header">
-                            <h3>Container Costs</h3>
-                            <span class="badge" id="tableCount">0 containers</span>
+                            <h3>Running Containers</h3>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <button class="btn btn-sm btn-secondary"><svg class="icon-sm" style="color:var(--mute)"><use href="#icon-filter"/></svg> Filter</button>
+                                <button class="btn btn-sm btn-secondary"><svg class="icon-sm" style="color:var(--mute)"><use href="#icon-download"/></svg> Export</button>
+                                <span class="badge" id="tableCount">0 containers</span>
+                            </div>
                         </div>
                         <div class="table-wrapper">
                             <table id="containerTable">
