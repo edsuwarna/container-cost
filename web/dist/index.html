@@ -149,6 +149,12 @@
             <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </symbol>
+            <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </symbol>
+            <symbol id="icon-bar-chart-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+            </symbol>
         </defs>
     </svg>
     <!-- ═══ Loading Overlay ═══ -->
@@ -503,7 +509,7 @@
                     <div class="vps-card">
                         <div class="vps-header">
                             <h3>VPS Management</h3>
-                            <button class="btn btn-primary" id="btnAddVPS"><svg class="icon-sm"><use href="#icon-plus"/></svg> Tambah VPS</button>
+                            <button class="btn btn-primary" id="btnAddVPS"><svg class="icon-sm"><use href="#icon-plus"/></svg> Add VPS</button>
                         </div>
                         <div class="vps-chips" id="vpsStatsBar" style="display:none;">
                             <div class="vps-chip vps-chip-blue">
@@ -558,15 +564,15 @@
                     <!-- Add VPS Modal -->
                     <div class="modal-overlay" id="vpsModal" style="display:none;">
                         <div class="modal-card" style="width:500px;">
-                            <h3><svg class="icon"><use href="#icon-plus"/></svg> Tambah VPS Baru</h3>
+                            <h3><svg class="icon"><use href="#icon-plus"/></svg> Add New VPS</h3>
                             <form id="vpsForm">
                                 <div class="form-group">
-                                    <label>Nama VPS</label>
-                                    <input type="text" id="vpsNameInput" placeholder="Contoh: Hetzner CX42" required>
+                                    <label>VPS Name</label>
+                                    <input type="text" id="vpsNameInput" placeholder="e.g. Hetzner CX42" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Catatan (opsional)</label>
-                                    <input type="text" id="vpsNotesInput" placeholder="Lokasi: Singapore, provider: Hetzner">
+                                    <label>Notes (optional)</label>
+                                    <input type="text" id="vpsNotesInput" placeholder="Location: Singapore, provider: Hetzner">
                                 </div>
                                 <div class="form-group" id="vpsKeyGroup" style="display:none;">
                                     <label>API Key</label>
@@ -574,10 +580,10 @@
                                         <code id="vpsApiKey"></code>
                                         <button type="button" class="btn btn-secondary btn-sm" onclick="copyKey()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
                                     </div>
-                                    <p class="form-hint">Gunakan key ini di agent VPS dengan flag <code>--api-key</code></p>
+                                    <p class="form-hint">Use this key in the VPS agent with <code>--api-key</code> flag</p>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="btn btn-primary" id="vpsSaveBtn"><svg class="icon-sm"><use href="#icon-save"/></svg> Simpan &amp; Generate Key</button>
+                                    <button type="submit" class="btn btn-primary" id="vpsSaveBtn"><svg class="icon-sm"><use href="#icon-save"/></svg> Save &amp; Generate Key</button>
                                     <button type="button" class="btn btn-secondary" id="btnCancelVPS">Cancel</button>
                                 </div>
                             </form>

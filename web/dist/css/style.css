@@ -1433,6 +1433,26 @@ th.sorted-desc .icon-sm { color: var(--accent-blue); }
 
 .icon-xs { width: 12px; height: 12px; flex-shrink: 0; stroke: currentColor; stroke-width: 1.5; fill: none; }
 
+/* ─── Users Table Action Buttons ─── */
+.btn-role-edit,
+.btn-user-reset,
+.btn-user-delete {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: none; cursor: pointer;
+  padding: 4px; border-radius: var(--radius-sm);
+  color: var(--ash); transition: all 0.15s;
+}
+.btn-role-edit:hover { color: var(--accent-blue); background: var(--accent-blue-soft); }
+.btn-user-reset:hover { color: var(--accent-yellow); background: var(--accent-yellow-soft); }
+.btn-user-delete:hover { color: var(--accent-red); background: var(--accent-red-soft); }
+.user-role-badge {
+  font-size: 11px; font-weight: 500; padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+.user-role-admin { background: var(--accent-blue-soft); color: var(--accent-blue); }
+.user-role-engineer { background: var(--accent-green-soft); color: var(--accent-green); }
+.user-role-management { background: var(--accent-yellow-soft); color: var(--accent-yellow); }
+
 /* ─── Responsive Detail ─── */
 @media (max-width: 1024px) {
   .detail-charts-row { grid-template-columns: 1fr; }

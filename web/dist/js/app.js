@@ -93,7 +93,10 @@ function togglePwd(inputId, btn) {
     if (!input) return;
     const isPwd = input.type === 'password';
     input.type = isPwd ? 'text' : 'password';
-    btn.textContent = isPwd ? '🙈' : '👁️';
+    const icon = btn.querySelector('.icon-sm');
+    if (icon) {
+        icon.setAttribute('href', isPwd ? '#icon-eye-off' : '#icon-eye');
+    }
 }
 
 // ─── Navigation ────────────────────────────────────────────
@@ -146,10 +149,10 @@ async function refreshReport() {
         state.report = result.report;
         setStatus('ok', 'Updated ' + formatTime(new Date().toISOString()));
         await reloadDashboard();
-        showConfigStatus('✅ Report generated!', 'success');
+        showConfigStatus('Report generated!', 'success');
     } catch (err) {
         setStatus('error', err.message);
-        showConfigStatus('❌ ' + err.message, 'error');
+        showConfigStatus(err.message, 'error');
     } finally {
         hideLoading();
         if (btn) btn.classList.remove('loading');
@@ -521,7 +524,7 @@ function renderDashboard() {
         document.getElementById('unallocCost').textContent = '-';
         document.getElementById('tableCount').textContent = '0 containers';
         document.getElementById('containerTableBody').innerHTML =
-            '<tr><td colspan="6" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>';
+            '<tr><td colspan="6" class="empty-state">No data yet. Click Generate Report to get started.</td></tr>';
         return;
     }
 
@@ -945,7 +948,7 @@ async function showContainerDetail(name) {
     if (state.charts.breakdownDonut) { state.charts.breakdownDonut.destroy(); state.charts.breakdownDonut = null; }
 
     // ── Loading state ──
-    document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">🔄 Loading history...</td></tr>';
+    document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Loading history...</td></tr>';
 
     // ── Fetch history ──
     try {
@@ -971,10 +974,10 @@ async function showContainerDetail(name) {
             renderBreakdownDonut(container, currency);
             renderHistoryTable(history, currency);
         } else {
-            document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">📊 Collecting more data points — generate reports to build history</td></tr>';
+            document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Collecting more data points — generate reports to build history</td></tr>';
         }
     } catch (err) {
-        document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">❌ ' + (err.message || 'Failed to load history') + '</td></tr>';
+        document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">' + (err.message || 'Failed to load history') + '</td></tr>';
     }
 }
 
@@ -1266,7 +1269,7 @@ async function loadConfig() {
         state.config = await API.get('/config');
         populateForm(state.config);
     } catch (err) {
-        showConfigStatus('❌ Failed to load config: ' + err.message, 'error');
+        showConfigStatus('Failed to load config: ' + err.message, 'error');
     }
 }
 
@@ -1293,16 +1296,17 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
     try {
         await API.put('/config', data);
         state.config = data;
-        showConfigStatus('✅ Config saved! Refresh report to apply changes.', 'success');
+        showConfigStatus('Config saved! Refresh report to apply changes.', 'success');
         setTimeout(() => document.getElementById('configStatus').style.display = 'none', 5000);
     } catch (err) {
-        showConfigStatus('❌ ' + err.message, 'error');
+        showConfigStatus(err.message, 'error');
     }
 });
 
 function showConfigStatus(msg, type) {
     const el = document.getElementById('configStatus');
-    el.textContent = msg;
+    const icon = type === 'success' ? '<svg class="icon-sm" style="color:var(--accent-green);vertical-align:middle;margin-right:4px;"><use href="#icon-check"/></svg>' : '<svg class="icon-sm" style="color:var(--accent-red);vertical-align:middle;margin-right:4px;"><use href="#icon-x"/></svg>';
+    el.innerHTML = icon + msg;
     el.className = 'config-status ' + type;
     el.style.display = 'block';
 }
@@ -1369,7 +1373,7 @@ async function loadUsers() {
         renderUsersTable(users);
     } catch (err) {
         document.getElementById('usersTableBody').innerHTML =
-            `<tr><td colspan="6" class="empty-state">❌ ${err.message}</td></tr>`;
+            `<tr><td colspan="6" class="empty-state">${err.message}</td></tr>`;
     }
 }
 
@@ -1387,9 +1391,9 @@ function renderUsersTable(users) {
             <td><span class="user-role-badge user-role-${u.role}">${u.role}</span></td>
             <td>${formatTime(u.created_at)}</td>
             <td>
-                <button class="btn-role-edit" onclick="openRoleModal(${u.id}, '${u.username}', '${u.role}')" title="Edit role">✏️</button>
-                <button class="btn-user-reset" onclick="openResetPasswordModal(${u.id}, '${u.username}')" title="Reset password">🔑</button>
-                <button class="btn-user-delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Delete user">🗑</button>
+                <button class="btn-role-edit" onclick="openRoleModal(${u.id}, '${u.username}', '${u.role}')" title="Edit role"><svg class="icon-sm"><use href="#icon-edit"/></svg></button>
+                <button class="btn-user-reset" onclick="openResetPasswordModal(${u.id}, '${u.username}')" title="Reset password"><svg class="icon-sm"><use href="#icon-key"/></svg></button>
+                <button class="btn-user-delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Delete user"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
             </td>
         </tr>
     `).join('');
@@ -1423,7 +1427,7 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
         document.getElementById('userModal').style.display = 'none';
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1462,12 +1466,12 @@ document.getElementById('resetPwdForm').addEventListener('submit', async (e) => 
     const confirm = document.getElementById('resetPwdConfirm').value;
 
     if (newPass.length < 4) {
-        errEl.textContent = '❌ Password must be at least 4 characters';
+        errEl.textContent = 'Password must be at least 4 characters';
         errEl.style.display = 'block';
         return;
     }
     if (newPass !== confirm) {
-        errEl.textContent = '❌ Passwords do not match';
+        errEl.textContent = 'Passwords do not match';
         errEl.style.display = 'block';
         return;
     }
@@ -1478,7 +1482,7 @@ document.getElementById('resetPwdForm').addEventListener('submit', async (e) => 
         resetPwdUserId = null;
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1511,7 +1515,7 @@ document.getElementById('roleForm').addEventListener('submit', async (e) => {
         editingUserId = null;
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1532,7 +1536,7 @@ async function loadVPSList() {
         renderVPSTable(vpsList);
     } catch (err) {
         document.getElementById('vpsTableBody').innerHTML =
-            `<tr><td colspan="6" class="empty-state">❌ Failed to load VPS: ${err.message}</td></tr>`;
+            `<tr><td colspan="6" class="empty-state">Failed to load VPS: ${err.message}</td></tr>`;
     }
 }
 
@@ -1541,7 +1545,7 @@ function renderVPSTable(vpsList) {
     const statsBar = document.getElementById('vpsStatsBar');
 
     if (!vpsList || vpsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No VPS registered yet. Click ➕ Tambah VPS to add one.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No VPS registered yet. Click "Add VPS" to add one.</td></tr>';
         statsBar.style.display = 'none';
         return;
     }
@@ -1610,7 +1614,7 @@ async function viewVPS(id) {
                     </div>
                 </div>
                 <div class="vps-detail-actions">
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg> Hapus</button>
+                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg> Delete</button>
                 </div>
             </div>
 
@@ -1654,7 +1658,7 @@ async function viewVPS(id) {
 
             ${report ? `
             <div class="vps-report-card">
-                <h4>📊 Latest Cost Report</h4>
+                <h4><svg class="icon-sm"><use href="#icon-bar-chart-3"/></svg> Latest Cost Report</h4>
                 <div class="vps-report-grid">
                     <div class="vps-report-item">
                         <div class="report-label">Containers</div>
@@ -1672,28 +1676,33 @@ async function viewVPS(id) {
             </div>` : ''}
         `;
     } catch (err) {
-        content.innerHTML = `<div class="empty-state">❌ Failed to load VPS detail: ${err.message}</div>`;
+        content.innerHTML = `<div class="empty-state">Failed to load VPS detail: ${err.message}</div>`;
     }
 }
 
 function copyVPSKey(id) {
-    // Since API key is shown masked, fetch it
     const codeEl = document.querySelector('.vps-key-display code');
     const key = codeEl.textContent;
     if (key && key !== '********') {
         navigator.clipboard.writeText(key).then(() => {
-            alert('✅ API Key copied to clipboard!');
+            showCopyFeedback('.vps-key-display .btn-sm');
         }).catch(() => fallbackCopy(key));
     }
+}
+
+function showCopyFeedback(selector) {
+    const btn = document.querySelector(selector);
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-check"/></svg> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
 
 function copySetupCmd() {
     const codeEl = document.querySelector('.vps-setup-code code');
     const cmd = codeEl.textContent;
     navigator.clipboard.writeText(cmd).then(() => {
-        // visual feedback
-        const btn = document.querySelector('.vps-setup-code .btn-sm');
-        if (btn) { btn.textContent = '✓ Copied'; setTimeout(() => { btn.innerHTML = '<svg class=\"icon-sm\"><use href=\"#icon-copy\"/></svg> Copy'; }, 2000); }
+        showCopyFeedback('.vps-setup-code .btn-sm');
     }).catch(() => fallbackCopy(cmd));
 }
 
@@ -1704,7 +1713,7 @@ function fallbackCopy(text) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    alert('✅ Copied to clipboard!');
+    showCopyFeedback('.vps-key-display .btn-sm, .vps-setup-code .btn-sm');
 }
 
 document.getElementById('btnBackToVPSList').addEventListener('click', () => {
@@ -1731,10 +1740,10 @@ async function regenerateKey(id) {
     if (!confirm('Regenerate API key? The old key will stop working immediately.')) return;
     try {
         const data = await API.post(`/vps/${id}/reset-key`);
-        alert('✅ New API key generated! Copy it now:\n\n' + data.api_key);
+        showConfigStatus('New API key generated! Copy it now: ' + data.api_key, 'success');
         viewVPS(id); // Refresh view
     } catch (err) {
-        alert('❌ Failed to regenerate key: ' + err.message);
+        alert('Failed to regenerate key: ' + err.message);
     }
 }
 
@@ -1751,13 +1760,13 @@ function openAddVPSModal() {
     document.getElementById('vpsForm').reset();
     document.getElementById('vpsKeyGroup').style.display = 'none';
     document.getElementById('vpsFormError').style.display = 'none';
-    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Generate Key';
     document.getElementById('vpsModal').style.display = 'flex';
 }
 
 document.getElementById('btnCancelVPS').addEventListener('click', () => {
     document.getElementById('vpsModal').style.display = 'none';
-    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Generate Key';
     document.getElementById('vpsSaveBtn').onclick = null;
     document.getElementById('btnCancelVPS').textContent = 'Cancel';
     document.getElementById('vpsNameInput').disabled = false;
@@ -1779,11 +1788,11 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
         document.getElementById('vpsSaveBtn').onclick = () => copyKey();
         document.getElementById('vpsNameInput').disabled = true;
         document.getElementById('vpsNotesInput').disabled = true;
-        document.getElementById('btnCancelVPS').textContent = '✅ Close';
+        document.getElementById('btnCancelVPS').textContent = '✓ Close';
         // Refresh VPS list in background
         loadVPSList();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1791,7 +1800,7 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
 function copyKey() {
     const key = document.getElementById('vpsApiKey').textContent;
     navigator.clipboard.writeText(key).then(() => {
-        alert('✅ API Key copied to clipboard!');
+        showCopyFeedback('#vpsSaveBtn');
     }).catch(() => {
         // Fallback
         const textarea = document.createElement('textarea');
@@ -1800,7 +1809,7 @@ function copyKey() {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        alert('✅ API Key copied!');
+        showCopyFeedback('#vpsSaveBtn');
     });
 }
 
