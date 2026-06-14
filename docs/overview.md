@@ -43,8 +43,10 @@ Container Cost answers all of these with a single dashboard.
 
 **Multi-VPS (v2.0)**
 - VPS management — add/edit/delete VPS from dashboard
-- Agent mode — deploy a lightweight agent on each VPS
-- Push API — agents push reports to central server (API key auth)
+- Agent mode — lightweight Go agent on each VPS, no local config needed
+- Push API — agents push **raw stats** to central server (API key auth)
+- Centralised config — VPS price, specs, weights managed from dashboard
+- Smart calculation — central server computes costs using DB-stored config
 - Aggregated dashboard — total cost across all VPS
 - Live status — online/offline detection per VPS
 - Auto API key generation on VPS creation

@@ -89,20 +89,20 @@ Container Cost answers all of these with a single dashboard.
 
 ![Container Cost Architecture Diagram](container-cost-architecture.png)
 
-### 2.1 Multi-VPS Architecture (v2.0+)
+### 2.2 Multi-VPS Architecture (v2.0+)
 
 Each agent:
 1. Reads Docker socket for container stats (CPU%, RAM)
-2. Calculates cost using its own VPS config (name, specs, price)
-3. Pushes the cost report to the central server
-4. Retries up to 5× with exponential backoff on failure
+2. Pushes **raw stats** to central server (no local cost calculation)
+3. Retries up to 5× with exponential backoff on failure
 
 The central server:
-1. Receives push reports from agents (API key auth)
-2. Stores snapshots in PostgreSQL (per VPS)
-3. Detects offline VPS (24h threshold)
-4. Serves the aggregated dashboard
-5. Can also collect locally if Docker socket is available
+1. Receives raw stats from agents (API key auth)
+2. Looks up VPS config from database — price, specs, weights
+3. Calculates cost report using VPS config
+4. Stores snapshots in PostgreSQL (per VPS)
+5. Detects offline VPS (24h threshold)
+6. Serves the aggregated dashboard
 
 ### 2.2 Single VPS Architecture (Legacy)
 

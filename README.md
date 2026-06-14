@@ -2,7 +2,7 @@
 
 > Multi-VPS Docker Container Cost Calculator — Agent & Central Server Architecture.
 
-A **Docker container cost allocation tool** that calculates and monitors how much each container costs across one or many VPS instances. It uses a weighted resource allocation formula based on actual CPU and RAM usage.
+| Container Cost is a **Docker container cost allocation tool** that calculates and monitors how much each container costs across one or many VPS instances. Deploy lightweight Go agents on each VPS — they push raw stats to a central server that computes costs using VPS config stored in the database. No local config needed on agents.
 
 Perfect for **chargeback**, **cost tracking**, or finding which containers are the most expensive without SSH-ing into each server.
 
@@ -20,11 +20,13 @@ Perfect for **chargeback**, **cost tracking**, or finding which containers are t
 - Auth system (admin/engineer/management roles)
 
 ### Multi-VPS (Agent Architecture)
-- Lightweight Go agent on each VPS (no Python needed)
-- Central server aggregates data from all agents
+- Lightweight Go agent on each VPS (no Python, no local config needed)
+- Agent pushes **raw Docker stats** (CPU%, RAM%) to central server
+- Central server calculates costs using **DB-stored VPS config** (price, weights, specs)
 - Per-VPS cost breakdown in a single dashboard
+- VPS config managed from dashboard — update once, auto recalculates
 - Agent auto-reconnect with health checks
-- One-liner agent deployment via SSH
+- One-liner agent deployment via Docker
 
 ---
 

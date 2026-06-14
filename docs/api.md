@@ -29,9 +29,9 @@ http://localhost:8080
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/push` | Push cost report from agent |
+| POST | `/api/v1/push` | Push raw container stats from agent (central server calculates cost) |
 
-**Headers:** `Authorization: Bearer ***`
+**Headers:** `Authorization: Bearer ***` — API key generated from dashboard
 
 #### Dashboard (Authenticated — any role)
 
@@ -106,41 +106,24 @@ http://localhost:8080
 #### POST /api/v1/push (Agent Push)
 
 ```json
-// Headers: Authorization: Bearer ***
+// Headers: Authorization: Bearer DCKR_xxx
 
-// Request Body
+// Request Body — raw container stats (no pre-calculated costs)
 {
-  "vps": {
-    "name": "Hetzner CX42",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
   "containers": [
     {
-      "container": {
-        "name": "web",
-        "id": "a1b2c3d4e5f6",
-        "image": "nginx:latest",
-        "cpu_percent": 2.5,
-        "mem_usage_mb": 128,
-        "mem_limit_mb": 1024,
-        "mem_percent": 12.5,
-        "status": "running",
-        "created_at": "2025-01-01T00:00:00Z",
-        "uptime": "14 days"
-      },
-      "cpu_cost": 4800,
-      "ram_cost": 1500,
-      "storage_cost": 6700,
-      "total_cost": 13000
+      "name": "web",
+      "id": "a1b2c3d4e5f6",
+      "image": "nginx:latest",
+      "cpu_percent": 2.5,
+      "mem_usage_mb": 128.0,
+      "mem_limit_mb": 1024.0,
+      "mem_percent": 12.5,
+      "status": "running",
+      "created_at": "2025-01-01T00:00:00Z",
+      "uptime": "14 days"
     }
-  ],
-  "overhead_cost": 30000,
-  "unallocated_cost": 55000,
-  "total_cost": 200000,
-  "period": "month"
+  ]
 }
 
 // Response 200
@@ -149,6 +132,8 @@ http://localhost:8080
   "snapshot_id": 42
 }
 ```
+
+> **Note:** The agent pushes raw stats only. The central server looks up the VPS config (price, weights, specs) from the database and calculates costs. VPS config is managed from the dashboard — no local config needed on agents.
 
 #### GET /api/dashboard (Aggregated)
 

@@ -4,7 +4,7 @@
 
 📖 **[Dokumentasi Lengkap → docs/index.html](./docs/index.html)** — Architecture, API Reference, Deployment Guide, Configuration, Cost Formula, Troubleshooting & more.
 
-Hitung & monitor biaya container Docker di **satu atau banyak VPS** dari dashboard terpusat. Deploy **agent** di tiap VPS, semua data otomatis terkumpul di **central server**.
+Hitung & monitor biaya container Docker di **satu atau banyak VPS** dari dashboard terpusat. Deploy **agent** ringan di tiap VPS — agent push raw stats CPU/RAM ke **central server**, central yang hitung biaya pakai konfigurasi VPS dari database. Ga perlu config file di agent.
 
 Cocok buat **chargeback**, **cost tracking**, atau tau container mana yang paling boros tanpa SSH satu-satu.
 
@@ -20,11 +20,13 @@ Cocok buat **chargeback**, **cost tracking**, atau tau container mana yang palin
 - 🔐 Auth system (admin/engineer/management)
 
 ### Multi-VPS (Agent Architecture)
-- 🚀 Agent Go ringan di tiap VPS (gak perlu Python)
-- 📡 Central server kumpulin data dari semua agent
+- 🚀 Agent Go ringan di tiap VPS (gak perlu Python, gak perlu config lokal)
+- 📡 Agent push **raw stats** CPU/RAM ke central server
+- 🧮 Central server hitung biaya pakai **konfigurasi VPS dari database**
 - 📈 Lihat cost breakdown per-VPS dari 1 dashboard
+- ⚙️ Konfigurasi VPS dari dashboard — update sekali, auto recalculate
 - 🔄 Agent auto-reconnect + health check
-- ⚡ One-liner deploy agent via SSH
+- ⚡ One-liner deploy agent via Docker
 
 ---
 
