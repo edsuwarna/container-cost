@@ -1,4 +1,4 @@
-# Container Cost Documentation 📖💰🐳
+# Container Cost Documentation
 
 > **Multi-VPS Docker Container Cost Calculator — Agent & Central Server Architecture**
 > Version 2.0 | Author: Endang Suwarna
