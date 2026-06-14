@@ -262,9 +262,25 @@
             .hero { padding: 48px 0 36px; }
             .metrics { grid-template-columns: repeat(2, 1fr); }
             .arch-detail { grid-template-columns: 1fr; }
+            .arch-detail-card { padding: 16px; }
             .flow { flex-direction: column; gap: 4px; }
+            .flow-node { padding: 14px 16px; min-width: 0; width: 100%; }
+            .flow-vps { width: 100%; }
             .flow-arrow { transform: rotate(90deg); padding: 4px 0; }
             nav .nav-links { display: none; }
+            .wrap { padding: 0 16px; }
+            .install-wrap { padding: 16px; }
+            .install-code { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .install-code code { font-size: 11px; white-space: pre; }
+            .features-grid { grid-template-columns: 1fr; }
+            .docs-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .docs-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 28px; }
+            .install-tabs { flex-wrap: wrap; width: 100%; }
+            .install-tab { flex: 1; text-align: center; padding: 7px 8px; font-size: 11px; }
         }
 
         /* ─── Copy button ─── */
