@@ -497,9 +497,8 @@
 
                 <div class="install-code active" id="tab-central">
                     <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                    <code><span class="cmt"># Start PostgreSQL + Container Cost</span>
-git clone https://github.com/edsuwarna/container-cost.git
-cd container-cost
+                    <code><span class="cmt"># Start everything with one command:</span>
+curl -sL https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.yml &gt; docker-compose.yml
 docker compose up -d
 
 <span class="cmt"># Open http://localhost:8081</span>
