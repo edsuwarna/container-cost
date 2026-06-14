@@ -11,6 +11,9 @@ let state = {
         breakdown: null,
         history: null,
         trend: null,
+        cpuTrend: null,
+        memTrend: null,
+        breakdownDonut: null,
     }
 };
 
@@ -90,7 +93,10 @@ function togglePwd(inputId, btn) {
     if (!input) return;
     const isPwd = input.type === 'password';
     input.type = isPwd ? 'text' : 'password';
-    btn.textContent = isPwd ? '🙈' : '👁️';
+    const icon = btn.querySelector('.icon-sm');
+    if (icon) {
+        icon.setAttribute('href', isPwd ? '#icon-eye-off' : '#icon-eye');
+    }
 }
 
 // ─── Navigation ────────────────────────────────────────────
@@ -98,19 +104,22 @@ function navigate(page) {
     state.currentPage = page;
 
     document.querySelectorAll('.nav-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.page === page);
+        const navPage = el.dataset.page;
+        const isActive = navPage === page || (page === 'vps-detail' && navPage === 'vps');
+        el.classList.toggle('active', isActive);
     });
     document.querySelectorAll('.page').forEach(el => {
         el.classList.toggle('active', el.id === `page-${page}`);
     });
 
     // Update topbar title
-    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'vps': 'VPS', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
+    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'vps': 'VPS', 'vps-detail': 'VPS Detail', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
     if (page === 'dashboard') renderDashboard();
     if (page === 'containers') renderContainerList();
     if (page === 'vps') loadVPSList();
+    if (page === 'vps-detail' && currentVPSId) loadVPSDetail();
     if (page === 'config') loadConfig();
     if (page === 'users') loadUsers();
     if (page === 'permissions') renderPermissions();
@@ -135,21 +144,25 @@ function hideLoading() {
 
 // ─── Report Refresh ────────────────────────────────────────
 async function refreshReport() {
-    showLoading();
     const btn = document.getElementById('btnGenerateReport');
-    if (btn) btn.classList.add('loading');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-ring" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;border-width:2px;"></div> Refreshing...';
+    }
     try {
         const result = await API.post('/report/refresh');
         state.report = result.report;
         setStatus('ok', 'Updated ' + formatTime(new Date().toISOString()));
         await reloadDashboard();
-        showConfigStatus('✅ Report generated!', 'success');
+        showConfigStatus('Report generated!', 'success');
     } catch (err) {
         setStatus('error', err.message);
-        showConfigStatus('❌ ' + err.message, 'error');
+        showConfigStatus(err.message, 'error');
     } finally {
-        hideLoading();
-        if (btn) btn.classList.remove('loading');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Refresh';
+        }
     }
 }
 
@@ -158,10 +171,10 @@ function setStatus(type, text) {
     const dot = document.getElementById('statusDot');
     const txt = document.getElementById('statusText');
     if (type === 'ok') {
-        dot.style.background = 'var(--green)';
+        dot.style.background = 'var(--accent-green)';
         txt.textContent = text || 'Connected';
     } else {
-        dot.style.background = 'var(--red)';
+        dot.style.background = 'var(--accent-red)';
         txt.textContent = text || 'Error';
     }
 }
@@ -244,20 +257,47 @@ async function loadCostTrend() {
         const data = await API.get('/costs/trends');
         renderTrendChart(data);
         if (data.vps_name) {
-            document.getElementById('vpsName').textContent = data.vps_name;
+            document.getElementById('vpsNameBadge').textContent = data.vps_name;
         }
-        if (data.budget > 0 && data.current_month > 0) {
-            const pct = ((data.current_month / data.budget) * 100).toFixed(1);
-            document.getElementById('totalPeriod').textContent = `${pct}% of budget`;
-            const indicator = document.getElementById('budgetIndicator');
-            if (indicator) {
-                const numPct = parseFloat(pct);
-                if (numPct > 90) { indicator.textContent = '⚠ ' + pct + '%'; indicator.className = 'card-change down'; }
-                else if (numPct > 70) { indicator.textContent = '📊 ' + pct + '%'; indicator.className = 'card-change up'; }
-                else { indicator.textContent = '✅ ' + pct + '%'; indicator.className = 'card-change up'; }
-            }
+
+        // Compute month-over-month change from trends
+        if (data.trends && data.trends.length >= 2) {
+            const trends = [...data.trends].sort((a, b) => a.date.localeCompare(b.date));
+            const latest = trends[trends.length - 1];
+            const prev = trends[trends.length - 2];
+
+            // Total cost change
+            const totalChange = prev.total_cost > 0
+                ? ((latest.total_cost - prev.total_cost) / prev.total_cost) * 100
+                : 0;
+
+            // Set change badge for Total Cost
+            updateChangeBadge('budgetIndicator', totalChange);
+
+            // For container/overhead/unalloc, compute proportional changes
+            // Use container count change as a proxy
+            const containerChange = prev.containers > 0
+                ? ((latest.containers - prev.containers) / prev.containers) * 100
+                : 0;
+
+            updateChangeBadge('containerChange', containerChange);
+            updateChangeBadge('overheadChange', 0);
+            updateChangeBadge('unallocChange', -(totalChange > 0 ? totalChange : -totalChange));
         }
     } catch {}
+}
+
+function updateChangeBadge(elId, change) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (change === 0 || isNaN(change) || !isFinite(change)) {
+        el.textContent = '±0%';
+        el.className = 'card-change neutral';
+        return;
+    }
+    const prefix = change > 0 ? '+' : '';
+    el.textContent = prefix + change.toFixed(1) + '%';
+    el.className = 'card-change ' + (change > 0 ? 'up' : 'down');
 }
 
 function renderTrendChart(data) {
@@ -282,28 +322,28 @@ function renderTrendChart(data) {
             datasets: [{
                 label: 'Total Cost',
                 data: costs,
-                borderColor: '#58a6ff',
-                backgroundColor: 'rgba(88,166,255,0.08)',
+                borderColor: '#57c1ff',
+                backgroundColor: 'rgba(87,193,255,0.08)',
                 fill: true,
                 tension: 0.3,
                 pointRadius: 5,
                 pointHoverRadius: 8,
-                pointBackgroundColor: '#58a6ff',
-                pointBorderColor: '#0b0f1a',
+                pointBackgroundColor: '#57c1ff',
+                pointBorderColor: '#07080a',
                 pointBorderWidth: 2,
                 borderWidth: 3,
                 yAxisID: 'y',
             }, {
                 label: 'Containers',
                 data: containers,
-                borderColor: '#3fb950',
-                backgroundColor: 'rgba(63,185,80,0.05)',
+                borderColor: '#59d499',
+                backgroundColor: 'rgba(89,212,153,0.05)',
                 fill: false,
                 tension: 0.3,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#3fb950',
-                pointBorderColor: '#0b0f1a',
+                pointBackgroundColor: '#59d499',
+                pointBorderColor: '#07080a',
                 pointBorderWidth: 2,
                 borderWidth: 2,
                 borderDash: [5, 3],
@@ -317,9 +357,9 @@ function renderTrendChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(48,54,61,0.5)' },
+                    grid: { color: '#242728' },
                     ticks: {
-                        color: '#b0b6c4',
+                        color: '#cdcdcd',
                         callback: (v) => data.currency === 'IDR' ? 'Rp' + Math.round(v).toLocaleString('id-ID') : '$' + v.toFixed(0),
                     }
                 },
@@ -334,12 +374,12 @@ function renderTrendChart(data) {
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { color: '#b0b6c4', maxTicksLimit: 10 }
+                    ticks: { color: '#cdcdcd', maxTicksLimit: 10 }
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: '#d4d8e0', font: { size: 11 }, padding: 12 }
+                    labels: { color: '#f4f4f6', font: { size: 11 }, padding: 12 }
                 },
                 tooltip: {
                     callbacks: {
@@ -404,6 +444,25 @@ async function reloadDashboard() {
 
         state.report = report?.vps ? report : null;
         state.containers = Array.isArray(containers) ? containers : [];
+
+        // Merge rolling average data into report containers
+        if (state.containers.length > 0 && state.report?.containers) {
+            const avgMap = {};
+            state.containers.forEach(c => {
+                if (c.avg_cost != null) {
+                    avgMap[c.name] = { avg_cost: c.avg_cost, avg_cpu_cost: c.avg_cpu_cost, avg_ram_cost: c.avg_ram_cost };
+                }
+            });
+            state.report.containers.forEach(c => {
+                const avg = avgMap[c.container.name];
+                if (avg) {
+                    c.avg_cost = avg.avg_cost;
+                    c.avg_cpu_cost = avg.avg_cpu_cost;
+                    c.avg_ram_cost = avg.avg_ram_cost;
+                }
+            });
+        }
+
         renderDashboard();
     } catch (err) {
         setStatus('error', err.message);
@@ -422,36 +481,104 @@ function getPeriodSince() {
 
 // ─── Main Load ─────────────────────────────────────────────
 async function loadDashboard() {
-    await reloadDashboard();
+    await Promise.all([reloadDashboard(), renderVPSStrip()]);
+
+    // Show setup guide if no data yet
+    const setupGuide = document.getElementById('dashboardSetup');
+    const dashContent = document.getElementById('dashContent');
+    if (setupGuide && dashContent) {
+        const hasData = state.report && state.report.vps;
+        setupGuide.style.display = hasData ? 'none' : 'block';
+        dashContent.style.display = hasData ? 'block' : 'none';
+    }
+}
+
+// ─── VPS Strip ──────────────────────────────────────────────
+let activeVPSId = null;
+
+async function renderVPSStrip() {
+    const strip = document.getElementById('vpsStrip');
+    if (!strip) return;
+
+    try {
+        const vpsList = await API.get('/vps').catch(() => []);
+        const config = await API.get('/config').catch(() => null);
+
+        if (!vpsList || vpsList.length === 0) {
+            // Show single config VPS if no agents registered
+            if (config && config.name) {
+                strip.innerHTML = `
+                    <div class="vps-item active">
+                        <div class="vps-bar blue"></div>
+                        <div>
+                            <div class="vps-name">${config.name}</div>
+                            <div class="vps-cost">${config.currency || 'IDR'}</div>
+                        </div>
+                    </div>`;
+            } else {
+                strip.style.display = 'none';
+            }
+            return;
+        }
+
+        strip.style.display = 'flex';
+        const colors = ['blue', 'green', 'yellow', 'purple', 'blue', 'green'];
+        strip.innerHTML = vpsList.map((v, i) => `
+            <div class="vps-item${activeVPSId === v.id ? ' active' : (activeVPSId === null && i === 0 ? ' active' : '')}" data-vps-id="${v.id}">
+                <div class="vps-bar ${colors[i % colors.length]}"></div>
+                <div>
+                    <div class="vps-name">${v.name}</div>
+                    <div class="vps-cost">${formatCurrency(v.price_per_month, v.currency || 'IDR')}/mo</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Click handlers
+        strip.querySelectorAll('.vps-item').forEach(item => {
+            item.addEventListener('click', () => {
+                strip.querySelectorAll('.vps-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                activeVPSId = parseInt(item.dataset.vpsId);
+                // TODO: reload dashboard with selected VPS
+            });
+        });
+    } catch (err) {
+        strip.style.display = 'none';
+    }
 }
 
 // ─── Dashboard Render ──────────────────────────────────────
 function renderDashboard() {
     const r = state.report;
     if (!r || !r.vps) {
-        document.getElementById('vpsName').textContent = 'No data yet · click refresh';
-        document.getElementById('lastUpdated').textContent = '-';
+        document.getElementById('vpsNameBadge').textContent = 'No data yet';
+        document.getElementById('lastUpdatedBadge').textContent = 'click refresh';
         document.getElementById('totalCost').textContent = '-';
         document.getElementById('containerCount').textContent = '0';
         document.getElementById('overheadCost').textContent = '-';
         document.getElementById('unallocCost').textContent = '-';
         document.getElementById('tableCount').textContent = '0 containers';
         document.getElementById('containerTableBody').innerHTML =
-            '<tr><td colspan="8" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>';
+            '<tr><td colspan="6" class="empty-state">No data yet. Click Generate Report to get started.</td></tr>';
         return;
     }
 
     const currency = r.vps.currency || 'IDR';
 
-    document.getElementById('vpsName').textContent = (r.vps.name || 'VPS') + ' · ' + document.getElementById('periodInfo').textContent;
-    document.getElementById('lastUpdated').textContent = r.vps.currency || 'IDR';
+    document.getElementById('vpsNameBadge').textContent = r.vps.name || 'VPS';
+    const minutes = Math.floor((Date.now() - new Date(r.vps.last_seen || r.created_at || Date.now()).getTime()) / 60000);
+    document.getElementById('lastUpdatedBadge').textContent = minutes < 1 ? 'Updated just now' : minutes < 60 ? `Updated ${minutes}m ago` : `Updated ${Math.floor(minutes/60)}h ago`;
 
     document.getElementById('totalCost').textContent = formatCurrency(r.total_cost, currency);
     const totalContainerCost = (r.containers || []).reduce((sum, c) => sum + (c.total_cost || 0), 0);
     document.getElementById('containerCount').textContent = formatCurrency(totalContainerCost, currency);
-    document.getElementById('containerSub').textContent = (r.containers || []).length + ' containers';
+    const containerCount = (r.containers || []).length;
+    document.getElementById('containerSub').textContent = containerCount + ' containers';
     document.getElementById('overheadCost').textContent = formatCurrency(r.overhead_cost, currency);
     document.getElementById('unallocCost').textContent = formatCurrency(r.unallocated_cost, currency);
+
+    // Keep "per month" as card subtitle
+    document.getElementById('totalPeriod').textContent = 'per month';
 
     // Table
     const tbody = document.getElementById('containerTableBody');
@@ -461,18 +588,20 @@ function renderDashboard() {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No containers running</td></tr>';
         document.getElementById('tableCount').textContent = '0 containers';
     } else {
-        tbody.innerHTML = containers.map(c => `
+        const vpsName = r.vps?.name || 'VPS';
+        tbody.innerHTML = containers.map(c => {
+            const status = c.container.status || 'running';
+            const statusPill = status === 'running' ? 'pill-green' : status === 'paused' ? 'pill-yellow' : 'pill-red';
+            return `
             <tr>
-                <td><a href="#" class="container-name" data-name="${c.container.name}">${c.container.name}</a></td>
-                <td style="color:var(--text-secondary)">${c.container.image || '-'}</td>
+                <td><div class="cell-name"><div class="dot ${status === 'running' ? 'run' : status === 'paused' ? 'pause' : 'stop'}"></div><a href="#" class="container-name" data-name="${c.container.name}">${c.container.name}</a></div></td>
+                <td><span class="text-muted">${vpsName}</span></td>
                 <td>${formatPercent(c.container.cpu_percent)}</td>
                 <td>${formatBytes(c.container.mem_usage_mb)}</td>
-                <td><span class="status-${c.container.status || 'running'}">${c.container.status || 'running'}</span></td>
-                <td>${formatCurrency(c.cpu_cost, currency)}</td>
-                <td>${formatCurrency(c.ram_cost, currency)}</td>
-                <td style="color:var(--accent);font-weight:600">${formatCurrency(c.total_cost, currency)}</td>
+                <td><span class="pill ${statusPill}">${status}</span></td>
+                <td class="cost-val">${c.avg_cost ? formatCurrency(c.avg_cost, currency) + ' <span class="cost-current">avg</span>' : formatCurrency(c.total_cost, currency)}</td>
             </tr>
-        `).join('');
+        `}).join('');
         document.getElementById('tableCount').textContent = containers.length + ' containers';
 
         tbody.querySelectorAll('.container-name').forEach(el => {
@@ -490,42 +619,90 @@ function renderDashboard() {
     loadCostTrend();
 }
 
-// ─── Cost Distribution Chart (Doughnut) ────────────────────
+// ─── Cost Distribution Chart (Horizontal Bar, scrollable) ───
 function renderCostChart(containers, currency) {
     const ctx = document.getElementById('costChart').getContext('2d');
     if (state.charts.cost) { state.charts.cost.destroy(); }
 
-    const labels = containers.map(c => c.container.name);
-    const data = containers.map(c => c.total_cost || 0);
-    const colors = generateColors(containers.length);
+    // Sort by cost descending
+    const sorted = [...containers].sort((a, b) => (b.total_cost || 0) - (a.total_cost || 0));
+
+    // Show top 15, group rest into "Others"
+    const MAX_SHOWN = 15;
+    const shown = sorted.slice(0, MAX_SHOWN);
+    const rest = sorted.slice(MAX_SHOWN);
+    const othersCost = rest.reduce((s, c) => s + (c.total_cost || 0), 0);
+
+    // Horizontal bar: container names as y-axis labels (no truncation needed)
+    const labels = shown.map(c => c.container.name);
+    const data = shown.map(c => c.total_cost || 0);
+    const colors = generateColors(shown.length);
+
+    // Append "Others" if there are hidden containers
+    if (rest.length > 0) {
+        labels.push(`+ Others (${rest.length} containers)`);
+        data.push(othersCost);
+        colors.push('#6a6b6c');
+    }
+
+    const barCount = labels.length;
+    // 36px per bar for horizontal layout, 180px min, 540px max
+    const chartH = Math.max(180, Math.min(540, barCount * 36));
+    const containerEl = document.getElementById('costChartContainer');
+    if (containerEl) {
+        containerEl.style.height = chartH + 'px';
+        // Enable scroll when bar count exceeds ~12
+        containerEl.style.overflowY = barCount > 12 ? 'auto' : 'hidden';
+    }
+
+    // Update header with count info — mockup style
 
     state.charts.cost = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'bar',
         data: {
             labels,
             datasets: [{
                 data,
-                backgroundColor: colors,
-                borderColor: 'var(--bg-card)',
-                borderWidth: 2,
+                backgroundColor: colors.map(c => c + 'cc'),
+                borderColor: colors,
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#d4d8e0',
-                        font: { size: 12 },
-                        padding: 16,
-                        usePointStyle: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: '#242728' },
+                    ticks: {
+                        color: '#cdcdcd',
+                        callback: (v) => formatCurrency(v, currency),
+                        font: { size: 10 },
                     }
                 },
+                y: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#6a6b6c',
+                        font: { size: 11 },
+                        // Truncate long names in y-axis labels
+                        callback: (val) => {
+                            const label = labels[val] || '';
+                            return label.length > 24 ? label.substring(0, 22) + '…' : label;
+                        },
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed, currency)}`
+                        label: (ctx) => `${ctx.label}: ${formatCurrency(ctx.parsed.x, currency)}`
                     }
                 }
             }
@@ -533,58 +710,75 @@ function renderCostChart(containers, currency) {
     });
 }
 
-// ─── Cost Breakdown Chart (Bar) ────────────────────────────
+// Truncate long container names for chart labels
+function truncateLabel(name, maxLen) {
+    if (!name) return '';
+    return name.length > maxLen ? name.substring(0, maxLen - 1) + '…' : name;
+}
+
+// ─── Cost Breakdown Chart (Doughnut) ────────────────────────
 function renderBreakdownChart(report, currency) {
     const ctx = document.getElementById('breakdownChart').getContext('2d');
     if (state.charts.breakdown) { state.charts.breakdown.destroy(); }
 
-    const labels = ['Containers', 'Overhead', 'Unallocated'];
-    const data = [
-        (report.containers || []).reduce((s, c) => s + (c.total_cost || 0), 0),
-        report.overhead_cost || 0,
-        report.unallocated_cost || 0,
-    ];
+    const containerCost = (report.containers || []).reduce((s, c) => s + (c.total_cost || 0), 0);
+    const overheadCost = report.overhead_cost || 0;
+    const unallocCost = report.unallocated_cost || 0;
+    const total = containerCost + overheadCost + unallocCost;
+
+    const labels = ['Container Cost', 'Overhead', 'Unallocated'];
+    const data = [containerCost, overheadCost, unallocCost];
+    const bgColors = ['rgba(87,193,255,0.85)', 'rgba(255,197,51,0.85)', 'rgba(255,97,97,0.85)'];
+    const borderColors = ['#57c1ff', '#ffc533', '#ff6161'];
 
     state.charts.breakdown = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels,
             datasets: [{
-                label: 'Cost per Month',
                 data,
-                backgroundColor: ['rgba(88,166,255,0.7)', 'rgba(210,153,34,0.7)', 'rgba(72,79,88,0.7)'],
-                borderColor: ['rgba(88,166,255,1)', 'rgba(210,153,34,1)', 'rgba(72,79,88,1)'],
-                borderWidth: 1,
-                borderRadius: 4,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                hoverBorderColor: '#f4f4f6',
+                hoverBorderWidth: 2,
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(48,54,61,0.5)' },
-                    ticks: {
-                        color: '#b0b6c4',
-                        callback: (v) => formatCurrency(v, currency),
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#d4d8e0' }
-                }
-            },
+            cutout: '62%',
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: (ctx) => formatCurrency(ctx.parsed.y, currency)
+                        label: (ctx) => {
+                            const val = ctx.parsed;
+                            const pct = total > 0 ? (val / total * 100).toFixed(1) : '0';
+                            return `${ctx.label}: ${formatCurrency(val, currency)} (${pct}%)`;
+                        }
                     }
                 }
             }
         }
     });
+
+    // ── Custom HTML legend (matches mockup v3 .donut-legend) ──
+    const legendEl = document.getElementById('breakdownLegend');
+    const totalEl = document.getElementById('donutTotal');
+    if (totalEl) totalEl.textContent = formatCurrency(total, currency);
+    if (legendEl) {
+        legendEl.innerHTML = labels.map((label, i) => {
+            const pct = total > 0 ? (data[i] / total * 100).toFixed(1) : '0';
+            return `
+                <div class="legend-item">
+                    <div class="legend-sq" style="background:${borderColors[i]}"></div>
+                    <span class="legend-lbl">${label}</span>
+                    <span class="legend-val">${formatCurrency(data[i], currency)}</span>
+                    <span class="legend-pct">${pct}%</span>
+                </div>`;
+        }).join('');
+    }
 }
 
 // ─── Container List ────────────────────────────────────────
@@ -597,30 +791,88 @@ function renderContainerList() {
     const containers = state.report?.containers || [];
     if (containers.length === 0) {
         containerList.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:48px">No containers. Refresh the dashboard first.</div>';
+        document.getElementById('containerListCount').textContent = '';
         return;
     }
 
     const currency = state.report?.vps?.currency || 'IDR';
 
-    containerList.innerHTML = containers.map(c => `
+    // Get filter/sort
+    const searchTerm = (document.getElementById('containerSearch').value || '').toLowerCase();
+    const sortBy = document.getElementById('containerSort').value;
+
+    // Filter by name or image
+    let filtered = containers.filter(c =>
+        c.container.name.toLowerCase().includes(searchTerm) ||
+        (c.container.image || '').toLowerCase().includes(searchTerm)
+    );
+
+    // Sort
+    filtered.sort((a, b) => {
+        if (sortBy === 'name') return a.container.name.localeCompare(b.container.name);
+        if (sortBy === 'cpu') return (b.container.cpu_percent || 0) - (a.container.cpu_percent || 0);
+        return (b.total_cost || 0) - (a.total_cost || 0); // cost descending default
+    });
+
+    document.getElementById('containerListCount').textContent = filtered.length + ' containers';
+
+    const maxCost = Math.max(...filtered.map(c => c.total_cost || 0), 1);
+
+    containerList.innerHTML = filtered.map((c, i) => {
+        const rank = i + 1;
+        const status = c.container.status || 'running';
+        const uptime = c.container.uptime || '';
+        const image = c.container.image || '-';
+        const shortImg = image.length > 32 ? image.substring(0, 30) + '…' : image;
+        const cpu = c.container.cpu_percent || 0;
+        const memMb = c.container.mem_usage_mb || 0;
+        const memLimit = c.container.mem_limit_mb || 0;
+        const memPct = memLimit > 0 ? Math.min((memMb / memLimit) * 100, 100) : 0;
+        const costVal = c.total_cost || 0;
+        const avgCostVal = c.avg_cost || 0;
+        const displayCost = avgCostVal || costVal;
+        const costPct = maxCost > 0 ? Math.min((displayCost / maxCost) * 100, 100) : 0;
+
+        return `
         <div class="container-card" data-name="${c.container.name}">
-            <div class="container-card-header">
+            <div class="card-top-row">
+                <span class="card-rank-badge">#${rank}</span>
                 <span class="container-card-name">${c.container.name}</span>
-                <span class="container-card-status ${c.container.status !== 'running' ? 'stopped' : ''}">${c.container.status || 'running'}</span>
+                <span class="container-card-status ${status !== 'running' ? 'stopped' : ''}">${status}</span>
             </div>
-            <div class="container-card-metrics">
-                <div class="metric">
-                    <span class="metric-label">CPU</span>
-                    <span class="metric-value">${formatPercent(c.container.cpu_percent)}</span>
+            <div class="card-meta-row">
+                <svg class="icon-sm"><use href="#icon-image"/></svg>
+                ${shortImg}
+                ${uptime ? `<span class="meta-sep">·</span><svg class="icon-sm"><use href="#icon-clock"/></svg>${uptime}` : ''}
+            </div>
+            <div class="card-chips">
+                <div class="chip chip-cpu">
+                    <div class="chip-header">
+                        <svg class="icon-sm"><use href="#icon-cpu"/></svg>
+                        CPU
+                    </div>
+                    <div class="chip-value">${formatPercent(cpu)}</div>
+                    <div class="chip-bar"><div class="chip-bar-fill cpu" style="width:${Math.min(cpu, 100)}%"></div></div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">RAM</span>
-                    <span class="metric-value">${formatBytes(c.container.mem_usage_mb)}</span>
+                <div class="chip chip-mem">
+                    <div class="chip-header">
+                        <svg class="icon-sm"><use href="#icon-database"/></svg>
+                        MEM
+                    </div>
+                    <div class="chip-value">${formatBytes(memMb)}${memLimit ? '' : ''}</div>
+                    <div class="chip-bar"><div class="chip-bar-fill mem" style="width:${memPct}%"></div></div>
+                </div>
+                <div class="chip chip-cost">
+                    <div class="chip-header">
+                        <svg class="icon-sm"><use href="#icon-dollar"/></svg>
+                        Cost
+                    </div>
+                    <div class="chip-value">${avgCostVal ? formatCurrency(avgCostVal, currency) + ' <span class="chip-avg-label">avg</span>' : formatCurrency(costVal, currency)}</div>
+                    <div class="chip-bar"><div class="chip-bar-fill cost" style="width:${costPct}%"></div></div>
                 </div>
             </div>
-            <div class="container-card-cost">${formatCurrency(c.total_cost, currency)} / month</div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 
     containerList.querySelectorAll('.container-card').forEach(el => {
         el.addEventListener('click', () => showContainerDetail(el.dataset.name));
@@ -635,18 +887,36 @@ async function showContainerDetail(name) {
     detail.style.display = 'block';
 
     state.selectedContainer = name;
-    document.getElementById('containerDetailName').textContent = name;
 
-    // Show container info from report
-    const container = state.report?.containers?.find(c => c.container.name === name);
+    // Get container from report for quick info + prev/next
+    const containers = state.report?.containers || [];
+    const currentIdx = containers.findIndex(c => c.container.name === name);
+    const container = containers[currentIdx];
     const currency = state.report?.vps?.currency || 'IDR';
 
+    // ── Prev/Next navigation ──
+    const prevBtn = document.getElementById('btnPrevContainer');
+    const nextBtn = document.getElementById('btnNextContainer');
+    prevBtn.disabled = currentIdx <= 0;
+    nextBtn.disabled = currentIdx >= containers.length - 1;
+    prevBtn.onclick = () => showContainerDetail(containers[currentIdx - 1].container.name);
+    nextBtn.onclick = () => showContainerDetail(containers[currentIdx + 1].container.name);
+
+    // ── Header ──
+    document.getElementById('containerDetailName').textContent = name;
+    if (container) {
+        const st = container.container.status || 'running';
+        const img = container.container.image || '-';
+        const uptime = container.container.uptime || '';
+        document.getElementById('detailHeaderMeta').innerHTML = `
+            <span class="detail-status-badge ${st === 'running' ? 'running' : 'stopped'}">${st}</span>
+            <span><svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> ${img}</span>
+            ${uptime ? `<span><svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Uptime: ${uptime}</span>` : ''}`;
+    }
+
+    // ── Info grid ──
     if (container) {
         document.getElementById('detailInfo').innerHTML = `
-            <div class="info-item">
-                <span class="info-label">Image</span>
-                <span class="info-value">${container.container.image || '-'}</span>
-            </div>
             <div class="info-item">
                 <span class="info-label">CPU Usage</span>
                 <span class="info-value">${formatPercent(container.container.cpu_percent)}</span>
@@ -654,6 +924,18 @@ async function showContainerDetail(name) {
             <div class="info-item">
                 <span class="info-label">Memory</span>
                 <span class="info-value">${formatBytes(container.container.mem_usage_mb)} / ${formatBytes(container.container.mem_limit_mb)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Memory %</span>
+                <span class="info-value">${formatPercent(container.container.mem_percent)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Image</span>
+                <span class="info-value" style="font-size:12px;">${container.container.image || '-'}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Container ID</span>
+                <span class="info-value" style="font-size:11px;font-family:monospace;">${(container.container.id || '').substring(0, 12)}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Status</span>
@@ -673,67 +955,66 @@ async function showContainerDetail(name) {
             </div>
             <div class="info-item">
                 <span class="info-label">Total Cost</span>
-                <span class="info-value" style="color:var(--accent)">${formatCurrency(container.total_cost, currency)}</span>
-            </div>
-        `;
+                <span class="info-value" style="color:var(--accent-blue);font-weight:600;">${formatCurrency(container.total_cost, currency)}</span>
+            </div>`;
     }
 
-    // Rebuild chart container fresh (avoid stale canvas issues)
-    const chartCard = document.querySelector('#containerDetail .detail-chart-card');
-    const oldChartContainer = chartCard.querySelector('.chart-container');
-    if (oldChartContainer) oldChartContainer.remove();
+    // ── Stats row (will fill after fetch) ──
+    document.getElementById('detailStatsRow').innerHTML = `
+        <div class="detail-stat-card">
+            <div class="detail-stat-value">-</div>
+            <div class="detail-stat-label">Snapshots</div>
+        </div>
+        <div class="detail-stat-card">
+            <div class="detail-stat-value">-</div>
+            <div class="detail-stat-label">Avg Cost</div>
+        </div>
+        <div class="detail-stat-card">
+            <div class="detail-stat-value">-</div>
+            <div class="detail-stat-label">Max Cost</div>
+        </div>
+        <div class="detail-stat-card">
+            <div class="detail-stat-value">-</div>
+            <div class="detail-stat-label">Current</div>
+        </div>`;
 
-    // Show loading state
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'historyLoading';
-    loadingDiv.style.cssText = 'text-align:center;padding:48px;color:var(--text-muted);font-size:13px;';
-    loadingDiv.textContent = '🔄 Loading history...';
-    chartCard.appendChild(loadingDiv);
+    // ── Destroy old charts ──
+    if (state.charts.history) { state.charts.history.destroy(); state.charts.history = null; }
+    if (state.charts.cpuTrend) { state.charts.cpuTrend.destroy(); state.charts.cpuTrend = null; }
+    if (state.charts.memTrend) { state.charts.memTrend.destroy(); state.charts.memTrend = null; }
+    if (state.charts.breakdownDonut) { state.charts.breakdownDonut.destroy(); state.charts.breakdownDonut = null; }
 
-    // Fetch history
+    // ── Loading state ──
+    document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Loading history...</td></tr>';
+
+    // ── Fetch history ──
     try {
         const history = await API.get(`/containers/${encodeURIComponent(name)}`);
 
-        // Remove loading
-        loadingDiv.remove();
-
-        // Create new chart container
-        const newChartContainer = document.createElement('div');
-        newChartContainer.className = 'chart-container';
-        newChartContainer.style.cssText = 'height:300px;position:relative;';
-
         if (history && history.length > 0) {
-            // Add data summary above chart
+            // Fill stats
             const total = history.reduce((s, h) => s + (h.total_cost || 0), 0);
             const avg = total / history.length;
-            const summary = document.createElement('div');
-            summary.style.cssText = 'text-align:center;padding:0 0 12px;color:var(--text-muted);font-size:11px;';
-            summary.textContent = `📊 ${history.length} snapshots · Avg: ${formatCurrency(avg, currency)} · Latest: ${formatCurrency(history[0].total_cost || 0, currency)}`;
-            newChartContainer.appendChild(summary);
+            const max = Math.max(...history.map(h => h.total_cost || 0));
+            const statsEls = document.querySelectorAll('#detailStatsRow .detail-stat-card');
+            if (statsEls[0]) statsEls[0].querySelector('.detail-stat-value').textContent = history.length;
+            if (statsEls[1]) statsEls[1].querySelector('.detail-stat-value').textContent = formatCurrency(avg, currency);
+            if (statsEls[2]) statsEls[2].querySelector('.detail-stat-value').textContent = formatCurrency(max, currency);
+            if (statsEls[3]) statsEls[3].querySelector('.detail-stat-value').textContent = formatCurrency(history[0].total_cost || 0, currency);
 
-            // Create fresh canvas
-            const canvas = document.createElement('canvas');
-            canvas.id = 'historyChart';
-            newChartContainer.appendChild(canvas);
-            chartCard.appendChild(newChartContainer);
+            // Small delay for DOM settle
+            await new Promise(r => setTimeout(r, 60));
 
-            // Small delay then render
-            await new Promise(r => setTimeout(r, 100));
             renderHistoryChart(history, currency);
+            renderCpuTrendChart(history, currency);
+            renderMemTrendChart(history, currency);
+            renderBreakdownDonut(container, currency);
+            renderHistoryTable(history, currency);
         } else {
-            // No data
-            const emptyMsg = document.createElement('div');
-            emptyMsg.style.cssText = 'text-align:center;padding:48px;color:var(--text-muted);font-size:12px;';
-            emptyMsg.textContent = '📊 Collecting more data points — click Generate Report a few times';
-            newChartContainer.appendChild(emptyMsg);
-            chartCard.appendChild(newChartContainer);
+            document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Collecting more data points — generate reports to build history</td></tr>';
         }
     } catch (err) {
-        loadingDiv.remove();
-        const errMsg = document.createElement('div');
-        errMsg.style.cssText = 'text-align:center;padding:48px;color:var(--red);font-size:12px;';
-        errMsg.textContent = '❌ Failed to load history: ' + (err.message || 'unknown error');
-        chartCard.appendChild(errMsg);
+        document.getElementById('historyTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">' + (err.message || 'Failed to load history') + '</td></tr>';
     }
 }
 
@@ -757,7 +1038,7 @@ function renderHistoryChart(history, currency) {
     const parent = canvas.parentElement;
     if (parent) {
         canvas.width = parent.clientWidth || 600;
-        canvas.height = parent.clientHeight || 280;
+        canvas.height = parent.clientHeight || 180;
         canvas.style.width = '100%';
         canvas.style.height = '100%';
     }
@@ -782,8 +1063,8 @@ function renderHistoryChart(history, currency) {
                 datasets: [{
                     label: 'Cost',
                     data: costs,
-                    borderColor: 'rgba(88,166,255,1)',
-                    backgroundColor: 'rgba(88,166,255,0.1)',
+                    borderColor: '#57c1ff',
+                    backgroundColor: 'rgba(87,193,255,0.1)',
                     fill: true,
                     tension: 0.3,
                     pointRadius: 3,
@@ -797,15 +1078,15 @@ function renderHistoryChart(history, currency) {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(48,54,61,0.5)' },
+                        grid: { color: '#242728' },
                         ticks: {
-                            color: '#b0b6c4',
+                            color: '#cdcdcd',
                             callback: (v) => formatCurrency(v, currency),
                         }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#b0b6c4', maxTicksLimit: 8 }
+                        ticks: { color: '#cdcdcd', maxTicksLimit: 8, font: { size: 9 } }
                     }
                 },
                 plugins: {
@@ -819,8 +1100,204 @@ function renderHistoryChart(history, currency) {
             }
         });
     } catch (err) {
-        // Chart render failed — summary already shown above
+        // Chart render failed — silently skip
     }
+}
+
+// ─── CPU Trend Chart ───────────────────────────────────────
+function renderCpuTrendChart(history, currency) {
+    const canvas = document.getElementById('cpuTrendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (state.charts.cpuTrend) { state.charts.cpuTrend.destroy(); }
+
+    if (!history || history.length === 0) return;
+
+    const parent = canvas.parentElement;
+    if (parent) { canvas.width = parent.clientWidth || 280; canvas.height = parent.clientHeight || 180; }
+
+    const reversed = [...history].reverse();
+    const labels = reversed.map(h => {
+        if (!h.timestamp) return '-';
+        try { const d = new Date(h.timestamp); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+        catch { return '-'; }
+    });
+    const data = reversed.map(h => h.cpu_percent || 0);
+
+    try {
+        state.charts.cpuTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'CPU %',
+                    data,
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(167,139,250,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 300 },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#242728' }, ticks: { color: '#cdcdcd', callback: v => v + '%', font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { color: '#cdcdcd', maxTicksLimit: 6, font: { size: 9 } } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f4f4f6', font: { size: 10 }, padding: 8 } },
+                    tooltip: { callbacks: { label: ctx => 'CPU: ' + ctx.parsed.y.toFixed(1) + '%' } }
+                }
+            }
+        });
+    } catch {}
+}
+
+// ─── Memory Trend Chart ────────────────────────────────────
+function renderMemTrendChart(history, currency) {
+    const canvas = document.getElementById('memTrendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (state.charts.memTrend) { state.charts.memTrend.destroy(); }
+
+    if (!history || history.length === 0) return;
+
+    const parent = canvas.parentElement;
+    if (parent) { canvas.width = parent.clientWidth || 280; canvas.height = parent.clientHeight || 180; }
+
+    const reversed = [...history].reverse();
+    const labels = reversed.map(h => {
+        if (!h.timestamp) return '-';
+        try { const d = new Date(h.timestamp); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); }
+        catch { return '-'; }
+    });
+    const data = reversed.map(h => h.mem_usage_mb || 0);
+
+    try {
+        state.charts.memTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Memory (MB)',
+                    data,
+                    borderColor: '#59d499',
+                    backgroundColor: 'rgba(89,212,153,0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 300 },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#242728' }, ticks: { color: '#cdcdcd', callback: v => v + ' MB', font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { color: '#cdcdcd', maxTicksLimit: 6, font: { size: 9 } } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f4f4f6', font: { size: 10 }, padding: 8 } },
+                    tooltip: { callbacks: { label: ctx => 'Memory: ' + ctx.parsed.y.toFixed(0) + ' MB' } }
+                }
+            }
+        });
+    } catch {}
+}
+
+// ─── Cost Breakdown Donut (Detail) ─────────────────────────
+function renderBreakdownDonut(container, currency) {
+    const canvas = document.getElementById('breakdownDonut');
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext('2d');
+    if (state.charts.breakdownDonut) { state.charts.breakdownDonut.destroy(); }
+
+    const cpuCost = container.cpu_cost || 0;
+    const ramCost = container.ram_cost || 0;
+    const storageCost = container.storage_cost || 0;
+    const total = cpuCost + ramCost + storageCost;
+
+    if (total === 0) {
+        document.getElementById('breakdownLegendDetail').innerHTML = '<div style="color:var(--ash);font-size:12px;">No cost data</div>';
+        return;
+    }
+
+    try {
+        state.charts.breakdownDonut = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['CPU', 'RAM', 'Storage'],
+                datasets: [{
+                    data: [cpuCost, ramCost, storageCost],
+                    backgroundColor: ['rgba(167,139,250,0.85)', 'rgba(87,193,255,0.85)', 'rgba(255,197,51,0.85)'],
+                    borderColor: ['#a78bfa', '#57c1ff', '#ffc533'],
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const pct = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : '0';
+                                return `${ctx.label}: ${formatCurrency(ctx.parsed, currency)} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch {}
+
+    // Custom legend
+    const legendEl = document.getElementById('breakdownLegendDetail');
+    if (legendEl) {
+        const colors = ['#a78bfa', '#57c1ff', '#ffc533'];
+        const labels = ['CPU Cost', 'RAM Cost', 'Storage Cost'];
+        const data = [cpuCost, ramCost, storageCost];
+        legendEl.innerHTML = labels.map((l, i) => {
+            const pct = total > 0 ? (data[i] / total * 100).toFixed(1) : '0';
+            return `<div class="breakdown-item">
+                <span class="breakdown-dot" style="background:${colors[i]}"></span>
+                <span class="breakdown-lbl">${l}</span>
+                <span class="breakdown-val">${formatCurrency(data[i], currency)}</span>
+                <span class="breakdown-pct">${pct}%</span>
+            </div>`;
+        }).join('');
+    }
+}
+
+// ─── History Table ──────────────────────────────────────
+function renderHistoryTable(history, currency) {
+    const tbody = document.getElementById('historyTableBody');
+    if (!tbody) return;
+    if (!history || history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No history data</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = history.slice(0, 20).map(h => {
+        const ts = h.timestamp ? (() => {
+            try {
+                const d = new Date(h.timestamp);
+                return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+            } catch { return h.timestamp.substring(0, 16); }
+        })() : '-';
+        return `<tr>
+            <td style="font-size:12px;color:var(--mute);">${ts}</td>
+            <td>${formatPercent(h.cpu_percent)}</td>
+            <td>${formatBytes(h.mem_usage_mb)}</td>
+            <td class="cost-val">${formatCurrency(h.total_cost, currency)}</td>
+        </tr>`;
+    }).join('');
 }
 
 // ─── Config ────────────────────────────────────────────────
@@ -829,7 +1306,7 @@ async function loadConfig() {
         state.config = await API.get('/config');
         populateForm(state.config);
     } catch (err) {
-        showConfigStatus('❌ Failed to load config: ' + err.message, 'error');
+        showConfigStatus('Failed to load config: ' + err.message, 'error');
     }
 }
 
@@ -854,18 +1331,21 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
     });
 
     try {
-        await API.put('/config', data);
-        state.config = data;
-        showConfigStatus('✅ Config saved! Refresh report to apply changes.', 'success');
+        // Merge with existing config — preserves VPS-specific fields not in form
+        const merged = { ...(state.config || {}), ...data };
+        await API.put('/config', merged);
+        state.config = merged;
+        showConfigStatus('Config saved! Refresh report to apply changes.', 'success');
         setTimeout(() => document.getElementById('configStatus').style.display = 'none', 5000);
     } catch (err) {
-        showConfigStatus('❌ ' + err.message, 'error');
+        showConfigStatus(err.message, 'error');
     }
 });
 
 function showConfigStatus(msg, type) {
     const el = document.getElementById('configStatus');
-    el.textContent = msg;
+    const icon = type === 'success' ? '<svg class="icon-sm" style="color:var(--accent-green);vertical-align:middle;margin-right:4px;"><use href="#icon-check"/></svg>' : '<svg class="icon-sm" style="color:var(--accent-red);vertical-align:middle;margin-right:4px;"><use href="#icon-x"/></svg>';
+    el.innerHTML = icon + msg;
     el.className = 'config-status ' + type;
     el.style.display = 'block';
 }
@@ -873,15 +1353,15 @@ function showConfigStatus(msg, type) {
 // ─── Color Generator ───────────────────────────────────────
 function generateColors(n) {
     const palette = [
-        '#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff',
-        '#56d4dd', '#f778ba', '#e3b341', '#7ee787', '#a5d6ff',
-        '#ff7b72', '#d2a8ff', '#79c0ff', '#aff5b4', '#ffd78c',
+        '#57c1ff', '#a78bfa', '#fb923c', '#2dd4bf', '#59d499',
+        '#ff6161', '#ffc533', '#f472b6', '#818cf8', '#34d399',
+        '#fbbf24', '#c084fc', '#38bdf8', '#4ade80', '#facc15',
     ];
     return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
 }
 
 // ─── Auto Refresh ──────────────────────────────────────────
-let autoRefreshInterval = 30000; // 30s
+let autoRefreshInterval = 120000; // 2 minutes
 let autoRefreshTimer;
 
 function startAutoRefresh() {
@@ -909,6 +1389,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadDashboard();
         startAutoRefresh();
     }
+
+    // ─── Container list search/sort ───
+    const searchInput = document.getElementById('containerSearch');
+    const sortSelect = document.getElementById('containerSort');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            if (state.currentPage === 'containers') renderContainerList();
+        });
+    }
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            if (state.currentPage === 'containers') renderContainerList();
+        });
+    }
 });
 
 // ─── User Management ──────────────────────────────────────
@@ -918,7 +1412,7 @@ async function loadUsers() {
         renderUsersTable(users);
     } catch (err) {
         document.getElementById('usersTableBody').innerHTML =
-            `<tr><td colspan="6" class="empty-state">❌ ${err.message}</td></tr>`;
+            `<tr><td colspan="6" class="empty-state">${err.message}</td></tr>`;
     }
 }
 
@@ -936,9 +1430,9 @@ function renderUsersTable(users) {
             <td><span class="user-role-badge user-role-${u.role}">${u.role}</span></td>
             <td>${formatTime(u.created_at)}</td>
             <td>
-                <button class="btn-role-edit" onclick="openRoleModal(${u.id}, '${u.username}', '${u.role}')" title="Edit role">✏️</button>
-                <button class="btn-user-reset" onclick="openResetPasswordModal(${u.id}, '${u.username}')" title="Reset password">🔑</button>
-                <button class="btn-user-delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Delete user">🗑</button>
+                <button class="btn-role-edit" onclick="openRoleModal(${u.id}, '${u.username}', '${u.role}')" title="Edit role"><svg class="icon-sm"><use href="#icon-edit"/></svg></button>
+                <button class="btn-user-reset" onclick="openResetPasswordModal(${u.id}, '${u.username}')" title="Reset password"><svg class="icon-sm"><use href="#icon-key"/></svg></button>
+                <button class="btn-user-delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Delete user"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
             </td>
         </tr>
     `).join('');
@@ -972,7 +1466,7 @@ document.getElementById('userForm').addEventListener('submit', async (e) => {
         document.getElementById('userModal').style.display = 'none';
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1010,13 +1504,13 @@ document.getElementById('resetPwdForm').addEventListener('submit', async (e) => 
     const newPass = document.getElementById('resetPwdNewPass').value;
     const confirm = document.getElementById('resetPwdConfirm').value;
 
-    if (newPass.length < 4) {
-        errEl.textContent = '❌ Password must be at least 4 characters';
+    if (newPass.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters';
         errEl.style.display = 'block';
         return;
     }
     if (newPass !== confirm) {
-        errEl.textContent = '❌ Passwords do not match';
+        errEl.textContent = 'Passwords do not match';
         errEl.style.display = 'block';
         return;
     }
@@ -1027,7 +1521,7 @@ document.getElementById('resetPwdForm').addEventListener('submit', async (e) => 
         resetPwdUserId = null;
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1060,7 +1554,7 @@ document.getElementById('roleForm').addEventListener('submit', async (e) => {
         editingUserId = null;
         loadUsers();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1075,13 +1569,12 @@ let currentVPSId = null;
 let vpsList = [];
 
 async function loadVPSList() {
-    document.getElementById('vpsDetail').style.display = 'none';
     try {
         vpsList = await API.get('/vps');
         renderVPSTable(vpsList);
     } catch (err) {
         document.getElementById('vpsTableBody').innerHTML =
-            `<tr><td colspan="6" class="empty-state">❌ Failed to load VPS: ${err.message}</td></tr>`;
+            `<tr><td colspan="6" class="empty-state">Failed to load VPS: ${err.message}</td></tr>`;
     }
 }
 
@@ -1090,29 +1583,37 @@ function renderVPSTable(vpsList) {
     const statsBar = document.getElementById('vpsStatsBar');
 
     if (!vpsList || vpsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No VPS registered yet. Click ➕ Tambah VPS to add one.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No VPS registered yet. Click "Add VPS" to add one.</td></tr>';
         statsBar.style.display = 'none';
         return;
     }
 
-    // Update stats bar
-    statsBar.style.display = 'flex';
+    // Update metric chips
+    statsBar.style.display = 'grid';
     document.getElementById('vpsTotalCount').textContent = vpsList.length;
     const online = vpsList.filter(v => v.status === 'online').length;
     document.getElementById('vpsOnlineCount').textContent = online;
     const totalCost = vpsList.reduce((sum, v) => sum + (v.price_per_month || 0), 0);
     document.getElementById('vpsTotalCost').textContent = formatCurrency(totalCost, 'IDR');
 
-    tbody.innerHTML = vpsList.map(v => `
+    const colors = ['blue', 'green', 'yellow', 'purple', 'blue', 'green'];
+    tbody.innerHTML = vpsList.map((v, i) => `
         <tr>
-            <td><a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a></td>
-            <td style="color:var(--text-secondary);font-size:13px;">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</td>
-            <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
-            <td><span class="vps-status-${v.status}">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span></td>
-            <td style="color:var(--text-secondary);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
             <td>
-                <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details">👁️</button>
-                <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--red);">🗑️</button>
+                <div class="vps-name-cell">
+                    <div class="vps-name-dot ${colors[i % colors.length]}"></div>
+                    <a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a>
+                </div>
+            </td>
+            <td><span class="vps-spec-badge"><svg class="icon-sm"><use href="#icon-cpu"/></svg> ${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</span></td>
+            <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
+            <td><span class="vps-status-badge ${v.status}"><svg class="icon-sm"><use href="#icon-${v.status === 'online' ? 'zap' : 'eye-off'}"/></svg> ${v.status === 'online' ? 'Live' : 'Off'}</span></td>
+            <td style="color:var(--ash);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
+            <td>
+                <div class="vps-table-actions">
+                    <button class="btn btn-sm" onclick="viewVPS(${v.id})" title="View details"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
+                    <button class="btn-danger btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -1128,8 +1629,14 @@ function renderVPSTable(vpsList) {
 
 async function viewVPS(id) {
     currentVPSId = id;
-    document.getElementById('vpsDetail').style.display = 'block';
+    navigate('vps-detail');
+}
+
+async function loadVPSDetail() {
+    const id = currentVPSId;
+    if (!id) return;
     const content = document.getElementById('vpsDetailContent');
+    content.innerHTML = '<div class="loading-spinner" style="padding:48px;text-align:center;"><div class="spinner-ring"></div></div>';
 
     try {
         const data = await API.get(`/vps/${id}`);
@@ -1138,69 +1645,248 @@ async function viewVPS(id) {
         const currency = v.currency || 'IDR';
 
         content.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">
+            <div class="vps-detail-header">
                 <div>
-                    <h2 style="margin:0 0 4px 0;">🖥️ ${v.name}</h2>
-                    <span class="vps-status-${v.status}" style="font-size:14px;">${v.status === 'online' ? '🟢 Live' : '🔴 Off'}</span>
-                    <span style="color:var(--text-muted);font-size:13px;margin-left:8px;">
+                    <div class="vps-detail-title">
+                        <svg class="icon-lg"><use href="#icon-server"/></svg>
+                        <h2>${v.name}</h2>
+                        <span class="vps-status-badge ${v.status}"><svg class="icon-sm"><use href="#icon-${v.status === 'online' ? 'zap' : 'eye-off'}"/></svg> ${v.status === 'online' ? 'Live' : 'Off'}</span>
+                    </div>
+                    <div class="vps-detail-meta">
+                        <svg class="icon-sm"><use href="#icon-clock"/></svg>
                         Last seen: ${v.last_seen ? formatTime(v.last_seen) : 'Never'}
-                    </span>
+                        &middot; <svg class="icon-sm"><use href="#icon-key"/></svg> ID: ${v.id}
+                    </div>
                 </div>
-                <div>
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--red);">🗑️ Hapus</button>
+                <div class="vps-detail-actions">
+                    <button class="btn-danger btn-sm" onclick="deleteVPS(${v.id})"><svg class="icon-sm"><use href="#icon-trash"/></svg> Delete</button>
                 </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">CPU Cores</span>
-                        <span class="info-value">${v.cpu_cores || '-'}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">RAM</span>
-                        <span class="info-value">${v.ram_gb || '-'} GB</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Harga</span>
-                        <span class="info-value">${formatCurrency(v.price_per_month, currency)}</span>
-                    </div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:12px;">
-                        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">🔑 API Key</div>
-                        <div class="key-display" style="margin-bottom:6px;">
-                            <code>${v.api_key || '********'}</code>
+
+            <!-- ─── Editable Specs & Weights ─── -->
+            <div class="vps-config-card">
+                <h4><svg class="icon-sm"><use href="#icon-sliders"/></svg> VPS Configuration</h4>
+                <p class="config-desc">Edit specs and cost allocation weights. Changes apply to future cost calculations.</p>
+                <form id="vpsConfigForm" onsubmit="return saveVPSConfig(${v.id})">
+                    <div class="vps-config-grid">
+                        <div class="config-block">
+                            <label>CPU Cores</label>
+                            <input type="number" id="vps-cpu" step="0.5" min="0" value="${v.cpu_cores || 0}">
                         </div>
-                        <button class="btn-secondary btn-sm" onclick="regenerateKey(${v.id})">🔄 Regenerate Key</button>
+                        <div class="config-block">
+                            <label>RAM (GB)</label>
+                            <input type="number" id="vps-ram" step="0.5" min="0" value="${v.ram_gb || 0}">
+                        </div>
+                        <div class="config-block">
+                            <label>Storage (GB)</label>
+                            <input type="number" id="vps-storage" step="1" min="0" value="${v.storage_gb || 0}">
+                        </div>
+                        <div class="config-block">
+                            <label>Price / Month</label>
+                            <input type="number" id="vps-price" step="0.01" min="0" value="${v.price_per_month || 0}">
+                        </div>
+                        <div class="config-block">
+                            <label>Currency</label>
+                            <input type="text" id="vps-currency" value="${v.currency || 'IDR'}" style="max-width:100px;">
+                        </div>
+                        <div class="config-block">
+                            <label>Name</label>
+                            <input type="text" id="vps-name" value="${v.name}">
+                        </div>
+                        <div class="config-block">
+                            <label>CPU Weight</label>
+                            <input type="number" id="vps-cpu-weight" step="0.1" min="0" max="1" value="${v.cpu_weight || 0.5}">
+                        </div>
+                        <div class="config-block">
+                            <label>RAM Weight</label>
+                            <input type="number" id="vps-ram-weight" step="0.1" min="0" max="1" value="${v.ram_weight || 0.4}">
+                        </div>
+                        <div class="config-block">
+                            <label>Storage Weight</label>
+                            <input type="number" id="vps-storage-weight" step="0.1" min="0" max="1" value="${v.storage_weight || 0.1}">
+                        </div>
+                        <div class="config-block">
+                            <label>Overhead %</label>
+                            <input type="number" id="vps-overhead" step="1" min="0" max="50" value="${v.overhead_percent || 15}">
+                        </div>
                     </div>
+                    <div class="form-actions" style="margin-top:16px;">
+                        <button type="submit" class="btn btn-primary" id="vpsConfigSaveBtn"><svg class="icon-sm"><use href="#icon-save"/></svg> Save Configuration</button>
+                        <div id="vpsConfigStatus" class="config-status" style="display:none;"></div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="vps-detail-layout">
+                <div class="vps-key-card">
+                    <h4><svg class="icon-sm"><use href="#icon-key"/></svg> API Key</h4>
+                    <div class="vps-key-display">
+                        <code>${v.api_key || '********'}</code>
+                        <button class="btn-copy btn-sm" onclick="copyVPSKey('${v.id}')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                    </div>
+                    <button class="btn btn-sm" style="align-self:flex-start;" onclick="regenerateKey(${v.id})"><svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Regenerate Key</button>
+                </div>
+
+                <div class="vps-setup-card">
+                    <h4><svg class="icon-sm"><use href="#icon-terminal"/></svg> Setup Agent on Remote VPS</h4>
+                    <p class="setup-desc">Pilih salah satu metode:</p>
+
+                    <div class="setup-method">
+                        <div class="setup-method-label"><svg class="icon-sm"><use href="#icon-zap"/></svg> Binary (recommended)</div>
+                        <div class="vps-setup-code">
+                            <code>curl -sL https://github.com/edsuwarna/container-cost/releases/latest/download/docker-cost-linux-amd64 -o /usr/local/bin/docker-cost && chmod +x /usr/local/bin/docker-cost && docker-cost --mode=agent --server=http://MAIN_IP:8083 --api-key=${v.api_key || 'YOUR_KEY'}</code>
+                            <button class="btn-copy btn-sm" onclick="copySetupCmd('binary')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                        </div>
+                    </div>
+
+                    <details class="setup-alt">
+                        <summary><svg class="icon-sm"><use href="#icon-layers"/></svg> Docker Compose</summary>
+                        <div class="setup-method" style="margin-top:8px;">
+                            <p style="color:var(--mute);font-size:13px;margin-bottom:8px;">1. Buat <code>docker-compose.agent.yml</code> di VPS remote:</p>
+                            <div class="setup-compose-block">
+                                <pre class="setup-code-block"><code>services:
+  container-cost-agent:
+    image: ghcr.io/edsuwarna/container-cost:latest
+    container_name: container-cost-agent
+    restart: unless-stopped
+    command: >
+      --mode=agent
+      --server=http://MAIN_IP:8083
+      --api-key=${v.api_key || 'YOUR_KEY'}
+      --push-interval=60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro</code></pre>
+                                <button class="btn-copy btn-sm" onclick="copySetupCmd('compose')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                            </div>
+                            <p style="color:var(--mute);font-size:13px;margin:8px 0 0;">2. Jalankan:</p>
+                            <div class="vps-setup-code" style="margin-top:4px;">
+                                <code>docker compose -f docker-compose.agent.yml up -d</code>
+                                <button class="btn-copy btn-sm" onclick="copySetupCmd('compose-run')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <p class="setup-hint" style="margin-top:12px;">Agent collects Docker stats and pushes to central. Edit VPS config (price, specs, weights) here in the UI — no config.json needed on remote VPS.</p>
                 </div>
             </div>
-            <div style="font-size:13px;color:var(--text-secondary);background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:12px;">
-                <strong>📋 Setup Agent:</strong><br>
-                SSH ke VPS ini, jalanin:<br>
-                <code style="display:block;margin-top:6px;padding:8px;background:var(--bg-primary);border-radius:6px;color:var(--accent);">
-                docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}
-                </code>
-            </div>
+
             ${report ? `
-            <div style="margin-top:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-                <h3 style="margin:0 0 12px 0;font-size:15px;">📊 Latest Cost Report</h3>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-                    <div><span style="color:var(--text-muted);font-size:12px;">Containers</span><br><span style="font-size:18px;font-weight:700;">${(report.containers || []).length}</span></div>
-                    <div><span style="color:var(--text-muted);font-size:12px;">Total Cost</span><br><span style="font-size:18px;font-weight:700;color:var(--accent);">${formatCurrency(report.total_cost, currency)}</span></div>
-                    <div><span style="color:var(--text-muted);font-size:12px;">Overhead</span><br><span style="font-size:18px;font-weight:700;color:var(--yellow);">${formatCurrency(report.overhead_cost, currency)}</span></div>
+            <div class="vps-report-card">
+                <h4><svg class="icon-sm"><use href="#icon-bar-chart-3"/></svg> Latest Cost Report</h4>
+                <div class="vps-report-grid">
+                    <div class="vps-report-item">
+                        <div class="report-label">Containers</div>
+                        <div class="report-value">${(report.containers || []).length}</div>
+                    </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Total Cost</div>
+                        <div class="report-value blue">${formatCurrency(report.total_cost, currency)}</div>
+                    </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Overhead</div>
+                        <div class="report-value yellow">${formatCurrency(report.overhead_cost, currency)}</div>
+                    </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Unallocated</div>
+                        <div class="report-value red">${formatCurrency(report.unallocated_cost, currency)}</div>
+                    </div>
                 </div>
             </div>` : ''}
         `;
     } catch (err) {
-        content.innerHTML = `<div class="empty-state">❌ Failed to load VPS detail: ${err.message}</div>`;
+        content.innerHTML = `<div class="empty-state">Failed to load VPS detail: ${err.message}</div>`;
     }
 }
 
+async function saveVPSConfig(id) {
+    const body = {
+        name: document.getElementById('vps-name').value,
+        notes: '',
+        cpu_cores: parseFloat(document.getElementById('vps-cpu').value) || 0,
+        ram_gb: parseFloat(document.getElementById('vps-ram').value) || 0,
+        storage_gb: parseFloat(document.getElementById('vps-storage').value) || 0,
+        price_per_month: parseFloat(document.getElementById('vps-price').value) || 0,
+        currency: document.getElementById('vps-currency').value || 'IDR',
+        cpu_weight: parseFloat(document.getElementById('vps-cpu-weight').value) || 0.5,
+        ram_weight: parseFloat(document.getElementById('vps-ram-weight').value) || 0.4,
+        storage_weight: parseFloat(document.getElementById('vps-storage-weight').value) || 0.1,
+        overhead_percent: parseFloat(document.getElementById('vps-overhead').value) || 15,
+    };
+    const statusEl = document.getElementById('vpsConfigStatus');
+    const btn = document.getElementById('vpsConfigSaveBtn');
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="icon-sm"><use href="#icon-loader"/></svg> Saving...';
+        await API.put(`/vps/${id}`, body);
+        statusEl.textContent = 'Configuration saved. Report recalculated.';
+        statusEl.className = 'config-status success';
+        statusEl.style.display = 'block';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    } catch (err) {
+        statusEl.textContent = 'Failed: ' + err.message;
+        statusEl.className = 'config-status error';
+        statusEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save Configuration';
+    }
+    return false; // prevent form submit reload
+}
+
+function copyVPSKey(id) {
+    const codeEl = document.querySelector('.vps-key-display code');
+    const key = codeEl.textContent;
+    if (key && key !== '********') {
+        navigator.clipboard.writeText(key).then(() => {
+            showCopyFeedback('.vps-key-display .btn-sm');
+        }).catch(() => fallbackCopy(key));
+    }
+}
+
+function showCopyFeedback(selector) {
+    const btn = document.querySelector(selector);
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg class="icon-sm"><use href="#icon-check"/></svg> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+
+function copySetupCmd(method) {
+    let cmd = '';
+    if (method === 'binary') {
+        const codeEl = document.querySelector('.vps-setup-card .setup-method:first-of-type .vps-setup-code code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else if (method === 'compose') {
+        const codeEl = document.querySelector('.setup-compose-block .setup-code-block code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else if (method === 'compose-run') {
+        const codeEl = document.querySelector('.setup-alt .vps-setup-code:last-of-type code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else {
+        // Fallback
+        const codeEl = document.querySelector('.vps-setup-card .vps-setup-code code');
+        if (codeEl) cmd = codeEl.textContent;
+    }
+    if (cmd) {
+        navigator.clipboard.writeText(cmd).then(() => {
+            showCopyFeedback('.vps-setup-card .btn-sm');
+        }).catch(() => fallbackCopy(cmd));
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showCopyFeedback('.vps-key-display .btn-sm, .vps-setup-code .btn-sm');
+}
+
 document.getElementById('btnBackToVPSList').addEventListener('click', () => {
-    document.getElementById('vpsDetail').style.display = 'none';
     currentVPSId = null;
-    loadVPSList();
+    navigate('vps');
 });
 
 async function deleteVPS(id) {
@@ -1208,10 +1894,11 @@ async function deleteVPS(id) {
     try {
         await API.del(`/vps/${id}`);
         if (currentVPSId === id) {
-            document.getElementById('vpsDetail').style.display = 'none';
             currentVPSId = null;
+            navigate('vps');
+        } else {
+            loadVPSList();
         }
-        loadVPSList();
     } catch (err) {
         alert('Failed to delete VPS: ' + err.message);
     }
@@ -1221,25 +1908,33 @@ async function regenerateKey(id) {
     if (!confirm('Regenerate API key? The old key will stop working immediately.')) return;
     try {
         const data = await API.post(`/vps/${id}/reset-key`);
-        alert('✅ New API key generated! Copy it now:\n\n' + data.api_key);
+        showConfigStatus('New API key generated! Copy it now: ' + data.api_key, 'success');
         viewVPS(id); // Refresh view
     } catch (err) {
-        alert('❌ Failed to regenerate key: ' + err.message);
+        alert('Failed to regenerate key: ' + err.message);
     }
 }
 
 // ─── Add VPS Modal ────────────────────────────────────
-document.getElementById('btnAddVPS').addEventListener('click', () => {
+document.getElementById('btnAddVPS').addEventListener('click', openAddVPSModal);
+
+// Topbar "Add VPS" button — same handler
+const btnAddVPSFromTopbar = document.getElementById('btnAddVPSFromTopbar');
+if (btnAddVPSFromTopbar) {
+    btnAddVPSFromTopbar.addEventListener('click', openAddVPSModal);
+}
+
+function openAddVPSModal() {
     document.getElementById('vpsForm').reset();
     document.getElementById('vpsKeyGroup').style.display = 'none';
     document.getElementById('vpsFormError').style.display = 'none';
-    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Generate Key';
     document.getElementById('vpsModal').style.display = 'flex';
-});
+}
 
 document.getElementById('btnCancelVPS').addEventListener('click', () => {
     document.getElementById('vpsModal').style.display = 'none';
-    document.getElementById('vpsSaveBtn').textContent = '💾 Simpan & Generate Key';
+    document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save & Generate Key';
     document.getElementById('vpsSaveBtn').onclick = null;
     document.getElementById('btnCancelVPS').textContent = 'Cancel';
     document.getElementById('vpsNameInput').disabled = false;
@@ -1250,22 +1945,27 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('vpsNameInput').value;
     const notes = document.getElementById('vpsNotesInput').value;
+    const cpu = parseFloat(document.getElementById('vpsAddCPU').value) || 0;
+    const ram = parseFloat(document.getElementById('vpsAddRAM').value) || 0;
+    const storage = parseFloat(document.getElementById('vpsAddStorage').value) || 0;
+    const price = parseFloat(document.getElementById('vpsAddPrice').value) || 0;
+    const currency = document.getElementById('vpsAddCurrency').value || 'IDR';
     const errEl = document.getElementById('vpsFormError');
 
     try {
-        const result = await API.postWithBody('/vps', { name, notes });
+        const result = await API.postWithBody('/vps', { name, notes, cpu_cores: cpu, ram_gb: ram, storage_gb: storage, price_per_month: price, currency });
         // Show the generated API key — modal stays open until user closes
         document.getElementById('vpsKeyGroup').style.display = 'block';
         document.getElementById('vpsApiKey').textContent = result.api_key;
-        document.getElementById('vpsSaveBtn').textContent = '📋 Copied? Click to copy again';
+        document.getElementById('vpsSaveBtn').innerHTML = '<svg class="icon-sm"><use href="#icon-copy"/></svg> Copied? Click to copy again';
         document.getElementById('vpsSaveBtn').onclick = () => copyKey();
         document.getElementById('vpsNameInput').disabled = true;
         document.getElementById('vpsNotesInput').disabled = true;
-        document.getElementById('btnCancelVPS').textContent = '✅ Close';
+        document.getElementById('btnCancelVPS').textContent = '✓ Close';
         // Refresh VPS list in background
         loadVPSList();
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
+        errEl.textContent = err.message;
         errEl.style.display = 'block';
     }
 });
@@ -1273,7 +1973,7 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
 function copyKey() {
     const key = document.getElementById('vpsApiKey').textContent;
     navigator.clipboard.writeText(key).then(() => {
-        alert('✅ API Key copied to clipboard!');
+        showCopyFeedback('#vpsSaveBtn');
     }).catch(() => {
         // Fallback
         const textarea = document.createElement('textarea');
@@ -1282,7 +1982,7 @@ function copyKey() {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        alert('✅ API Key copied!');
+        showCopyFeedback('#vpsSaveBtn');
     });
 }
 

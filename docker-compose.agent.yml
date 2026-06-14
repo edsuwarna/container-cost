@@ -5,14 +5,14 @@ services:
     restart: unless-stopped
     command: >
       --mode=agent
-      --server=http://CHANGE_ME:8080
-      --api-key=CHANGE_ME
+      --server=http://YOUR_CENTRAL_IP:8083
+      --api-key=YOUR_API_KEY
       --push-interval=60
     volumes:
       # Docker socket — REQUIRED: to collect container stats
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Config file — contains VPS specs & pricing (name, cpu, ram, price, etc)
-      - ./container-cost-config.json:/root/.docker-cost/config.json:ro
+      # NOTE: No config.json needed! VPS config (price, specs, weights)
+      # is managed from the central UI — edit on the VPS detail page.
     environment:
       - TZ=Asia/Jakarta
     logging:

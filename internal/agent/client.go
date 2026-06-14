@@ -8,10 +8,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/endangsuwarna/docker-cost/internal/calculator"
+	"github.com/endangsuwarna/docker-cost/internal/collector"
 )
 
-// Client pushes cost reports to a central server
+// RawPushPayload is sent by agents to the central server
+type RawPushPayload struct {
+	Containers []collector.ContainerStat `json:"containers"`
+}
+
+// Client pushes raw container stats to a central server
 type Client struct {
 	centralURL  string
 	apiKey      string
@@ -31,15 +36,16 @@ func NewClient(centralURL, apiKey string, retries int) *Client {
 	}
 }
 
-// PushReport sends a cost report to the central server
-func (c *Client) PushReport(report calculator.CostReport) error {
+// PushStats sends raw container stats to the central server
+func (c *Client) PushStats(stats []collector.ContainerStat) error {
 	if c.centralURL == "" || c.apiKey == "" {
 		return fmt.Errorf("agent not configured: central_url or api_key missing")
 	}
 
-	body, err := json.Marshal(report)
+	payload := RawPushPayload{Containers: stats}
+	body, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("failed to marshal report: %w", err)
+		return fmt.Errorf("failed to marshal stats: %w", err)
 	}
 
 	url := fmt.Sprintf("%s/api/v1/push", c.centralURL)
@@ -82,9 +88,9 @@ func (c *Client) PushReport(report calculator.CostReport) error {
 	return fmt.Errorf("push failed after %d retries: %w", c.pushRetries, lastErr)
 }
 
-// PushLoop runs the agent push loop: collect → calculate → push → sleep
+// PushLoop runs the agent push loop: collect → push → sleep
 func (c *Client) PushLoop(
-	collectFn func() ([]calculator.CostReport, error),
+	collectFn func() ([]collector.ContainerStat, error),
 	interval time.Duration,
 	stop chan struct{},
 ) {
@@ -94,14 +100,11 @@ func (c *Client) PushLoop(
 	defer ticker.Stop()
 
 	// Push immediately on start
-	if reports, err := collectFn(); err == nil {
-		for _, report := range reports {
-			if err := c.PushReport(report); err != nil {
-				log.Printf("[agent] initial push failed: %v", err)
-			} else {
-				log.Printf("[agent] initial push success: VPS=%s containers=%d cost=%.2f",
-					report.VPS.Name, len(report.Containers), report.TotalCost)
-			}
+	if stats, err := collectFn(); err == nil {
+		if err := c.PushStats(stats); err != nil {
+			log.Printf("[agent] initial push failed: %v", err)
+		} else {
+			log.Printf("[agent] initial push success: containers=%d", len(stats))
 		}
 	} else {
 		log.Printf("[agent] initial collect failed: %v", err)
@@ -113,18 +116,15 @@ func (c *Client) PushLoop(
 			log.Println("[agent] push loop stopped")
 			return
 		case <-ticker.C:
-			reports, err := collectFn()
+			stats, err := collectFn()
 			if err != nil {
 				log.Printf("[agent] collect failed: %v", err)
 				continue
 			}
-			for _, report := range reports {
-				if err := c.PushReport(report); err != nil {
-					log.Printf("[agent] push failed: %v", err)
-				} else {
-					log.Printf("[agent] push success: VPS=%s containers=%d cost=%.2f",
-						report.VPS.Name, len(report.Containers), report.TotalCost)
-				}
+			if err := c.PushStats(stats); err != nil {
+				log.Printf("[agent] push failed: %v", err)
+			} else {
+				log.Printf("[agent] push success: containers=%d", len(stats))
 			}
 		}
 	}

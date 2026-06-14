@@ -7,10 +7,162 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.0.0">
+    <link rel="stylesheet" href="css/style.css?v=3.0.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
+    <!-- ═══ SVG Icon Sprite (Lucide-style) ═══ -->
+    <svg aria-hidden="true" style="display:none">
+        <defs>
+            <!-- Nav Icons -->
+            <symbol id="icon-layout-dashboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="7" height="9" x="3" y="3" rx="1"/>
+                <rect width="7" height="5" x="14" y="3" rx="1"/>
+                <rect width="7" height="9" x="14" y="12" rx="1"/>
+                <rect width="7" height="5" x="3" y="16" rx="1"/>
+            </symbol>
+            <symbol id="icon-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m7.5 4.27 9 5.15"/>
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/>
+                <path d="M12 22V12"/>
+            </symbol>
+            <symbol id="icon-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                <line x1="6" x2="6.01" y1="6" y2="6"/>
+                <line x1="6" x2="6.01" y1="18" y2="18"/>
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </symbol>
+            <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </symbol>
+            <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </symbol>
+            <!-- Action Icons -->
+            <symbol id="icon-refresh-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M3 21v-5h5"/>
+            </symbol>
+            <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="5" y2="19"/>
+                <line x1="5" x2="19" y1="12" y2="12"/>
+            </symbol>
+            <symbol id="icon-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </symbol>
+            <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </symbol>
+            <!-- Summary Card Icons -->
+            <symbol id="icon-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="2" y2="22"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </symbol>
+            <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </symbol>
+            <symbol id="icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </symbol>
+            <symbol id="icon-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="5" x="2" y="3" rx="1"/>
+                <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+                <path d="M10 12h4"/>
+            </symbol>
+            <!-- Extra for Production -->
+            <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </symbol>
+            <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                <line x1="2" x2="22" y1="2" y2="22"/>
+            </symbol>
+            <symbol id="icon-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" x2="9" y1="12" y2="12"/>
+            </symbol>
+            <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </symbol>
+            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+            </symbol>
+            <symbol id="icon-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="7.5" cy="15.5" r="5.5"/>
+                <path d="m21 2-9.6 9.6"/>
+                <path d="m15.5 7.5 3 3L22 7l-3-3"/>
+            </symbol>
+            <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+            </symbol>
+            <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+            </symbol>
+            <!-- Container Card Icons -->
+            <symbol id="icon-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <rect x="9" y="9" width="6" height="6"/>
+                <path d="M15 2v2M15 20v2M2 9h2M20 9h2M2 15h2M20 15h2M9 2v2M9 20v2"/>
+            </symbol>
+            <symbol id="icon-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+                <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+            </symbol>
+            <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </symbol>
+            <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+            </symbol>
+            <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+            </symbol>
+            <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </symbol>
+            <symbol id="icon-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/>
+            </symbol>
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </symbol>
+            <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </symbol>
+            <symbol id="icon-bar-chart-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+            </symbol>
+            <symbol id="icon-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </symbol>
+            <symbol id="icon-hard-drive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/>
+            </symbol>
+        </defs>
+    </svg>
     <!-- ═══ Loading Overlay ═══ -->
     <div id="loadingOverlay" class="loading-overlay" style="display:none;">
         <div class="loading-spinner">
@@ -24,7 +176,9 @@
     <div id="loginScreen" class="login-overlay">
         <div class="login-card">
             <div class="login-logo">
-                <div class="login-icon">💰</div>
+                <div class="login-icon">
+                    <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
                 <h1>ContainerCost</h1>
                 <p>Docker Cost Calculator</p>
             </div>
@@ -37,7 +191,7 @@
                     <label>Password</label>
                     <div class="pwd-wrapper">
                         <input type="password" id="loginPass" class="pwd-input" required>
-                        <button type="button" class="pwd-toggle" onclick="togglePwd('loginPass', this)" tabindex="-1">👁️</button>
+                        <button type="button" class="pwd-toggle" onclick="togglePwd('loginPass', this)" tabindex="-1"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
                     </div>
                 </div>
                 <button type="submit" class="btn-login">Sign In</button>
@@ -52,7 +206,9 @@
         <nav class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <div class="logo-icon">💰</div>
+                    <div class="logo-mark">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    </div>
                     <div>
                         <div class="logo-text">ContainerCost</div>
                         <span class="logo-sub">Cost Analyzer</span>
@@ -61,40 +217,42 @@
             </div>
             <div class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
-                    <span class="nav-icon">📊</span>
+                    <svg class="icon"><use href="#icon-layout-dashboard"/></svg>
                     <span>Dashboard</span>
                 </a>
                 <a href="#" class="nav-item" data-page="containers">
-                    <span class="nav-icon">🐳</span>
+                    <svg class="icon"><use href="#icon-package"/></svg>
                     <span>Containers</span>
                 </a>
                 <a href="#" class="nav-item" data-page="vps">
-                    <span class="nav-icon">🖥️</span>
+                    <svg class="icon"><use href="#icon-server"/></svg>
                     <span>VPS</span>
                 </a>
+                <div class="nav-divider"></div>
+                <div class="nav-section-label">Administration</div>
                 <a href="#" class="nav-item" data-page="config">
-                    <span class="nav-icon">⚙️</span>
+                    <svg class="icon"><use href="#icon-settings"/></svg>
                     <span>Settings</span>
                 </a>
                 <a href="#" class="nav-item" id="navUsers" data-page="users" style="display:none;">
-                    <span class="nav-icon">👥</span>
+                    <svg class="icon"><use href="#icon-users"/></svg>
                     <span>Users</span>
                 </a>
                 <a href="#" class="nav-item" id="navPermissions" data-page="permissions" style="display:none;">
-                    <span class="nav-icon">🔒</span>
+                    <svg class="icon"><use href="#icon-shield"/></svg>
                     <span>Permissions</span>
                 </a>
             </div>
             <div class="sidebar-footer">
-                <div class="sidebar-footer-top">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">Connected</span>
-                    <span class="sidebar-user" id="sidebarUser"></span>
+                    <div class="footer-row">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span class="status-label" id="statusText">Connected</span>
+                        <span class="sidebar-user" id="sidebarUser"></span>
+                    </div>
+                    <div class="footer-row">
+                        <button class="btn-footer-action btn-logout" id="btnLogout" title="Logout"><svg class="icon-sm"><use href="#icon-log-out"/></svg> Logout</button>
+                    </div>
                 </div>
-                <div class="sidebar-footer-actions">
-                    <button class="btn-footer-action btn-logout" id="btnLogout" title="Logout">🚪 Logout</button>
-                </div>
-            </div>
         </nav>
 
         <!-- Main Content -->
@@ -103,23 +261,33 @@
             <header class="topbar">
                 <div class="topbar-left">
                     <span class="topbar-title" id="pageTitle">Dashboard</span>
-                    <span class="topbar-meta" id="vpsName">-</span>
-                    <span class="vps-badge" id="lastUpdated">-</span>
+                    <span class="topbar-badge" id="vpsNameBadge">-</span>
+                    <span class="topbar-badge" id="lastUpdatedBadge">-</span>
                 </div>
                 <div class="topbar-right">
-                    <button class="btn-header-action" id="btnGenerateReport" title="Collect Docker stats & generate report">🔄 Generate Report</button>
-                    <span class="period-badge">Monthly</span>
+                    <button class="btn" id="btnGenerateReport" title="Collect Docker stats & generate report"><svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Generate Report</button>
+                    <button class="btn btn-primary" id="btnAddVPSFromTopbar"><svg class="icon-sm"><use href="#icon-plus"/></svg> Add VPS</button>
                 </div>
             </header>
 
             <div class="content">
                 <!-- ═══ Dashboard Page ═══ -->
                 <section class="page active" id="page-dashboard">
+
+                    <div id="dashContent">
+
+                    <!-- ═══ VPS Strip ═══ -->
+                    <div class="vps-strip" id="vpsStrip">
+                        <!-- populated by JS -->
+                    </div>
+
                     <!-- Summary Cards -->
                     <div class="summary-grid">
                         <div class="summary-card" id="cardTotal">
                             <div class="card-top">
-                                <div class="card-icon">💰</div>
+                                <div class="card-icon-box blue">
+                                    <svg class="icon-lg"><use href="#icon-dollar"/></svg>
+                                </div>
                                 <span class="card-change up" id="budgetIndicator">-</span>
                             </div>
                             <div class="card-label">Total Cost</div>
@@ -129,7 +297,10 @@
                         </div>
                         <div class="summary-card" id="cardContainers">
                             <div class="card-top">
-                                <div class="card-icon">💵</div>
+                                <div class="card-icon-box green">
+                                    <svg class="icon-lg"><use href="#icon-box"/></svg>
+                                </div>
+                                <span class="card-change up" id="containerChange"></span>
                             </div>
                             <div class="card-label">Container Cost</div>
                             <div class="card-value" id="containerCount">-</div>
@@ -138,7 +309,10 @@
                         </div>
                         <div class="summary-card" id="cardOverhead">
                             <div class="card-top">
-                                <div class="card-icon">⚡</div>
+                                <div class="card-icon-box yellow">
+                                    <svg class="icon-lg"><use href="#icon-zap"/></svg>
+                                </div>
+                                <span class="card-change neutral" id="overheadChange"></span>
                             </div>
                             <div class="card-label">Overhead</div>
                             <div class="card-value" id="overheadCost">-</div>
@@ -147,7 +321,10 @@
                         </div>
                         <div class="summary-card" id="cardUnalloc">
                             <div class="card-top">
-                                <div class="card-icon">📦</div>
+                                <div class="card-icon-box red">
+                                    <svg class="icon-lg"><use href="#icon-archive"/></svg>
+                                </div>
+                                <span class="card-change neutral" id="unallocChange"></span>
                             </div>
                             <div class="card-label">Unallocated</div>
                             <div class="card-value" id="unallocCost">-</div>
@@ -158,7 +335,7 @@
 
                     <!-- Period Filter -->
                     <div class="period-filter-bar">
-                        <div class="period-filter-label">📅 Period:</div>
+                        <div class="period-filter-label">Period:</div>
                         <div class="period-filter-btns">
                             <button class="period-btn active" data-period="latest" onclick="setPeriod('latest')">Latest</button>
                             <button class="period-btn" data-period="7d" onclick="setPeriod('7d')">7 Days</button>
@@ -174,16 +351,29 @@
                             <div class="chart-card-header">
                                 <h3>Cost Distribution <span class="chart-period-label">· per month</span></h3>
                             </div>
-                            <div class="chart-container">
-                                <canvas id="costChart"></canvas>
+                            <div class="chart-body">
+                                <div class="chart-container chart-container-scroll" id="costChartContainer">
+                                    <canvas id="costChart"></canvas>
+                                </div>
                             </div>
                         </div>
                         <div class="chart-card">
                             <div class="chart-card-header">
                                 <h3>Cost Breakdown <span class="chart-period-label">· per month</span></h3>
                             </div>
-                            <div class="chart-container">
-                                <canvas id="breakdownChart"></canvas>
+                            <div class="chart-body donut-wrap">
+                                <div class="donut-vis">
+                                    <div class="chart-container" style="width:160px;height:160px;flex-shrink:0;min-height:0;">
+                                        <canvas id="breakdownChart"></canvas>
+                                    </div>
+                                    <div class="donut-center" id="donutCenter">
+                                        <span class="donut-center-val" id="donutTotal">-</span>
+                                        <span class="donut-center-lbl">total</span>
+                                    </div>
+                                </div>
+                                <div class="donut-legend" id="breakdownLegend">
+                                    <!-- populated by JS -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -202,50 +392,156 @@
                     <!-- Table -->
                     <div class="table-card">
                         <div class="table-card-header">
-                            <h3>Container Costs</h3>
-                            <span class="badge" id="tableCount">0 containers</span>
+                            <h3>Running Containers</h3>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <button class="btn btn-sm btn-secondary"><svg class="icon-sm" style="color:var(--mute)"><use href="#icon-filter"/></svg> Filter</button>
+                                <button class="btn btn-sm btn-secondary"><svg class="icon-sm" style="color:var(--mute)"><use href="#icon-download"/></svg> Export</button>
+                                <span class="badge" id="tableCount">0 containers</span>
+                            </div>
                         </div>
                         <div class="table-wrapper">
                             <table id="containerTable">
                                 <thead>
                                     <tr>
-                                        <th>Container</th>
-                                        <th>Image</th>
-                                        <th>CPU</th>
-                                        <th>RAM</th>
-                                        <th>Status</th>
-                                        <th>CPU Cost</th>
-                                        <th>RAM Cost</th>
-                                        <th>Total/Month</th>
+                                        <th><span class="th-inner">Container</span></th>
+                                        <th><span class="th-inner">VPS</span></th>
+                                        <th><span class="th-inner">CPU</span></th>
+                                        <th><span class="th-inner">Memory</span></th>
+                                        <th><span class="th-inner">Status</span></th>
+                                        <th class="sortable sorted-desc"><span class="th-inner">Monthly Cost <svg class="icon-sm"><use href="#icon-chevron-down"/></svg></span></th>
                                     </tr>
                                 </thead>
                                 <tbody id="containerTableBody">
-                                    <tr><td colspan="8" class="empty-state">No data yet. Click 🔄 Refresh to generate a report.</td></tr>
+                                    <tr><td colspan="6" class="empty-state">No data yet. Click Generate Report to start.</td></tr>
                                 </tbody>
                             </table>
-                        </div>
                     </div>
-                </section>
+                </div>
+                    </div>
 
-                <!-- ═══ Containers Page ═══ -->
+                <!-- ═══ Setup Guide (shown when no data yet) ═══ -->
+                <div class="setup-guide" id="dashboardSetup" style="display:none;">
+                    <div class="setup-guide-card">
+                        <h3><svg class="icon-lg" style="width:24px;height:24px;vertical-align:middle;margin-right:8px;color:var(--accent-blue);"><use href="#icon-server"/></svg> Welcome to ContainerCost!</h3>
+                        <p>To get started, install the ContainerCost agent on your VPS. The agent collects Docker container stats and pushes cost reports to this central server.</p>
+
+                        <h4>Step 1: Add VPS via panel</h4>
+                        <p>Go to <strong>VPS</strong> page → click <strong>Add VPS</strong> → give it a name. Copy the generated API key.</p>
+
+                        <h4>Step 2: Run agent on your VPS</h4>
+                        <div class="setup-code-block">
+                            <code># Download &amp; run agent (replace KEY with your API key):</code><br>
+                            <code>docker run -d \</code><br>
+                            <code>  --name container-cost-agent \</code><br>
+                            <code>  -v /var/run/docker.sock:/var/run/docker.sock:ro \</code><br>
+                            <code>  -e MODE=agent \</code><br>
+                            <code>  -e CENTRAL_URL=https://your-server:8081 \</code><br>
+                            <code>  -e API_KEY=YOUR_API_KEY \</code><br>
+                            <code>  ghcr.io/edsuwarna/container-cost:latest</code>
+                        </div>
+
+                        <h4>Step 3: Or use standalone binary</h4>
+                        <div class="setup-code-block">
+                            <code>./container-cost --mode agent \</code><br>
+                            <code>  --server https://your-server:8081 \</code><br>
+                            <code>  --api-key YOUR_API_KEY \</code><br>
+                            <code>  --push-interval 60</code>
+                        </div>
+
+                        <p class="setup-guide-footer"><em>Once the agent pushes its first report, you'll see cost breakdown here. Meanwhile you can also click <strong>Refresh</strong> to collect stats from this server's local Docker socket.</em></p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ═══ Containers Page ═══ -->
                 <section class="page" id="page-containers">
+                    <!-- Toolbar: Search + Sort -->
+                    <div class="container-toolbar">
+                        <input type="text" class="container-search" id="containerSearch" placeholder="Search containers..." spellcheck="false">
+                        <select class="container-sort" id="containerSort">
+                            <option value="cost">Highest Cost</option>
+                            <option value="name">Name A-Z</option>
+                            <option value="cpu">Highest CPU</option>
+                        </select>
+                        <span class="container-count" id="containerListCount"></span>
+                    </div>
                     <div class="container-list" id="containerList">
                         <!-- populated by JS -->
                     </div>
+                    <!-- ═══ Container Detail View ═══ -->
                     <div class="detail-view" id="containerDetail" style="display:none;">
-                        <button class="btn-back" id="btnBackToList">← Back to list</button>
-                        <div style="margin-bottom:12px;">
-                            <h3 id="containerDetailName" style="margin:0;font-weight:600;font-size:16px;"></h3>
-                        </div>
-                        <div class="detail-chart-card">
-                            <h3>Cost History</h3>
-                            <div class="chart-container" style="height:300px">
-                                <canvas id="historyChart"></canvas>
+                        <!-- Back + Prev/Next -->
+                        <div class="detail-topbar">
+                            <button class="btn-back" id="btnBackToList">← Back to list</button>
+                            <div class="detail-nav">
+                                <button class="btn-nav" id="btnPrevContainer">← Previous</button>
+                                <button class="btn-nav" id="btnNextContainer">Next →</button>
                             </div>
                         </div>
-                        <div class="detail-info">
-                            <div class="info-grid" id="detailInfo">
-                                <!-- populated by JS -->
+                        <!-- Container Identity -->
+                        <div class="detail-header" id="detailHeader">
+                            <h2 id="containerDetailName"></h2>
+                            <div class="detail-header-meta" id="detailHeaderMeta"></div>
+                        </div>
+                        <!-- Stats row -->
+                        <div class="detail-stats-row" id="detailStatsRow"></div>
+                        <!-- Charts row -->
+                        <div class="detail-charts-row" id="detailChartsRow">
+                            <div class="detail-chart-card">
+                                <h3>Cost History</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="historyChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>CPU Trend</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="cpuTrendChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>Memory Trend</h3>
+                                <div class="chart-container chart-container-tight">
+                                    <canvas id="memTrendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bottom row: Breakdown + Info -->
+                        <div class="detail-bottom-row">
+                            <div class="detail-chart-card">
+                                <h3>Cost Breakdown</h3>
+                                <div class="breakdown-wrap">
+                                    <div class="breakdown-vis">
+                                        <canvas id="breakdownDonut"></canvas>
+                                    </div>
+                                    <div class="breakdown-legend" id="breakdownLegendDetail"></div>
+                                </div>
+                            </div>
+                            <div class="detail-chart-card">
+                                <h3>Container Info</h3>
+                                <div class="info-grid" id="detailInfo">
+                                    <!-- populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- History Table -->
+                        <div class="detail-chart-card">
+                            <h3>Snapshot History</h3>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>CPU</th>
+                                            <th>Memory</th>
+                                            <th>Cost</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                        <tr><td colspan="4" class="empty-state">Loading history...</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -256,20 +552,29 @@
                     <div class="vps-card">
                         <div class="vps-header">
                             <h3>VPS Management</h3>
-                            <button class="btn-primary" id="btnAddVPS">➕ Tambah VPS</button>
+                            <button class="btn btn-primary" id="btnAddVPS"><svg class="icon-sm"><use href="#icon-plus"/></svg> Add VPS</button>
                         </div>
-                        <div class="vps-stats-bar" id="vpsStatsBar" style="display:none;">
-                            <div class="vps-stat-item">
-                                <span class="vps-stat-value" id="vpsTotalCount">0</span>
-                                <span class="vps-stat-label">Total VPS</span>
+                        <div class="vps-chips" id="vpsStatsBar" style="display:none;">
+                            <div class="vps-chip vps-chip-blue">
+                                <div class="vps-chip-header">
+                                    <svg class="icon-sm"><use href="#icon-server"/></svg>
+                                    Total VPS
+                                </div>
+                                <div class="vps-chip-value" id="vpsTotalCount">0</div>
                             </div>
-                            <div class="vps-stat-item">
-                                <span class="vps-stat-value" id="vpsOnlineCount">0</span>
-                                <span class="vps-stat-label">Online</span>
+                            <div class="vps-chip vps-chip-green">
+                                <div class="vps-chip-header">
+                                    <svg class="icon-sm"><use href="#icon-zap"/></svg>
+                                    Online
+                                </div>
+                                <div class="vps-chip-value" id="vpsOnlineCount">0</div>
                             </div>
-                            <div class="vps-stat-item">
-                                <span class="vps-stat-value" id="vpsTotalCost">-</span>
-                                <span class="vps-stat-label">Total Cost</span>
+                            <div class="vps-chip vps-chip-yellow">
+                                <div class="vps-chip-header">
+                                    <svg class="icon-sm"><use href="#icon-dollar"/></svg>
+                                    Total Cost
+                                </div>
+                                <div class="vps-chip-value" id="vpsTotalCost">-</div>
                             </div>
                         </div>
                         <div class="table-wrapper">
@@ -291,38 +596,53 @@
                         </div>
                     </div>
 
-                    <!-- VPS Detail -->
-                    <div class="detail-view" id="vpsDetail" style="display:none;">
-                        <button class="btn-back" id="btnBackToVPSList">← Back to VPS list</button>
-                        <div class="vps-detail-card" id="vpsDetailContent">
-                            <!-- populated by JS -->
-                        </div>
-                    </div>
-
                     <!-- Add VPS Modal -->
                     <div class="modal-overlay" id="vpsModal" style="display:none;">
                         <div class="modal-card" style="width:500px;">
-                            <h3>➕ Tambah VPS Baru</h3>
+                            <h3><svg class="icon"><use href="#icon-plus"/></svg> Add New VPS</h3>
                             <form id="vpsForm">
                                 <div class="form-group">
-                                    <label>Nama VPS</label>
-                                    <input type="text" id="vpsNameInput" placeholder="Contoh: Hetzner CX42" required>
+                                    <label>VPS Name</label>
+                                    <input type="text" id="vpsNameInput" placeholder="e.g. Hetzner CX42" required>
                                 </div>
+                                <div class="form-row" style="gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr;">
+                                    <div class="form-group">
+                                        <label>CPU Cores</label>
+                                        <input type="number" id="vpsAddCPU" step="0.5" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RAM (GB)</label>
+                                        <input type="number" id="vpsAddRAM" step="0.5" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Storage (GB)</label>
+                                        <input type="number" id="vpsAddStorage" step="1" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Price / Month</label>
+                                        <input type="number" id="vpsAddPrice" step="0.01" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Currency</label>
+                                        <input type="text" id="vpsAddCurrency" value="IDR" placeholder="IDR" style="max-width:100px;">
+                                    </div>
+                                </div>
+                                <p class="form-hint">Specs are optional — set later from the VPS detail page.</p>
                                 <div class="form-group">
-                                    <label>Catatan (opsional)</label>
-                                    <input type="text" id="vpsNotesInput" placeholder="Lokasi: Singapore, provider: Hetzner">
+                                    <label>Notes (optional)</label>
+                                    <input type="text" id="vpsNotesInput" placeholder="Location: Singapore, provider: Hetzner">
                                 </div>
                                 <div class="form-group" id="vpsKeyGroup" style="display:none;">
                                     <label>API Key</label>
                                     <div class="key-display">
                                         <code id="vpsApiKey"></code>
-                                        <button type="button" class="btn-secondary btn-sm" onclick="copyKey()">📋 Copy</button>
+                                        <button type="button" class="btn-copy btn-sm" onclick="copyKey()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
                                     </div>
-                                    <p class="form-hint">Gunakan key ini di agent VPS dengan flag <code>--api-key</code></p>
+                                    <p class="form-hint">Use this key in the VPS agent with <code>--api-key</code> flag</p>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="btn-primary" id="vpsSaveBtn">💾 Simpan & Generate Key</button>
-                                    <button type="button" class="btn-secondary" id="btnCancelVPS">Cancel</button>
+                                    <button type="submit" class="btn btn-primary" id="vpsSaveBtn"><svg class="icon-sm"><use href="#icon-save"/></svg> Save &amp; Generate Key</button>
+                                    <button type="button" class="btn btn-secondary" id="btnCancelVPS">Cancel</button>
                                 </div>
                             </form>
                             <div id="vpsFormError" class="config-status error" style="display:none;"></div>
@@ -330,53 +650,32 @@
                     </div>
                 </section>
 
-                <!-- ═══ Config Page ═══ -->
+                <!-- ═══ VPS Detail Page ═══ -->
+                <section class="page" id="page-vps-detail">
+                    <button class="btn-back" id="btnBackToVPSList"><svg class="icon-sm"><use href="#icon-chevron-left"/></svg> Back to VPS List</button>
+                    <div id="vpsDetailContent">
+                        <!-- populated by JS -->
+                    </div>
+                </section>
+
+                <!-- ═══ Settings Page ═══ -->
                 <section class="page" id="page-config">
                     <div class="config-card">
+                        <div class="config-header">
+                            <h3>Settings</h3>
+                            <p class="config-desc">Global defaults applied when creating new VPS. Each VPS can override these from its detail page.</p>
+                        </div>
                         <form id="configForm">
                             <div class="config-section">
-                                <h3>VPS Info</h3>
+                                <h3>Default VPS Config</h3>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label>VPS Name</label>
-                                        <input type="text" name="name" placeholder="My VPS">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Currency</label>
+                                        <label>Default Currency</label>
                                         <input type="text" name="currency" placeholder="IDR">
                                     </div>
-                                </div>
-                                <div class="form-row">
                                     <div class="form-group">
-                                        <label>Price per Month</label>
-                                        <input type="number" name="price_per_month" step="1000" min="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Overhead %</label>
+                                        <label>Default Overhead %</label>
                                         <input type="number" name="overhead_percent" step="1" min="0" max="50">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="config-section">
-                                <h3>VPS Specs</h3>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>CPU Cores</label>
-                                        <input type="number" name="cpu_cores" step="1" min="1">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>RAM (GB)</label>
-                                        <input type="number" name="ram_gb" step="1" min="1">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Storage (GB)</label>
-                                        <input type="number" name="storage_gb" step="10" min="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Bandwidth (GB)</label>
-                                        <input type="number" name="bandwidth_gb" step="10" min="0">
                                     </div>
                                 </div>
                             </div>
@@ -405,7 +704,7 @@
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn-primary">💾 Save Config</button>
+                                <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-save"/></svg> Save Settings</button>
                             </div>
                         </form>
                         <div id="configStatus" class="config-status"></div>
@@ -416,7 +715,7 @@
                     <div class="users-card">
                         <div class="users-header">
                             <h3>User Management</h3>
-                            <button class="btn-primary" id="btnAddUser">➕ Add User</button>
+                            <button class="btn btn-primary" id="btnAddUser"><svg class="icon-sm"><use href="#icon-plus"/></svg> Add User</button>
                         </div>
                         <div class="table-wrapper">
                             <table id="usersTable">
@@ -450,7 +749,7 @@
                                     <label>Password</label>
                                     <div class="pwd-wrapper">
                                         <input type="password" id="userPassword" class="pwd-input" required>
-                                        <button type="button" class="pwd-toggle" onclick="togglePwd('userPassword', this)" tabindex="-1">👁️</button>
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('userPassword', this)" tabindex="-1"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -466,8 +765,8 @@
                                     </select>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="btn-primary">💾 Save</button>
-                                    <button type="button" class="btn-secondary" id="btnCancelUser">Cancel</button>
+                                    <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-save"/></svg> Save</button>
+                                    <button type="button" class="btn btn-secondary" id="btnCancelUser">Cancel</button>
                                 </div>
                             </form>
                             <div id="userFormError" class="config-status error" style="display:none;"></div>
@@ -490,14 +789,14 @@
                                 <div class="form-group">
                                     <label>New Role</label>
                                     <select id="roleNewSelect">
-                                        <option value="admin">Admin 👑</option>
-                                        <option value="engineer">Engineer 🔧</option>
-                                        <option value="management">Management 📋</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="engineer">Engineer</option>
+                                        <option value="management">Management</option>
                                     </select>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="btn-primary">💾 Update Role</button>
-                                    <button type="button" class="btn-secondary" id="btnCancelRole">Cancel</button>
+                                    <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-save"/></svg> Update Role</button>
+                                    <button type="button" class="btn btn-secondary" id="btnCancelRole">Cancel</button>
                                 </div>
                             </form>
                             <div id="roleFormError" class="config-status error" style="display:none;"></div>
@@ -507,7 +806,7 @@
                     <!-- Reset Password Modal -->
                     <div class="modal-overlay" id="resetPwdModal" style="display:none;">
                         <div class="modal-card" style="width:360px;">
-                            <h3>🔑 Reset Password</h3>
+                            <h3><svg class="icon-sm"><use href="#icon-key"/></svg> Reset Password</h3>
                             <form id="resetPwdForm">
                                 <div class="form-group">
                                     <label>User</label>
@@ -517,19 +816,19 @@
                                     <label>New Password</label>
                                     <div class="pwd-wrapper">
                                         <input type="password" id="resetPwdNewPass" class="pwd-input" placeholder="Min 4 characters" required minlength="4">
-                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdNewPass', this)" tabindex="-1">👁️</button>
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdNewPass', this)" tabindex="-1"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Confirm Password</label>
                                     <div class="pwd-wrapper">
                                         <input type="password" id="resetPwdConfirm" class="pwd-input" placeholder="Re-enter password" required minlength="4">
-                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdConfirm', this)" tabindex="-1">👁️</button>
+                                        <button type="button" class="pwd-toggle" onclick="togglePwd('resetPwdConfirm', this)" tabindex="-1"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
                                     </div>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="btn-primary">🔑 Update Password</button>
-                                    <button type="button" class="btn-secondary" id="btnCancelResetPwd">Cancel</button>
+                                    <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-key"/></svg> Update Password</button>
+                                    <button type="button" class="btn btn-secondary" id="btnCancelResetPwd">Cancel</button>
                                 </div>
                             </form>
                             <div id="resetPwdError" class="config-status error" style="display:none;"></div>
@@ -547,46 +846,46 @@
                             <div class="permission-role-card role-admin">
                                 <div class="role-card-header">
                                     <span class="role-badge role-badge-admin">Admin</span>
-                                    <span class="role-icon">👑</span>
+                                    <span class="role-icon"><svg class="icon-sm"><use href="#icon-shield"/></svg></span>
                                 </div>
                                 <div class="role-desc">Full access to all features. Can manage users, configure VPS settings, and view all data.</div>
                                 <div class="role-perm-list">
-                                    <div class="perm-item allowed">📊 View Dashboard</div>
-                                    <div class="perm-item allowed">🐳 View Containers</div>
-                                    <div class="perm-item allowed">⚙️ Configure Settings</div>
-                                    <div class="perm-item allowed">👥 Manage Users</div>
-                                    <div class="perm-item allowed">🔒 Manage Permissions</div>
-                                    <div class="perm-item allowed">🔄 Generate Reports</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Dashboard</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Containers</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Configure Settings</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Manage Users</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Manage Permissions</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Generate Reports</div>
                                 </div>
                             </div>
                             <div class="permission-role-card role-engineer">
                                 <div class="role-card-header">
                                     <span class="role-badge role-badge-engineer">Engineer</span>
-                                    <span class="role-icon">🔧</span>
+                                    <span class="role-icon"><svg class="icon-sm"><use href="#icon-settings"/></svg></span>
                                 </div>
                                 <div class="role-desc">Can view dashboard, container details, and generate cost reports. Cannot manage users or settings.</div>
                                 <div class="role-perm-list">
-                                    <div class="perm-item allowed">📊 View Dashboard</div>
-                                    <div class="perm-item allowed">🐳 View Containers</div>
-                                    <div class="perm-item denied">⚙️ Configure Settings</div>
-                                    <div class="perm-item denied">👥 Manage Users</div>
-                                    <div class="perm-item denied">🔒 Manage Permissions</div>
-                                    <div class="perm-item allowed">🔄 Generate Reports</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Dashboard</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Containers</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Configure Settings</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Manage Users</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Manage Permissions</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Generate Reports</div>
                                 </div>
                             </div>
                             <div class="permission-role-card role-management">
                                 <div class="role-card-header">
                                     <span class="role-badge role-badge-management">Management</span>
-                                    <span class="role-icon">📋</span>
+                                    <span class="role-icon"><svg class="icon-sm"><use href="#icon-layout-dashboard"/></svg></span>
                                 </div>
                                 <div class="role-desc">Can view dashboard with cost summaries, per-container costs, and high-level reports. Cannot configure settings or manage users.</div>
                                 <div class="role-perm-list">
-                                    <div class="perm-item allowed">📊 View Dashboard</div>
-                                    <div class="perm-item allowed">🐳 View Container Costs</div>
-                                    <div class="perm-item denied">⚙️ Configure Settings</div>
-                                    <div class="perm-item denied">👥 Manage Users</div>
-                                    <div class="perm-item denied">🔒 Manage Permissions</div>
-                                    <div class="perm-item allowed">🔄 Generate Reports</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Dashboard</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> View Container Costs</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Configure Settings</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Manage Users</div>
+                                    <div class="perm-item denied"><svg class="icon-sm" style="color:var(--accent-red)"><use href="#icon-log-out"/></svg> Manage Permissions</div>
+                                    <div class="perm-item allowed"><svg class="icon-sm" style="color:var(--accent-green)"><use href="#icon-check"/></svg> Generate Reports</div>
                                 </div>
                             </div>
                         </div>
@@ -596,6 +895,6 @@
         </main>
     </div>
 
-    <script src="js/app.js?v=2.0.0"></script>
+    <script src="js/app.js?v=3.0.0"></script>
 </body>
 </html>

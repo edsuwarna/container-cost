@@ -371,16 +371,80 @@ func generateAPIKey() string {
 	return "dckr_" + hex.EncodeToString(buf)
 }
 
-func (s *Store) CreateVPS(name string, notes string) (*VPSAgent, error) {
+// VPSConfigFields holds the editable VPS configuration
+type VPSConfigFields struct {
+	Name           string  `json:"name"`
+	CPU            float64 `json:"cpu_cores"`
+	RAMGB          float64 `json:"ram_gb"`
+	StorageGB      float64 `json:"storage_gb"`
+	PricePerMonth  float64 `json:"price_per_month"`
+	Currency       string  `json:"currency"`
+	CPUWeight      float64 `json:"cpu_weight"`
+	RAMWeight      float64 `json:"ram_weight"`
+	StorageWeight  float64 `json:"storage_weight"`
+	OverheadPercent float64 `json:"overhead_percent"`
+	Notes          string  `json:"notes"`
+}
+
+func (s *Store) CreateVPS(name string, notes string, opts ...VPSConfigFields) (*VPSAgent, error) {
 	rawKey := generateAPIKey()
 	hashedKey := hashAPIKey(rawKey)
+
+	cfg := VPSConfigFields{
+		Name:            name,
+		Notes:           notes,
+		CPU:             0,
+		RAMGB:           0,
+		StorageGB:       0,
+		PricePerMonth:   0,
+		Currency:        "IDR",
+		CPUWeight:       0.5,
+		RAMWeight:       0.4,
+		StorageWeight:   0.1,
+		OverheadPercent: 15.0,
+	}
+	if len(opts) > 0 {
+		o := opts[0]
+		if o.CPU > 0 {
+			cfg.CPU = o.CPU
+		}
+		if o.RAMGB > 0 {
+			cfg.RAMGB = o.RAMGB
+		}
+		if o.StorageGB > 0 {
+			cfg.StorageGB = o.StorageGB
+		}
+		if o.PricePerMonth > 0 {
+			cfg.PricePerMonth = o.PricePerMonth
+		}
+		if o.Currency != "" {
+			cfg.Currency = o.Currency
+		}
+		if o.CPUWeight > 0 {
+			cfg.CPUWeight = o.CPUWeight
+		}
+		if o.RAMWeight > 0 {
+			cfg.RAMWeight = o.RAMWeight
+		}
+		if o.StorageWeight > 0 {
+			cfg.StorageWeight = o.StorageWeight
+		}
+		if o.OverheadPercent > 0 {
+			cfg.OverheadPercent = o.OverheadPercent
+		}
+	}
+
 	agent := &VPSAgent{}
 	err := s.db.QueryRow(
-		`INSERT INTO vps_agents (name, api_key, notes) VALUES ($1, $2, $3)
+		`INSERT INTO vps_agents (name, api_key, notes, cpu, ram_gb, storage_gb, price_per_month, currency,
+		                         cpu_weight, ram_weight, storage_weight, overhead_percent)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		 RETURNING id, name, cpu, ram_gb, storage_gb, price_per_month, currency,
 		           cpu_weight, ram_weight, storage_weight, overhead_percent,
 		           notes, status, last_seen, created_at`,
 		name, hashedKey, notes,
+		cfg.CPU, cfg.RAMGB, cfg.StorageGB, cfg.PricePerMonth, cfg.Currency,
+		cfg.CPUWeight, cfg.RAMWeight, cfg.StorageWeight, cfg.OverheadPercent,
 	).Scan(&agent.ID, &agent.Name,
 		&agent.CPU, &agent.RAMGB,
 		&agent.StorageGB, &agent.PricePerMonth, &agent.Currency,
@@ -392,6 +456,21 @@ func (s *Store) CreateVPS(name string, notes string) (*VPSAgent, error) {
 	// Return the raw key to the caller so it can be displayed once
 	agent.APIKey = rawKey
 	return agent, nil
+}
+
+func (s *Store) UpdateVPSConfig(id int, cfg VPSConfigFields) error {
+	_, err := s.db.Exec(
+		`UPDATE vps_agents SET
+			name = $1, notes = $2, cpu = $3, ram_gb = $4, storage_gb = $5,
+			price_per_month = $6, currency = $7,
+			cpu_weight = $8, ram_weight = $9, storage_weight = $10, overhead_percent = $11
+		 WHERE id = $12`,
+		cfg.Name, cfg.Notes,
+		cfg.CPU, cfg.RAMGB, cfg.StorageGB, cfg.PricePerMonth, cfg.Currency,
+		cfg.CPUWeight, cfg.RAMWeight, cfg.StorageWeight, cfg.OverheadPercent,
+		id,
+	)
+	return err
 }
 
 func (s *Store) ListVPS() ([]VPSAgent, error) {
@@ -594,6 +673,50 @@ func (s *Store) GetLatestSnapshotForVPS(vpsID int) (*calculator.CostReport, erro
 	return &report, nil
 }
 
+// GetLastSnapshots returns the most recent N snapshots, optionally filtered by vpsID.
+// Used for computing rolling averages.
+func (s *Store) GetLastSnapshots(vpsID int, n int) ([]calculator.CostReport, error) {
+	if n <= 0 {
+		n = 3
+	}
+
+	var rows *sql.Rows
+	var err error
+	if vpsID > 0 {
+		rows, err = s.db.Query(
+			`SELECT report_json FROM snapshots WHERE vps_id = $1 ORDER BY created_at DESC LIMIT $2`,
+			vpsID, n,
+		)
+	} else {
+		rows, err = s.db.Query(
+			`SELECT report_json FROM snapshots ORDER BY created_at DESC LIMIT $2`,
+			n,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reports []calculator.CostReport
+	for rows.Next() {
+		var rj string
+		if err := rows.Scan(&rj); err != nil {
+			continue
+		}
+		var r calculator.CostReport
+		if err := json.Unmarshal([]byte(rj), &r); err != nil {
+			continue
+		}
+		reports = append(reports, r)
+	}
+	// Reverse to chronological order
+	for i, j := 0, len(reports)-1; i < j; i, j = i+1, j-1 {
+		reports[i], reports[j] = reports[j], reports[i]
+	}
+	return reports, nil
+}
+
 func (s *Store) GetSnapshotHistory(since time.Time, limit int) ([]calculator.CostReport, error) {
 	if limit <= 0 {
 		limit = 100
@@ -680,18 +803,31 @@ type ContainerCostPoint struct {
 	TotalCost  float64   `json:"total_cost"`
 }
 
-func (s *Store) GetContainerHistory(name string, limit int) ([]ContainerCostPoint, error) {
+func (s *Store) GetContainerHistory(name string, vpsID int, limit int) ([]ContainerCostPoint, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 
-	rows, err := s.db.Query(
-		`SELECT s.created_at, s.report_json, COALESCE(v.name, '') as vps_name
-		 FROM snapshots s
-		 LEFT JOIN vps_agents v ON s.vps_id = v.id
-		 ORDER BY s.created_at DESC LIMIT $1`,
-		limit,
-	)
+	var rows *sql.Rows
+	var err error
+	if vpsID > 0 {
+		rows, err = s.db.Query(
+			`SELECT s.created_at, s.report_json, COALESCE(v.name, '') as vps_name
+			 FROM snapshots s
+			 LEFT JOIN vps_agents v ON s.vps_id = v.id
+			 WHERE s.vps_id = $1
+			 ORDER BY s.created_at DESC LIMIT $2`,
+			vpsID, limit,
+		)
+	} else {
+		rows, err = s.db.Query(
+			`SELECT s.created_at, s.report_json, COALESCE(v.name, '') as vps_name
+			 FROM snapshots s
+			 LEFT JOIN vps_agents v ON s.vps_id = v.id
+			 ORDER BY s.created_at DESC LIMIT $1`,
+			limit,
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to query container history: %w", err)
 	}

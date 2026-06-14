@@ -581,7 +581,21 @@ services:
 ## 11. Related Documents
 
 - [README.md](./README.md) — Dokumentasi teknis & cara pakai
+- [DESIGN.md](./DESIGN.md) — Design system & visual tokens (Raycast-inspired)
 - [Makefile](./Makefile) — Build commands
 - [deploy/setup-agent.sh](./deploy/setup-agent.sh) — One-liner agent deployment
 - [docker-compose.yml](./docker-compose.yml) — Central server deployment
+
+### Design Mockups
+
+Semua mockup UI disimpan di `sketches/`:
+
+| File | Deskripsi |
+|------|-----------|
+| `sketches/mockup-v3-raycast-polish.html` | **Latest** — Final mockup with Lucide icons, Y-axis labels, sort indicators, VPS active states |
+| `sketches/mockup-v2-raycast-lucide.html` | Iterasi-2 — Emoji → Lucide SVG icons |
+| `sketches/mockup-v1-raycast.html` | Iterasi-1 — Initial Raycast design tokens |
+
+Design reference: [Raycast DESIGN.md](https://raw.githubusercontent.com/VoltAgent/awesome-design-md/main/design-md/raycast/DESIGN.md) from getdesign.md collection.
+
 - [docker-compose.agent.yml](./docker-compose.agent.yml) — Agent deployment

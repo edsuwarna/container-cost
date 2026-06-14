@@ -74,13 +74,33 @@ func runServerMode(cfg config.VPSConfig, configDir, cfgPath string) {
 
 	// --- Startup snapshot (only if local collector available) ---
 	if col != nil && col.IsAvailable() {
-		stats, err := col.CollectStats()
+		stats, err := col.CollectStatsFresh()
 		if err == nil {
 			report := cal.CalculateReport(stats)
 			if id, err := store.SaveSnapshot(report); err == nil {
 				log.Printf("Initial snapshot saved (id=%d)", id)
 			}
 		}
+	}
+
+	// --- Periodic collection every 5 minutes ---
+	if col != nil && col.IsAvailable() {
+		go func() {
+			ticker := time.NewTicker(5 * time.Minute)
+			defer ticker.Stop()
+			for range ticker.C {
+				stats, err := col.CollectStatsFresh()
+				if err != nil {
+					log.Printf("Periodic collection failed: %v", err)
+					continue
+				}
+				report := cal.CalculateReport(stats)
+				if id, err := store.SaveSnapshot(report); err == nil {
+					log.Printf("Periodic snapshot saved (id=%d)", id)
+				}
+			}
+		}()
+		log.Println("Periodic collection started (every 5m)")
 	}
 
 	// --- Start HTTP ---
@@ -124,14 +144,11 @@ func runAgentMode(cfg config.VPSConfig, configDir, centralURL, apiKey string, pu
 		pushInterval = 60
 	}
 
-	// --- Collector ---
+	// --- Collector (no local calculator needed — central calculates from DB config) ---
 	col, err := collector.New()
 	if err != nil {
 		log.Fatalf("Docker collector required for agent mode: %v", err)
 	}
-
-	// --- Calculator ---
-	cal := calculator.New(cfg)
 
 	// --- Agent Client ---
 	retries := agentCfg.PushRetries
@@ -140,19 +157,14 @@ func runAgentMode(cfg config.VPSConfig, configDir, centralURL, apiKey string, pu
 	}
 	client := agent.NewClient(centralURL, apiKey, retries)
 
-	collectFn := func() ([]calculator.CostReport, error) {
-		stats, err := col.CollectStats()
-		if err != nil {
-			return nil, fmt.Errorf("collect failed: %w", err)
-		}
-		report := cal.CalculateReport(stats)
-		return []calculator.CostReport{report}, nil
+	// collectFn returns raw container stats (no local cost calculation)
+	collectFn := func() ([]collector.ContainerStat, error) {
+		return col.CollectStats()
 	}
 
 	stop := make(chan struct{})
-	log.Printf("Docker Cost Calculator (AGENT MODE) pushing to %s every %ds", centralURL, pushInterval)
-	log.Printf("VPS: %s | CPU: %.0f | RAM: %.0fGB | Price: %.0f/month",
-		cfg.Name, cfg.CPU, cfg.RAMGB, cfg.PricePerMonth)
+	log.Printf("Docker Cost Calculator (AGENT MODE) pushing raw stats to %s every %ds", centralURL, pushInterval)
+	log.Printf("Agent key: %s…", apiKey[:min(8, len(apiKey))])
 
 	client.PushLoop(collectFn, time.Duration(pushInterval)*time.Second, stop)
 }
