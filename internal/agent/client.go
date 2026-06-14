@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/endangsuwarna/docker-cost/internal/collector"
+	"github.com/edsuwarna/container-cost/internal/collector"
 )
 
 // RawPushPayload is sent by agents to the central server

@@ -11,8 +11,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/endangsuwarna/docker-cost/internal/calculator"
-	"github.com/endangsuwarna/docker-cost/internal/collector"
+	"github.com/edsuwarna/container-cost/internal/calculator"
+	"github.com/edsuwarna/container-cost/internal/collector"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -166,13 +166,13 @@ func (s *Store) seed() error {
 		return nil
 	}
 
-	adminPassword := os.Getenv("DOCKER_COST_ADMIN_PASSWORD")
+	adminPassword := os.Getenv("CONTAINER_COST_ADMIN_PASSWORD")
 	if adminPassword == "" {
 		b := make([]byte, 16)
 		rand.Read(b)
 		adminPassword = hex.EncodeToString(b)
-		log.Printf("⚠️  DOCKER_COST_ADMIN_PASSWORD not set. Generated random admin password: %s", adminPassword)
-		log.Printf("   Set DOCKER_COST_ADMIN_PASSWORD env var to use a custom password.")
+		log.Printf("⚠️  CONTAINER_COST_ADMIN_PASSWORD not set. Generated random admin password: %s", adminPassword)
+		log.Printf("   Set CONTAINER_COST_ADMIN_PASSWORD env var to use a custom password.")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(adminPassword), bcrypt.DefaultCost)
@@ -190,8 +190,8 @@ func (s *Store) seed() error {
 	log.Printf("✅ Created default admin user (username: admin)")
 
 	// Demo users — only created if corresponding env vars are set
-	// Usage: DOCKER_COST_DEMO_PASSWORD_ENG=<pass> DOCKER_COST_DEMO_PASSWORD_MGT=<pass>
-	demoPasswordEng := os.Getenv("DOCKER_COST_DEMO_PASSWORD_ENG")
+	// Usage: CONTAINER_COST_DEMO_PASSWORD_ENG=<pass> CONTAINER_COST_DEMO_PASSWORD_MGT=<pass>
+	demoPasswordEng := os.Getenv("CONTAINER_COST_DEMO_PASSWORD_ENG")
 	if demoPasswordEng != "" {
 		h, _ := bcrypt.GenerateFromPassword([]byte(demoPasswordEng), bcrypt.DefaultCost)
 		_, err = s.db.Exec(
@@ -204,7 +204,7 @@ func (s *Store) seed() error {
 		log.Printf("✅ Created demo user: eng")
 	}
 
-	demoPasswordMgt := os.Getenv("DOCKER_COST_DEMO_PASSWORD_MGT")
+	demoPasswordMgt := os.Getenv("CONTAINER_COST_DEMO_PASSWORD_MGT")
 	if demoPasswordMgt != "" {
 		h, _ := bcrypt.GenerateFromPassword([]byte(demoPasswordMgt), bcrypt.DefaultCost)
 		_, err = s.db.Exec(

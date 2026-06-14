@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/endangsuwarna/docker-cost/internal/calculator"
-	"github.com/endangsuwarna/docker-cost/internal/collector"
-	"github.com/endangsuwarna/docker-cost/internal/config"
-	"github.com/endangsuwarna/docker-cost/internal/storage"
+	"github.com/edsuwarna/container-cost/internal/calculator"
+	"github.com/edsuwarna/container-cost/internal/collector"
+	"github.com/edsuwarna/container-cost/internal/config"
+	"github.com/edsuwarna/container-cost/internal/storage"
 )
 
 // ─── Server ──────────────────────────────────────────

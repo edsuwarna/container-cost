@@ -52,10 +52,10 @@ make run-quick
 
 # Or build first
 make build
-./build/docker-cost
+./build/container-cost
 
 # With custom port
-PORT=9000 ./build/docker-cost
+PORT=9000 ./build/container-cost
 ```
 
 ### Testing
@@ -121,8 +121,8 @@ CREATE TABLE IF NOT EXISTS snapshots (
 ```
 
 **Default seeding:** On first startup, creates the default admin user:
-- `admin` / password = `DOCKER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
-- Demo users `eng` / `mgt` are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set
+- `admin` / password = `CONTAINER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
+- Demo users `eng` / `mgt` are only created if `CONTAINER_COST_DEMO_PASSWORD_ENG` and `CONTAINER_COST_DEMO_PASSWORD_MGT` env vars are set
 
 ### Adding Tests
 

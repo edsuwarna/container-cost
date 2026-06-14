@@ -126,7 +126,7 @@ echo "Open http://localhost:8083"
 
 **Default Login:**
 - Username: `admin`
-- Password: *(set via `DOCKER_COST_ADMIN_PASSWORD` env var; randomly generated 32-char hex if not set)*
+- Password: *(set via `CONTAINER_COST_ADMIN_PASSWORD` env var; randomly generated 32-char hex if not set)*
 
 > Port 8083 is the external port mapped to the container's port 8080 (see docker-compose.yml).
 
@@ -202,7 +202,7 @@ docker compose logs -f
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port (inside container) |
-| `DATABASE_URL` | `postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable` | PostgreSQL connection |
+| `DATABASE_URL` | `postgres://container-cost:***@postgres:5432/container-cost?sslmode=disable` | PostgreSQL connection |
 | `TZ` | `Asia/Jakarta` | Timezone |
 
 The `DATABASE_URL` in `docker-compose.yml` already points to the `postgres` service. **Make sure to change the password in production.**
@@ -212,10 +212,10 @@ The `DATABASE_URL` in `docker-compose.yml` already points to the `postgres` serv
 ```bash
 # From source
 make build
-./build/docker-cost
+./build/container-cost
 
 # With custom DB
-DATABASE_URL="postgres://user:pass@localhost:5432/docker-cost?sslmode=disable" ./build/docker-cost
+DATABASE_URL="postgres://user:pass@localhost:5432/container-cost?sslmode=disable" ./build/container-cost
 ```
 
 #### Docker Run (Without Compose)
@@ -224,7 +224,7 @@ DATABASE_URL="postgres://user:pass@localhost:5432/docker-cost?sslmode=disable" .
 docker run -d --name container-cost \
   -p 8080:8080 \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -e DATABASE_URL="postgres://user:pass@host:5432/docker-cost?sslmode=disable" \
+  -e DATABASE_URL="postgres://user:pass@host:5432/container-cost?sslmode=disable" \
   ghcr.io/edsuwarna/container-cost:latest
 ```
 
@@ -327,7 +327,7 @@ Container Cost is designed to be **platform-agnostic** at the VPS level. Any VPS
 
 ### 6.1 Config File Location
 
-Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` env var)
+Default: `~/.container-cost/config.json` (override with `CONTAINER_COST_CONFIG_DIR` env var)
 
 ### 6.2 Server Mode Configuration
 
@@ -414,9 +414,9 @@ For agent mode, use the FullConfig format that wraps both VPS and agent settings
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port |
-| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | PostgreSQL connection string |
+| `DATABASE_URL` | `postgres://container-cost:***@localhost:5432/container-cost?sslmode=disable` | PostgreSQL connection string |
 | `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
-| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Config directory |
+| `CONTAINER_COST_CONFIG_DIR` | `~/.container-cost` | Config directory |
 | `TZ` | `Asia/Jakarta` | Timezone |
 
 ### 6.5 Weights Tuning
@@ -799,7 +799,7 @@ Default login: `admin` / `change-me`
 ### 10.1 Flags
 
 ```
-Usage of /app/docker-cost:
+Usage of /app/container-cost:
 
   -mode string
         Run mode: 'server' (central) or 'agent' (default: "server")
@@ -815,7 +815,7 @@ Usage of /app/docker-cost:
 
 | Command | Description |
 |---------|-------------|
-| `make build` | Build binary to `./build/docker-cost` |
+| `make build` | Build binary to `./build/container-cost`
 | `make build-static` | Static Linux binary |
 | `make run` | Build + run |
 | `make run-quick` | Quick run with `go run` |
@@ -873,10 +873,10 @@ make run-quick
 
 # Or build first
 make build
-./build/docker-cost
+./build/container-cost
 
 # With custom port
-PORT=9000 ./build/docker-cost
+PORT=9000 ./build/container-cost
 ```
 
 ### 11.4 Testing
@@ -942,8 +942,8 @@ CREATE TABLE IF NOT EXISTS snapshots (
 ```
 
 **Default seeding:** On first startup, creates the default admin user:
-- `admin` / password = `DOCKER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
-- Demo users `eng` / `mgt` are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set
+- `admin` / password = `CONTAINER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
+- Demo users `eng` / `mgt` are only created if `CONTAINER_COST_DEMO_PASSWORD_ENG` and `CONTAINER_COST_DEMO_PASSWORD_MGT` env vars are set
 
 ### 11.7 Adding Tests
 
@@ -1071,8 +1071,8 @@ push rejected (HTTP 401): invalid api key
 ### 13.6 Config File Issues
 
 If config.json doesn't exist, it's auto-created with defaults. Check:
-- Path: `~/.docker-cost/config.json`
-- Or set `DOCKER_COST_CONFIG_DIR` env var
+- Path: `~/.container-cost/config.json`
+- Or set `CONTAINER_COST_CONFIG_DIR` env var
 
 ### 13.7 Common Docker Commands
 
@@ -1084,7 +1084,7 @@ docker logs -f container-cost-agent
 docker logs -f container-cost
 
 # Database
-docker exec -it docker-cost-postgres psql -U docker-cost -d docker-cost
+docker exec -it container-cost-postgres psql -U container-cost -d container-cost
 
 # Restart everything
 docker compose restart

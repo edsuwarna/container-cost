@@ -1,7 +1,7 @@
 .PHONY: build run clean test deps
 
 # Variables
-BINARY_NAME=docker-cost
+BINARY_NAME=container-cost
 BUILD_DIR=build
 GOFLAGS=-ldflags="-s -w"
 
@@ -41,6 +41,6 @@ info:
 	@echo "Docker Cost Calculator"
 	@echo "----------------------"
 	@echo "Binary:   $(BUILD_DIR)/$(BINARY_NAME)"
-	@echo "Config:   ~/.docker-cost/config.json"
+	@echo "Config:   ~/.container-cost/config.json"
 	@echo "Database: PostgreSQL (via DATABASE_URL)"
 	@echo "Docs:     http://localhost:8080"

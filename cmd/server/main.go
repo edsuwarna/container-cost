@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/endangsuwarna/docker-cost/internal/api"
-	"github.com/endangsuwarna/docker-cost/internal/agent"
-	"github.com/endangsuwarna/docker-cost/internal/calculator"
-	"github.com/endangsuwarna/docker-cost/internal/collector"
-	"github.com/endangsuwarna/docker-cost/internal/config"
-	"github.com/endangsuwarna/docker-cost/internal/storage"
+	"github.com/edsuwarna/container-cost/internal/api"
+	"github.com/edsuwarna/container-cost/internal/agent"
+	"github.com/edsuwarna/container-cost/internal/calculator"
+	"github.com/edsuwarna/container-cost/internal/collector"
+	"github.com/edsuwarna/container-cost/internal/config"
+	"github.com/edsuwarna/container-cost/internal/storage"
 )
 
 func main() {
@@ -25,10 +25,10 @@ func main() {
 	flag.Parse()
 
 	// --- Config ---
-	configDir := os.Getenv("DOCKER_COST_CONFIG_DIR")
+	configDir := os.Getenv("CONTAINER_COST_CONFIG_DIR")
 	if configDir == "" {
 		home, _ := os.UserHomeDir()
-		configDir = filepath.Join(home, ".docker-cost")
+		configDir = filepath.Join(home, ".container-cost")
 	}
 
 	cfgPath := filepath.Join(configDir, "config.json")
@@ -55,7 +55,7 @@ func runServerMode(cfg config.VPSConfig, configDir, cfgPath string) {
 	// --- Database ---
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable"
+		dbURL = "postgres://container-cost:***@localhost:5432/container-cost?sslmode=disable"
 	}
 	store, err := storage.NewStore(dbURL)
 	if err != nil {
@@ -110,7 +110,7 @@ func runServerMode(cfg config.VPSConfig, configDir, cfgPath string) {
 	}
 
 	addr := fmt.Sprintf(":%s", port)
-	log.Printf("Docker Cost Calculator (SERVER MODE) starting on %s", addr)
+	log.Printf("Container Cost Calculator (SERVER MODE) starting on %s", addr)
 	log.Printf("Config: %s", cfgPath)
 	log.Printf("Database URL: %s", maskURL(dbURL))
 
@@ -163,7 +163,7 @@ func runAgentMode(cfg config.VPSConfig, configDir, centralURL, apiKey string, pu
 	}
 
 	stop := make(chan struct{})
-	log.Printf("Docker Cost Calculator (AGENT MODE) pushing raw stats to %s every %ds", centralURL, pushInterval)
+	log.Printf("Container Cost Calculator (AGENT MODE) pushing raw stats to %s every %ds", centralURL, pushInterval)
 	log.Printf("Agent key: %s…", apiKey[:min(8, len(apiKey))])
 
 	client.PushLoop(collectFn, time.Duration(pushInterval)*time.Second, stop)

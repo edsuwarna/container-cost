@@ -10,7 +10,7 @@
 ### Flags
 
 ```
-Usage of /app/docker-cost:
+Usage of /app/container-cost:
 
   -mode string
         Run mode: 'server' (central) or 'agent' (default: "server")
@@ -26,7 +26,7 @@ Usage of /app/docker-cost:
 
 | Command | Description |
 |---------|-------------|
-| `make build` | Build binary to `./build/docker-cost` |
+| `make build` | Build binary to `./build/container-cost` |
 | `make build-static` | Static Linux binary |
 | `make run` | Build + run |
 | `make run-quick` | Quick run with `go run` |

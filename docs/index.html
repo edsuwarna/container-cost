@@ -551,11 +551,11 @@ docker run -d --name container-cost-agent \
                     <code><span class="cmt"># Download from GitHub Releases:</span>
 curl -LO https://github.com/edsuwarna/container-cost/releases/latest/download/container-cost-linux-amd64.tar.gz
 tar xzf container-cost-linux-amd64.tar.gz
-sudo install docker-cost /usr/local/bin/
+sudo install container-cost /usr/local/bin/
 
 <span class="cmt"># Verify:</span>
-docker-cost --version
-docker-cost --mode=agent --server=http://<span class="var">CENTRAL_IP</span>:8080 --api-key=<span class="var">DCKR_xxx</span></code>
+container-cost --version
+container-cost --mode=agent --server=http://<span class="var">CENTRAL_IP</span>:8080 --api-key=<span class="var">DCKR_xxx</span></code>
                 </div>
             </div>
 

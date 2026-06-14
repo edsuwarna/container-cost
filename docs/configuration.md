@@ -9,7 +9,7 @@
 
 ### Config File Location
 
-Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` env var)
+Default: `~/.container-cost/config.json` (override with `CONTAINER_COST_CONFIG_DIR` env var)
 
 If the config file doesn't exist, defaults are used.
 
@@ -118,9 +118,9 @@ docker run ... ghcr.io/edsuwarna/container-cost:latest \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port |
-| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | PostgreSQL connection string |
+| `DATABASE_URL` | `postgres://container-cost:***@localhost:5432/container-cost?sslmode=disable` | PostgreSQL connection string |
 | `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
-| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Config directory |
+| `CONTAINER_COST_CONFIG_DIR` | `~/.container-cost` | Config directory |
 | `TZ` | `Asia/Jakarta` | Timezone |
 
 ### Weights Tuning

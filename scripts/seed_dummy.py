@@ -57,7 +57,7 @@ def docker_exec(sql):
     """Execute SQL via docker compose exec."""
     cmd = [
         "docker", "compose", "exec", "-T", "postgres",
-        "psql", "-U", "docker-cost", "-d", "docker-cost",
+        "psql", "-U", "container-cost", "-d", "container-cost",
         "-c", sql,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, cwd="/home/ubuntu/projects/container-cost")

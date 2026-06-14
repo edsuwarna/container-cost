@@ -388,7 +388,7 @@ Semua error response: `{ "error": string, "details?": string }`
 
 ## 6. Konfigurasi
 
-### 6.1 File: `~/.docker-cost/config.json`
+### 6.1 File: `~/.container-cost/config.json`
 
 #### Server Mode:
 ```json
@@ -431,9 +431,9 @@ Semua error response: `{ "error": string, "details?": string }`
 | Variable | Default | Deskripsi |
 |----------|---------|-----------|
 | `PORT` | `8080` | Port HTTP server |
-| `DATABASE_URL` | `postgres://docker-cost:***@localhost:5432/docker-cost?sslmode=disable` | PostgreSQL connection |
+| `DATABASE_URL` | `postgres://container-cost:***@localhost:5432/container-cost?sslmode=disable` | PostgreSQL connection |
 | `DOCKER_HOST` | `/var/run/docker.sock` | Docker socket path |
-| `DOCKER_COST_CONFIG_DIR` | `~/.docker-cost` | Direktori config |
+| `CONTAINER_COST_CONFIG_DIR` | `~/.container-cost` | Direktori config |
 
 ---
 
@@ -441,14 +441,14 @@ Semua error response: `{ "error": string, "details?": string }`
 
 ### Server Mode (default)
 ```bash
-docker-cost
+container-cost
 # atau
-docker-cost --mode=server
+container-cost --mode=server
 ```
 
 ### Agent Mode
 ```bash
-docker-cost \
+container-cost \
   --mode=agent \
   --server=http://central-ip:8080 \
   --api-key=dckr_xxx \
@@ -543,9 +543,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: docker-cost
+      POSTGRES_USER: container-cost
       POSTGRES_PASSWORD: change-me
-      POSTGRES_DB: docker-cost
+      POSTGRES_DB: container-cost
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -555,9 +555,9 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config.json:/root/.docker-cost/config.json:ro
+      - ./config.json:/root/.container-cost/config.json:ro
     environment:
-      - DATABASE_URL=postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable
+      - DATABASE_URL=postgres://container-cost:***@postgres:5432/container-cost?sslmode=disable
 ```
 
 ### Docker Compose (Agent)
@@ -572,7 +572,7 @@ services:
       --push-interval=60
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config.json:/root/.docker-cost/config.json:ro
+      - ./config.json:/root/.container-cost/config.json:ro
     restart: unless-stopped
 ```
 

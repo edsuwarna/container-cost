@@ -1734,7 +1734,7 @@ async function loadVPSDetail() {
                     <div class="setup-method">
                         <div class="setup-method-label"><svg class="icon-sm"><use href="#icon-zap"/></svg> Binary (recommended)</div>
                         <div class="vps-setup-code">
-                            <code>curl -sL https://github.com/edsuwarna/container-cost/releases/latest/download/docker-cost-linux-amd64 -o /usr/local/bin/docker-cost && chmod +x /usr/local/bin/docker-cost && docker-cost --mode=agent --server=http://MAIN_IP:8083 --api-key=${v.api_key || 'YOUR_KEY'}</code>
+                            <code>curl -sL https://github.com/edsuwarna/container-cost/releases/latest/download/container-cost-linux-amd64 -o /usr/local/bin/container-cost && chmod +x /usr/local/bin/container-cost && container-cost --mode=agent --server=http://MAIN_IP:8083 --api-key=${v.api_key || 'YOUR_KEY'}</code>
                             <button class="btn-copy btn-sm" onclick="copySetupCmd('binary')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-module github.com/endangsuwarna/docker-cost
+module github.com/edsuwarna/container-cost
 
 go 1.22.2
 

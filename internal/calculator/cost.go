@@ -3,8 +3,8 @@ package calculator
 import (
 	"math"
 
-	"github.com/endangsuwarna/docker-cost/internal/collector"
-	"github.com/endangsuwarna/docker-cost/internal/config"
+	"github.com/edsuwarna/container-cost/internal/collector"
+	"github.com/edsuwarna/container-cost/internal/config"
 )
 
 // ContainerCost holds cost breakdown for a single container

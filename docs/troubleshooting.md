@@ -62,8 +62,8 @@ push rejected (HTTP 401): invalid api key
 ### Config File Issues
 
 If config.json doesn't exist, it's auto-created with defaults. Check:
-- Path: `~/.docker-cost/config.json`
-- Or set `DOCKER_COST_CONFIG_DIR` env var
+- Path: `~/.container-cost/config.json`
+- Or set `CONTAINER_COST_CONFIG_DIR` env var
 
 ### Common Docker Commands
 
@@ -75,7 +75,7 @@ docker logs -f container-cost-agent
 docker logs -f container-cost
 
 # Database
-docker exec -it docker-cost-postgres psql -U docker-cost -d docker-cost
+docker exec -it container-cost-postgres psql -U container-cost -d container-cost
 
 # Restart everything
 docker compose restart

@@ -25,9 +25,9 @@ docker compose logs -f
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port (inside container) |
-| `DATABASE_URL` | `postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable` | PostgreSQL connection |
+| `DATABASE_URL` | `postgres://container-cost:***@postgres:5432/container-cost?sslmode=disable` | PostgreSQL connection |
 | `TZ` | `Asia/Jakarta` | Timezone |
-| `DOCKER_COST_ADMIN_PASSWORD` | *(generated randomly if not set)* | Admin password — if unset, a random password is printed in server logs on first start |
+| `CONTAINER_COST_ADMIN_PASSWORD` | *(generated randomly if not set)* | Admin password — if unset, a random password is printed in server logs on first start |
 
 The `DATABASE_URL` in `docker-compose.yml` already points to the `postgres` service. **Make sure to change the password in production.**
 
@@ -35,11 +35,11 @@ The `DATABASE_URL` in `docker-compose.yml` already points to the `postgres` serv
 
 ```bash
 # From source
-go build -o docker-cost ./cmd/server
-./docker-cost --mode=server
+go build -o container-cost ./cmd/server
+./container-cost --mode=server
 
 # With custom DB
-DATABASE_URL="postgres://user:***@localhost:5432/docker-cost?sslmode=disable" ./docker-cost
+DATABASE_URL="postgres://user:***@localhost:5432/container-cost?sslmode=disable" ./container-cost
 ```
 
 #### Docker Run (Without Compose)
@@ -47,8 +47,8 @@ DATABASE_URL="postgres://user:***@localhost:5432/docker-cost?sslmode=disable" ./
 ```bash
 docker run -d --name container-cost \
   -p 8083:8080 \
-  -e DATABASE_URL="postgres://user:***@host:5432/docker-cost?sslmode=disable" \
-  -e DOCKER_COST_ADMIN_PASSWORD=your_secret_password \
+  -e DATABASE_URL="postgres://user:***@host:5432/container-cost?sslmode=disable" \
+  -e CONTAINER_COST_ADMIN_PASSWORD=your_secret_password \
   ghcr.io/edsuwarna/container-cost:latest
 ```
 
@@ -105,7 +105,7 @@ Then check the dashboard — your VPS should show as **online** with live contai
 ### Setting Up from the Dashboard
 
 1. Open `http://your-server:8083`
-2. Login: **admin** / *(password from server logs or DOCKER_COST_ADMIN_PASSWORD env var)*
+2. Login: **admin** / *(password from server logs or CONTAINER_COST_ADMIN_PASSWORD env var)*
 3. Click **VPS** menu → **Tambah VPS**
 4. Enter a name (e.g. "Hetzner CX42"), set price, CPU, RAM, weights
 5. Click **Simpan & Generate Key** — copy the API key
@@ -141,5 +141,5 @@ This runs in server mode with local Docker socket access. The server collects st
 - Stage 2: `alpine:3.19` — runtime (only 15MB + binary)
 
 **Volumes:**
-- `~/.docker-cost` — config directory (optional for agent)
+- `~/.container-cost` — config directory (optional for agent)
 - `/var/run/docker.sock` — Docker socket (read-only, required)

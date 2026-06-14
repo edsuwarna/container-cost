@@ -25,8 +25,8 @@ echo "Open http://localhost:8083"
 - Password: *(randomly generated — check server logs on first start)*
 
 > Port 8083 is the external port mapped to the container's port 8080 (see docker-compose.yml).
-> If `DOCKER_COST_ADMIN_PASSWORD` is not set, a random password is generated and printed in the server logs.
-> Demo users (`eng`, `mgt`) are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set.
+> If `CONTAINER_COST_ADMIN_PASSWORD` is not set, a random password is generated and printed in the server logs.
+> Demo users (`eng`, `mgt`) are only created if `CONTAINER_COST_DEMO_PASSWORD_ENG` and `CONTAINER_COST_DEMO_PASSWORD_MGT` env vars are set.
 
 ### Add a VPS Agent
 
