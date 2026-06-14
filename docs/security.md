@@ -30,7 +30,7 @@ The Docker socket is mounted **read-only** (`ro`):
 
 ### Network Security
 
-- The default setup exposes port 8080/8081
+- The default setup exposes port 8080/8083
 - **Recommendation:** Run behind a reverse proxy (nginx, Caddy, Traefik) with:
   - TLS (HTTPS)
   - IP whitelisting for agent push endpoint
@@ -73,7 +73,9 @@ The configuration file (`config.json`) is created with `0600` permissions (owner
 
 Session cookies use:
 - `HttpOnly` flag (inaccessible to JavaScript)
-- `Secure` flag (only sent over HTTPS)
+- `Secure` flag behavior varies by endpoint:
+  - Login: `Secure=false` (supports HTTP development)
+  - Logout: `Secure=true` (requires HTTPS)
 - `SameSite=Strict` mode (prevents CSRF)
 - 24-hour expiration
 

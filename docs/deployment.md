@@ -27,6 +27,7 @@ docker compose logs -f
 | `PORT` | `8080` | HTTP server port (inside container) |
 | `DATABASE_URL` | `postgres://docker-cost:***@postgres:5432/docker-cost?sslmode=disable` | PostgreSQL connection |
 | `TZ` | `Asia/Jakarta` | Timezone |
+| `DOCKER_COST_ADMIN_PASSWORD` | *(generated randomly if not set)* | Admin password — if unset, a random password is printed in server logs on first start |
 
 The `DATABASE_URL` in `docker-compose.yml` already points to the `postgres` service. **Make sure to change the password in production.**
 
@@ -45,9 +46,9 @@ DATABASE_URL="postgres://user:***@localhost:5432/docker-cost?sslmode=disable" ./
 
 ```bash
 docker run -d --name container-cost \
-  -p 8080:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -p 8083:8080 \
   -e DATABASE_URL="postgres://user:***@host:5432/docker-cost?sslmode=disable" \
+  -e DOCKER_COST_ADMIN_PASSWORD=your_secret_password \
   ghcr.io/edsuwarna/container-cost:latest
 ```
 
@@ -71,7 +72,7 @@ docker run -d --name container-cost-agent \
   ghcr.io/edsuwarna/container-cost:latest \
   --mode=agent \
   --server=http://CENTRAL_IP:8080 \
-  --api-key=DCKR_xxx
+  --api-key=dckr_xxx
 ```
 
 That's it — no config files, no VPS specs. Just mount the Docker socket, point to your central server, and provide the API key.
@@ -101,7 +102,7 @@ cat > ~/.docker-cost/config.json <<EOF
 {
   "agent": {
     "central_url": "http://CENTRAL_IP:8080",
-    "agent_key": "DCKR_xxx",
+    "agent_key": "dckr_xxx",
     "push_interval": 120,
     "push_retries": 3
   }
@@ -121,12 +122,12 @@ docker run -d --name container-cost-agent \
 
 ```bash
 # Download binary from GitHub Releases
-curl -LO https://github.com/edsuwarna/container-cost/releases/latest/download/container-cost-linux-amd64.tar.gz
-tar xzf container-cost-linux-amd64.tar.gz
+curl -LO https://github.com/edsuwarna/container-cost/releases/latest/download/docker-cost-linux-amd64.tar.gz
+tar xzf docker-cost-linux-amd64.tar.gz
 sudo install docker-cost /usr/local/bin/
 
 # Run as agent
-docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=DCKR_xxx
+docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```
 
 #### Verify Agent
@@ -145,8 +146,8 @@ Then check the dashboard — your VPS should show as **online** with live contai
 
 ### Setting Up from the Dashboard
 
-1. Open `http://your-server:8081`
-2. Login: **admin** / **change-me**
+1. Open `http://your-server:8083`
+2. Login: **admin** / *(password from server logs or DOCKER_COST_ADMIN_PASSWORD env var)*
 3. Click **VPS** menu → **Tambah VPS**
 4. Enter a name (e.g. "Hetzner CX42"), set price, CPU, RAM, weights
 5. Click **Simpan & Generate Key** — copy the API key

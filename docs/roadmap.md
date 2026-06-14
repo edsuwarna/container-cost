@@ -29,6 +29,7 @@
 - [x] Offline detection per VPS
 - [x] GitHub Container Registry
 - [x] One-liner agent deployment
+- [x] Multi-currency support (`currency` field in config and DB)
 
 ### 🔜 Future
 - [ ] Cost alerts (Telegram / webhook)
@@ -37,7 +38,6 @@
 - [ ] Telegram bot for daily reports
 - [ ] Per-container disk usage tracking
 - [ ] Time-range cost projections
-- [ ] Multi-currency support
 
 ---
 

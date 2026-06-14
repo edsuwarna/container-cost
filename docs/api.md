@@ -11,7 +11,7 @@
 
 ```
 http://localhost:8080
-// Via docker-compose: http://localhost:8081
+// Via docker-compose: http://localhost:8083
 ```
 
 ### Endpoint Summary
@@ -85,7 +85,7 @@ http://localhost:8080
 // Request
 {
   "username": "admin",
-  "password": "change-me"
+  "password": "your_password"
 }
 
 // Response 200
@@ -101,7 +101,7 @@ http://localhost:8080
 }
 ```
 
-**Sets a session cookie** `session` (HttpOnly, SameSite=Lax, 24h expiry).
+**Sets a session cookie** `session` (HttpOnly, SameSite=Strict, 24h expiry).
 
 #### POST /api/v1/push (Agent Push)
 

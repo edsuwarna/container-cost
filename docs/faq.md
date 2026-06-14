@@ -11,7 +11,7 @@
 
 **Server mode** (`--mode=server`, default): Runs the API server, database connection, frontend, and optionally collects local Docker stats. This is your central dashboard.
 
-**Agent mode** (`--mode=agent`): A lightweight process that collects Docker stats, calculates costs, and pushes reports to the central server. No database, no frontend.
+**Agent mode** (`--mode=agent`): A lightweight process that collects raw Docker stats (CPU%, memory usage) and pushes them to the central server. **No cost calculation happens on the agent** — the central server looks up the VPS config from the database and calculates costs. No database, no frontend.
 
 ### Can I run multiple agents on the same VPS?
 

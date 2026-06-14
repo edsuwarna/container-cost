@@ -17,14 +17,16 @@ cd container-cost
 docker compose up -d
 
 # Open the dashboard
-echo "Open http://localhost:8081"
+echo "Open http://localhost:8083"
 ```
 
 **Default Login:**
 - Username: `admin`
-- Password: `change-me`
+- Password: *(randomly generated — check server logs on first start)*
 
-> Port 8081 is the external port mapped to the container's port 8080 (see docker-compose.yml).
+> Port 8083 is the external port mapped to the container's port 8080 (see docker-compose.yml).
+> If `DOCKER_COST_ADMIN_PASSWORD` is not set, a random password is generated and printed in the server logs.
+> Demo users (`eng`, `mgt`) are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set.
 
 ### Add a VPS Agent
 
@@ -42,10 +44,7 @@ echo "Open http://localhost:8081"
 curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh | bash -s -- \
   --server=http://CENTRAL_IP:8080 \
   --api-key=dckr_xxx_generated_from_dashboard \
-  --name="Hetzner CX42" \
-  --price=200000 \
-  --cpu=4 \
-  --ram=8
+  --name="Hetzner CX42"
 ```
 
 **Or with docker-compose:**
@@ -54,17 +53,10 @@ curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deplo
 curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
 
 # Create config file
-cat > container-cost-config.json <<EOF
+mkdir -p ~/.docker-cost
+cat > ~/.docker-cost/config.json <<EOF
 {
-  "vps": {
-    "name": "Hetzner CX42",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
   "agent": {
-    "mode": "agent",
     "central_url": "http://CENTRAL_IP:8080",
     "agent_key": "dckr_xxx",
     "push_interval": 60,
@@ -94,9 +86,9 @@ docker run -d --name container-cost-agent \
 docker logs -f container-cost-agent
 
 # Expected output:
-# [agent] push success: VPS=Hetzner CX42 containers=5 cost=200000.00
+# [agent] push success: containers=5
 
-# Dashboard: http://CENTRAL_IP:8081
+# Dashboard: http://CENTRAL_IP:8083
 ```
 
 ---

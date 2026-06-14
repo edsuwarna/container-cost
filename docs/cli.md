@@ -32,7 +32,7 @@ Usage of /app/docker-cost:
 | `make run-quick` | Quick run with `go run` |
 | `make test` | Run all tests with race detection |
 | `make clean` | Remove build artifacts |
-| `make install-deps` | Install system deps (gcc, sqlite3) |
+| `make install-deps` | Install system deps (gcc, libc6-dev) |
 | `make info` | Show project info |
 
 ---

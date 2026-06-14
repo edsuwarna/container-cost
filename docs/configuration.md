@@ -24,10 +24,12 @@ In **server mode** (central server), the config file defines the local VPS where
   "cpu_cores": 4,
   "ram_gb": 8,
   "storage_gb": 100,
+  "bandwidth_gb": 0,
   "currency": "IDR",
   "cpu_weight": 0.5,
   "ram_weight": 0.4,
   "storage_weight": 0.1,
+  "network_weight": 0.0,
   "overhead_percent": 15,
   "admin_user": "admin",
   "admin_pass": "",
@@ -44,10 +46,12 @@ In **server mode** (central server), the config file defines the local VPS where
 | `cpu_cores` | number | `4` | Number of CPU cores |
 | `ram_gb` | number | `8` | RAM in GB |
 | `storage_gb` | number | `100` | Storage in GB |
+| `bandwidth_gb` | number | `0` | Bandwidth in GB (reserved for future use) |
 | `currency` | string | `"IDR"` | Currency code (IDR, USD, EUR, etc.) |
 | `cpu_weight` | 0.0-1.0 | `0.5` | CPU weight in cost formula |
 | `ram_weight` | 0.0-1.0 | `0.4` | RAM weight in cost formula |
 | `storage_weight` | 0.0-1.0 | `0.1` | Storage weight in cost formula |
+| `network_weight` | 0.0-1.0 | `0.0` | Network weight in cost formula (reserved) |
 | `overhead_percent` | 0-100 | `15` | OS/Docker overhead percentage |
 
 The server also stores per-VPS configuration in the database (see **VPS Config in DB** below).
@@ -63,10 +67,12 @@ For multi-VPS setups, each VPS is registered via the dashboard and its config is
 | `cpu_cores` | CPU cores | Dashboard form |
 | `ram_gb` | RAM in GB | Dashboard form |
 | `storage_gb` | Storage in GB | Dashboard form |
+| `bandwidth_gb` | Bandwidth in GB | Dashboard form |
 | `currency` | Currency code | Dashboard form |
 | `cpu_weight` | CPU weight (0.0-1.0) | Dashboard form |
 | `ram_weight` | RAM weight (0.0-1.0) | Dashboard form |
 | `storage_weight` | Storage weight (0.0-1.0) | Dashboard form |
+| `network_weight` | Network weight (0.0-1.0) | Dashboard form |
 | `overhead_percent` | Overhead % | Dashboard form |
 | `api_key` | Auto-generated on create | Dashboard (copy once) |
 | `status` | Online/offline (auto) | Detected via push |
@@ -83,7 +89,7 @@ In **agent mode**, the agent only needs to know where the central server is and 
 docker run ... ghcr.io/edsuwarna/container-cost:latest \
   --mode=agent \
   --server=http://CENTRAL_IP:8080 \
-  --api-key=DCKR_xxx
+  --api-key=dckr_xxx
 ```
 
 #### With Config File (for custom timing)
@@ -92,7 +98,7 @@ docker run ... ghcr.io/edsuwarna/container-cost:latest \
 {
   "agent": {
     "central_url": "http://CENTRAL_IP:8080",
-    "agent_key": "DCKR_xxx",
+    "agent_key": "dckr_xxx",
     "push_interval": 120,
     "push_retries": 3
   }
@@ -129,6 +135,7 @@ The default weights are:
 | CPU | 50% | Most common bottleneck |
 | RAM | 40% | Second most important |
 | Storage | 10% | Relatively cheap |
+| Network | 0% | Reserved for future use |
 
 **Tips for adjusting weights:**
 - **CPU-heavy workloads** (compute, batch jobs) → increase CPU weight to 0.7+
