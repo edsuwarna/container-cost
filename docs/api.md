@@ -106,7 +106,7 @@ http://localhost:8080
 #### POST /api/v1/push (Agent Push)
 
 ```json
-// Headers: Authorization: Bearer DCKR_xxx
+// Headers: Authorization: Bearer ***
 
 // Request Body — raw container stats (no pre-calculated costs)
 {
@@ -120,8 +120,7 @@ http://localhost:8080
       "mem_limit_mb": 1024.0,
       "mem_percent": 12.5,
       "status": "running",
-      "created_at": "2025-01-01T00:00:00Z",
-      "uptime": "14 days"
+      "created_at": "2025-01-01T00:00:00Z"
     }
   ]
 }

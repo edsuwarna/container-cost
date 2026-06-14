@@ -26,7 +26,7 @@
 - [x] Agent push API (`POST /api/v1/push`)
 - [x] VPS management (CRUD from dashboard)
 - [x] Aggregated dashboard (all VPS)
-- [x] Offline detection per VPS
+- [x] VPS status tracking (online on push, manual offline)
 - [x] GitHub Container Registry
 - [x] One-liner agent deployment
 - [x] Multi-currency support (`currency` field in config and DB)

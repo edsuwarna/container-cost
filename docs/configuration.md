@@ -66,12 +66,10 @@ For multi-VPS setups, each VPS is registered via the dashboard and its config is
 | `cpu_cores` | CPU cores | Dashboard form |
 | `ram_gb` | RAM in GB | Dashboard form |
 | `storage_gb` | Storage in GB | Dashboard form |
-| `bandwidth_gb` | Bandwidth in GB | Dashboard form |
 | `currency` | Currency code | Dashboard form |
 | `cpu_weight` | CPU weight (0.0-1.0) | Dashboard form |
 | `ram_weight` | RAM weight (0.0-1.0) | Dashboard form |
 | `storage_weight` | Storage weight (0.0-1.0) | Dashboard form |
-| `network_weight` | Network weight (0.0-1.0) | Dashboard form |
 | `overhead_percent` | Overhead % | Dashboard form |
 | `api_key` | Auto-generated on create | Dashboard (copy once) |
 | `status` | Online/offline (auto) | Detected via push |
@@ -134,7 +132,7 @@ The default weights are:
 | CPU | 50% | Most common bottleneck |
 | RAM | 40% | Second most important |
 | Storage | 10% | Relatively cheap |
-| Network | 0% | Reserved for future use |
+| Network | 0% | Reserved for future use — has no effect on calculations |
 
 **Tips for adjusting weights:**
 - **CPU-heavy workloads** (compute, batch jobs) → increase CPU weight to 0.7+

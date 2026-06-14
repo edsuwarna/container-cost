@@ -34,30 +34,29 @@ For a VPS with 4 CPU cores and 8GB RAM, 15% overhead:
 CPU Fraction = Container CPU Cores / Available CPU
 RAM Fraction = Container RAM (GB) / Available RAM
 Storage Fraction = 1 / Number of Containers (equal split per container)
-Network Fraction = 1 / Number of Containers (equal split per container, weight = 0 by default)
 ```
 
 **Step 3: Weighted Cost**
 
 ```
-Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RAM_Fraction + Storage_Weight × Storage_Fraction + Network_Weight × Network_Fraction)
-                         / (CPU_Weight + RAM_Weight + Storage_Weight + Network_Weight)
+Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RAM_Fraction + Storage_Weight × Storage_Fraction)
+                          / (CPU_Weight + RAM_Weight + Storage_Weight)
 ```
 
 ### Example
 
 **VPS:** Hetzner CX42 — Rp 200.000/month, 4 CPU, 8GB RAM, 3 containers
 
-**Weights:** CPU=0.5, RAM=0.4, Storage=0.1, Network=0.0
+**Weights:** CPU=0.5, RAM=0.4, Storage=0.1
 
 | Container | CPU% | RAM | CPU Cost | RAM Cost | Storage Cost | **Total** |
 |-----------|------|-----|----------|----------|-------------|-----------|
-| web | 2.5% | 128MB | Rp 5.500 | Rp 2.500 | Rp 7.000 | **Rp 15.000** |
-| postgres | 15.2% | 1.2GB | Rp 32.000 | Rp 16.000 | Rp 7.000 | **Rp 55.000** |
-| nginx | 0.8% | 64MB | Rp 2.000 | Rp 1.000 | Rp 7.000 | **Rp 10.000** |
+| web | 2.5% | 128MB | Rp 735 | Rp 1.471 | Rp 6.667 | **Rp 8.873** |
+| postgres | 15.2% | 1.2GB | Rp 4.471 | Rp 13.787 | Rp 6.667 | **Rp 24.924** |
+| nginx | 0.8% | 64MB | Rp 235 | Rp 735 | Rp 6.667 | **Rp 7.637** |
 
-**Overhead cost (OS + Docker ~15%):** Rp 40.000  
-**Unallocated (idle resources):** Rp 80.000  
+**Overhead cost (OS + Docker ~15%):** Rp 30.000  
+**Unallocated (idle resources):** Rp 174.568  
 **Total allocated:** Rp 200.000 ✓
 
 ### Overhead Cost

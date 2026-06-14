@@ -66,7 +66,7 @@ Container Cost answers all of these with a single dashboard.
 - Agent mode — deploy a lightweight agent on each VPS
 |   - Push API — agents push **raw stats** to central server (API key auth)
 - Aggregated dashboard — total cost across all VPS
-- Live status — online/offline detection per VPS
+- Live status — online/offline per VPS (updates on push)
 - Auto API key generation on VPS creation
 - GitHub Container Registry image
 - One-liner agent deployment
@@ -101,8 +101,7 @@ The central server:
 2. Looks up VPS config from database — price, specs, weights
 3. Calculates cost report using VPS config
 4. Stores snapshots in PostgreSQL (per VPS)
-5. Detects offline VPS (24h threshold)
-6. Serves the aggregated dashboard
+5. Serves the aggregated dashboard
 
 ### 2.2 Single VPS Architecture (Legacy)
 
@@ -429,7 +428,7 @@ The default weights are:
 | CPU | 50% | Most common bottleneck |
 | RAM | 40% | Second most important |
 | Storage | 10% | Relatively cheap |
-| Network | 0% | Reserved for future |
+| Network | 0% | Reserved for future use — has no effect on calculations |
 
 **Tips for adjusting weights:**
 - **CPU-heavy workloads** (compute, batch jobs) → increase CPU weight to 0.7+
@@ -485,12 +484,12 @@ Container Monthly Cost = Price × (CPU_Weight × CPU_Fraction + RAM_Weight × RA
 
 | Container | CPU% | RAM | CPU Cost | RAM Cost | Storage Cost | **Total** |
 |-----------|------|-----|----------|----------|-------------|-----------|
-| web | 2.5% | 128MB | Rp 4.800 | Rp 1.500 | Rp 6.700 | **Rp 13.000** |
-| postgres | 15.2% | 1.2GB | Rp 29.200 | Rp 14.100 | Rp 6.700 | **Rp 50.000** |
-| nginx | 0.8% | 64MB | Rp 1.500 | Rp 750 | Rp 6.700 | **Rp 8.950** |
+| web | 2.5% | 128MB | Rp 735 | Rp 1.471 | Rp 6.667 | **Rp 8.873** |
+| postgres | 15.2% | 1.2GB | Rp 4.471 | Rp 13.787 | Rp 6.667 | **Rp 24.924** |
+| nginx | 0.8% | 64MB | Rp 235 | Rp 735 | Rp 6.667 | **Rp 7.637** |
 
 **Overhead cost (OS + Docker ~15%):** Rp 30.000  
-**Unallocated (idle resources):** Rp 55.000  
+**Unallocated (idle resources):** Rp 174.568  
 **Total allocated:** Rp 200.000 ✓
 
 ### 7.4 Overhead Cost

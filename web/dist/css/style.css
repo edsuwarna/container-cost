@@ -209,10 +209,10 @@ body {
 .btn-primary:hover { background: var(--primary-pressed); border-color: var(--primary-pressed); }
 .btn-secondary { background: transparent; color: var(--mute); border-color: var(--hairline); }
 .btn-secondary:hover { background: var(--surface-hover); color: var(--ink); }
-.btn-danger { background: var(--accent-red-soft); color: var(--accent-red); border-color: var(--accent-red); }
-.btn-danger:hover { background: var(--accent-red); color: #000; }
-.btn-copy { background: var(--accent-blue-soft); color: var(--accent-blue); border-color: var(--accent-blue); }
-.btn-copy:hover { background: var(--accent-blue); color: #000; }
+.btn-danger { background: rgba(255,97,97,0.2); color: #ff6161; border-color: rgba(255,97,97,0.4); font-weight: 600; }
+.btn-danger:hover { background: #ff6161; color: #000; border-color: #ff6161; }
+.btn-copy { background: rgba(87,193,255,0.2); color: #57c1ff; border-color: rgba(87,193,255,0.4); font-weight: 600; }
+.btn-copy:hover { background: #57c1ff; color: #000; border-color: #57c1ff; }
 .btn-sm { padding: 4px 10px; font-size: 11px; }
 
 /* Legacy alias */
@@ -1081,7 +1081,7 @@ th.sorted-desc .icon-sm { color: var(--accent-blue); }
 }
 
 /* ─── VPS Detail Redesign ─── */
-#page-vps-detail { max-width: 800px; }
+#page-vps-detail { max-width: 800px; margin: 0 auto; }
 .vps-detail-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;

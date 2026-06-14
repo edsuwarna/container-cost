@@ -31,7 +31,7 @@ Container Cost uses a **push-based architecture** with three tiers:
 1. Reads Docker socket for container stats (CPU%, RAM%, memory limit, status)
 2. Sends **raw stats** (not calculated costs) to central server via `POST /api/v1/push`
 3. Authenticates via **API key** generated from the dashboard
-4. Retries up to 5× with exponential backoff on failure
+4. Retries up to 5× with 10-second fixed delay on failure
 5. Does **no local cost calculation** — just collects and pushes
 
 **The central server:**
@@ -39,7 +39,7 @@ Container Cost uses a **push-based architecture** with three tiers:
 2. Looks up the VPS configuration from DB (price, CPU cores, RAM, weights)
 3. Creates a **Calculator** with that VPS config and computes the cost report
 4. Stores the snapshot in PostgreSQL linked to the VPS
-5. Updates VPS `last_seen` timestamp for online/offline detection
+5. Updates VPS `last_seen` timestamp on each push
 6. Serves aggregated dashboard with totals across all VPS
 
 ### Why Push Raw Stats?
