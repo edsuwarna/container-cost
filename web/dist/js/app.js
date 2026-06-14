@@ -104,19 +104,22 @@ function navigate(page) {
     state.currentPage = page;
 
     document.querySelectorAll('.nav-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.page === page);
+        const navPage = el.dataset.page;
+        const isActive = navPage === page || (page === 'vps-detail' && navPage === 'vps');
+        el.classList.toggle('active', isActive);
     });
     document.querySelectorAll('.page').forEach(el => {
         el.classList.toggle('active', el.id === `page-${page}`);
     });
 
     // Update topbar title
-    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'vps': 'VPS', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
+    const titles = { 'dashboard': 'Dashboard', 'containers': 'Containers', 'vps': 'VPS', 'vps-detail': 'VPS Detail', 'config': 'Settings', 'users': 'Users', 'permissions': 'Permissions' };
     document.getElementById('pageTitle').textContent = titles[page] || page;
 
     if (page === 'dashboard') renderDashboard();
     if (page === 'containers') renderContainerList();
     if (page === 'vps') loadVPSList();
+    if (page === 'vps-detail' && currentVPSId) loadVPSDetail();
     if (page === 'config') loadConfig();
     if (page === 'users') loadUsers();
     if (page === 'permissions') renderPermissions();
@@ -141,9 +144,11 @@ function hideLoading() {
 
 // ─── Report Refresh ────────────────────────────────────────
 async function refreshReport() {
-    showLoading();
     const btn = document.getElementById('btnGenerateReport');
-    if (btn) btn.classList.add('loading');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-ring" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;border-width:2px;"></div> Refreshing...';
+    }
     try {
         const result = await API.post('/report/refresh');
         state.report = result.report;
@@ -154,8 +159,10 @@ async function refreshReport() {
         setStatus('error', err.message);
         showConfigStatus(err.message, 'error');
     } finally {
-        hideLoading();
-        if (btn) btn.classList.remove('loading');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Refresh';
+        }
     }
 }
 
@@ -437,6 +444,25 @@ async function reloadDashboard() {
 
         state.report = report?.vps ? report : null;
         state.containers = Array.isArray(containers) ? containers : [];
+
+        // Merge rolling average data into report containers
+        if (state.containers.length > 0 && state.report?.containers) {
+            const avgMap = {};
+            state.containers.forEach(c => {
+                if (c.avg_cost != null) {
+                    avgMap[c.name] = { avg_cost: c.avg_cost, avg_cpu_cost: c.avg_cpu_cost, avg_ram_cost: c.avg_ram_cost };
+                }
+            });
+            state.report.containers.forEach(c => {
+                const avg = avgMap[c.container.name];
+                if (avg) {
+                    c.avg_cost = avg.avg_cost;
+                    c.avg_cpu_cost = avg.avg_cpu_cost;
+                    c.avg_ram_cost = avg.avg_ram_cost;
+                }
+            });
+        }
+
         renderDashboard();
     } catch (err) {
         setStatus('error', err.message);
@@ -456,6 +482,15 @@ function getPeriodSince() {
 // ─── Main Load ─────────────────────────────────────────────
 async function loadDashboard() {
     await Promise.all([reloadDashboard(), renderVPSStrip()]);
+
+    // Show setup guide if no data yet
+    const setupGuide = document.getElementById('dashboardSetup');
+    const dashContent = document.getElementById('dashContent');
+    if (setupGuide && dashContent) {
+        const hasData = state.report && state.report.vps;
+        setupGuide.style.display = hasData ? 'none' : 'block';
+        dashContent.style.display = hasData ? 'block' : 'none';
+    }
 }
 
 // ─── VPS Strip ──────────────────────────────────────────────
@@ -564,7 +599,7 @@ function renderDashboard() {
                 <td>${formatPercent(c.container.cpu_percent)}</td>
                 <td>${formatBytes(c.container.mem_usage_mb)}</td>
                 <td><span class="pill ${statusPill}">${status}</span></td>
-                <td class="cost-val">${formatCurrency(c.total_cost, currency)}</td>
+                <td class="cost-val">${c.avg_cost ? formatCurrency(c.avg_cost, currency) + ' <span class="cost-current">avg</span>' : formatCurrency(c.total_cost, currency)}</td>
             </tr>
         `}).join('');
         document.getElementById('tableCount').textContent = containers.length + ' containers';
@@ -794,7 +829,9 @@ function renderContainerList() {
         const memLimit = c.container.mem_limit_mb || 0;
         const memPct = memLimit > 0 ? Math.min((memMb / memLimit) * 100, 100) : 0;
         const costVal = c.total_cost || 0;
-        const costPct = maxCost > 0 ? Math.min((costVal / maxCost) * 100, 100) : 0;
+        const avgCostVal = c.avg_cost || 0;
+        const displayCost = avgCostVal || costVal;
+        const costPct = maxCost > 0 ? Math.min((displayCost / maxCost) * 100, 100) : 0;
 
         return `
         <div class="container-card" data-name="${c.container.name}">
@@ -830,7 +867,7 @@ function renderContainerList() {
                         <svg class="icon-sm"><use href="#icon-dollar"/></svg>
                         Cost
                     </div>
-                    <div class="chip-value">${formatCurrency(costVal, currency)}</div>
+                    <div class="chip-value">${avgCostVal ? formatCurrency(avgCostVal, currency) + ' <span class="chip-avg-label">avg</span>' : formatCurrency(costVal, currency)}</div>
                     <div class="chip-bar"><div class="chip-bar-fill cost" style="width:${costPct}%"></div></div>
                 </div>
             </div>
@@ -1294,8 +1331,10 @@ document.getElementById('configForm').addEventListener('submit', async (e) => {
     });
 
     try {
-        await API.put('/config', data);
-        state.config = data;
+        // Merge with existing config — preserves VPS-specific fields not in form
+        const merged = { ...(state.config || {}), ...data };
+        await API.put('/config', merged);
+        state.config = merged;
         showConfigStatus('Config saved! Refresh report to apply changes.', 'success');
         setTimeout(() => document.getElementById('configStatus').style.display = 'none', 5000);
     } catch (err) {
@@ -1322,7 +1361,7 @@ function generateColors(n) {
 }
 
 // ─── Auto Refresh ──────────────────────────────────────────
-let autoRefreshInterval = 30000; // 30s
+let autoRefreshInterval = 120000; // 2 minutes
 let autoRefreshTimer;
 
 function startAutoRefresh() {
@@ -1465,8 +1504,8 @@ document.getElementById('resetPwdForm').addEventListener('submit', async (e) => 
     const newPass = document.getElementById('resetPwdNewPass').value;
     const confirm = document.getElementById('resetPwdConfirm').value;
 
-    if (newPass.length < 4) {
-        errEl.textContent = 'Password must be at least 4 characters';
+    if (newPass.length < 8) {
+        errEl.textContent = 'Password must be at least 8 characters';
         errEl.style.display = 'block';
         return;
     }
@@ -1530,7 +1569,6 @@ let currentVPSId = null;
 let vpsList = [];
 
 async function loadVPSList() {
-    document.getElementById('vpsDetail').style.display = 'none';
     try {
         vpsList = await API.get('/vps');
         renderVPSTable(vpsList);
@@ -1567,14 +1605,14 @@ function renderVPSTable(vpsList) {
                     <a href="#" class="container-name vps-row-link" data-id="${v.id}">${v.name}</a>
                 </div>
             </td>
-            <td><span class="vps-spec-tag">${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</span></td>
+            <td><span class="vps-spec-badge"><svg class="icon-sm"><use href="#icon-cpu"/></svg> ${v.cpu_cores || '?'} CPU · ${v.ram_gb || '?'} GB</span></td>
             <td style="font-weight:600;">${formatCurrency(v.price_per_month, v.currency || 'IDR')}</td>
             <td><span class="vps-status-badge ${v.status}"><svg class="icon-sm"><use href="#icon-${v.status === 'online' ? 'zap' : 'eye-off'}"/></svg> ${v.status === 'online' ? 'Live' : 'Off'}</span></td>
             <td style="color:var(--ash);font-size:13px;">${v.last_seen ? formatTime(v.last_seen) : 'Never'}</td>
             <td>
                 <div class="vps-table-actions">
-                    <button class="btn-secondary btn-sm" onclick="viewVPS(${v.id})" title="View details"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
+                    <button class="btn btn-sm" onclick="viewVPS(${v.id})" title="View details"><svg class="icon-sm"><use href="#icon-eye"/></svg></button>
+                    <button class="btn-danger btn-sm" onclick="deleteVPS(${v.id})" title="Remove VPS"><svg class="icon-sm"><use href="#icon-trash"/></svg></button>
                 </div>
             </td>
         </tr>
@@ -1591,8 +1629,14 @@ function renderVPSTable(vpsList) {
 
 async function viewVPS(id) {
     currentVPSId = id;
-    document.getElementById('vpsDetail').style.display = 'block';
+    navigate('vps-detail');
+}
+
+async function loadVPSDetail() {
+    const id = currentVPSId;
+    if (!id) return;
     const content = document.getElementById('vpsDetailContent');
+    content.innerHTML = '<div class="loading-spinner" style="padding:48px;text-align:center;"><div class="spinner-ring"></div></div>';
 
     try {
         const data = await API.get(`/vps/${id}`);
@@ -1611,48 +1655,118 @@ async function viewVPS(id) {
                     <div class="vps-detail-meta">
                         <svg class="icon-sm"><use href="#icon-clock"/></svg>
                         Last seen: ${v.last_seen ? formatTime(v.last_seen) : 'Never'}
+                        &middot; <svg class="icon-sm"><use href="#icon-key"/></svg> ID: ${v.id}
                     </div>
                 </div>
                 <div class="vps-detail-actions">
-                    <button class="btn-secondary btn-sm" onclick="deleteVPS(${v.id})" style="color:var(--accent-red);"><svg class="icon-sm"><use href="#icon-trash"/></svg> Delete</button>
+                    <button class="btn-danger btn-sm" onclick="deleteVPS(${v.id})"><svg class="icon-sm"><use href="#icon-trash"/></svg> Delete</button>
                 </div>
             </div>
 
-            <div class="vps-detail-layout">
-                <div class="vps-info-card">
-                    <h4>Spesifikasi</h4>
-                    <div class="vps-info-grid">
-                        <div class="vps-info-item">
-                            <span class="info-label">CPU Cores</span>
-                            <span class="info-value">${v.cpu_cores || '-'}</span>
+            <!-- ─── Editable Specs & Weights ─── -->
+            <div class="vps-config-card">
+                <h4><svg class="icon-sm"><use href="#icon-sliders"/></svg> VPS Configuration</h4>
+                <p class="config-desc">Edit specs and cost allocation weights. Changes apply to future cost calculations.</p>
+                <form id="vpsConfigForm" onsubmit="return saveVPSConfig(${v.id})">
+                    <div class="vps-config-grid">
+                        <div class="config-block">
+                            <label>CPU Cores</label>
+                            <input type="number" id="vps-cpu" step="0.5" min="0" value="${v.cpu_cores || 0}">
                         </div>
-                        <div class="vps-info-item">
-                            <span class="info-label">RAM</span>
-                            <span class="info-value">${v.ram_gb || '-'} GB</span>
+                        <div class="config-block">
+                            <label>RAM (GB)</label>
+                            <input type="number" id="vps-ram" step="0.5" min="0" value="${v.ram_gb || 0}">
                         </div>
-                        <div class="vps-info-item">
-                            <span class="info-label">Harga</span>
-                            <span class="info-value">${formatCurrency(v.price_per_month, currency)}</span>
+                        <div class="config-block">
+                            <label>Storage (GB)</label>
+                            <input type="number" id="vps-storage" step="1" min="0" value="${v.storage_gb || 0}">
+                        </div>
+                        <div class="config-block">
+                            <label>Price / Month</label>
+                            <input type="number" id="vps-price" step="0.01" min="0" value="${v.price_per_month || 0}">
+                        </div>
+                        <div class="config-block">
+                            <label>Currency</label>
+                            <input type="text" id="vps-currency" value="${v.currency || 'IDR'}" style="max-width:100px;">
+                        </div>
+                        <div class="config-block">
+                            <label>Name</label>
+                            <input type="text" id="vps-name" value="${v.name}">
+                        </div>
+                        <div class="config-block">
+                            <label>CPU Weight</label>
+                            <input type="number" id="vps-cpu-weight" step="0.1" min="0" max="1" value="${v.cpu_weight || 0.5}">
+                        </div>
+                        <div class="config-block">
+                            <label>RAM Weight</label>
+                            <input type="number" id="vps-ram-weight" step="0.1" min="0" max="1" value="${v.ram_weight || 0.4}">
+                        </div>
+                        <div class="config-block">
+                            <label>Storage Weight</label>
+                            <input type="number" id="vps-storage-weight" step="0.1" min="0" max="1" value="${v.storage_weight || 0.1}">
+                        </div>
+                        <div class="config-block">
+                            <label>Overhead %</label>
+                            <input type="number" id="vps-overhead" step="1" min="0" max="50" value="${v.overhead_percent || 15}">
                         </div>
                     </div>
-                </div>
+                    <div class="form-actions" style="margin-top:16px;">
+                        <button type="submit" class="btn btn-primary" id="vpsConfigSaveBtn"><svg class="icon-sm"><use href="#icon-save"/></svg> Save Configuration</button>
+                        <div id="vpsConfigStatus" class="config-status" style="display:none;"></div>
+                    </div>
+                </form>
+            </div>
 
+            <div class="vps-detail-layout">
                 <div class="vps-key-card">
                     <h4><svg class="icon-sm"><use href="#icon-key"/></svg> API Key</h4>
                     <div class="vps-key-display">
                         <code>${v.api_key || '********'}</code>
-                        <button class="btn-secondary btn-sm" onclick="copyVPSKey('${v.id}')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                        <button class="btn-copy btn-sm" onclick="copyVPSKey('${v.id}')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
                     </div>
-                    <button class="btn-secondary btn-sm" style="align-self:flex-start;" onclick="regenerateKey(${v.id})"><svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Regenerate Key</button>
+                    <button class="btn btn-sm" style="align-self:flex-start;" onclick="regenerateKey(${v.id})"><svg class="icon-sm"><use href="#icon-refresh-cw"/></svg> Regenerate Key</button>
                 </div>
-            </div>
 
-            <div class="vps-setup-card">
-                <h4><svg class="icon-sm"><use href="#icon-terminal"/></svg> Setup Agent</h4>
-                <p>SSH ke VPS ini, lalu jalankan perintah berikut:</p>
-                <div class="vps-setup-code">
-                    <code>docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=${v.api_key || 'YOUR_KEY'}</code>
-                    <button class="btn-secondary btn-sm" onclick="copySetupCmd()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                <div class="vps-setup-card">
+                    <h4><svg class="icon-sm"><use href="#icon-terminal"/></svg> Setup Agent on Remote VPS</h4>
+                    <p class="setup-desc">Pilih salah satu metode:</p>
+
+                    <div class="setup-method">
+                        <div class="setup-method-label"><svg class="icon-sm"><use href="#icon-zap"/></svg> Binary (recommended)</div>
+                        <div class="vps-setup-code">
+                            <code>curl -sL https://github.com/endangsuwarna/docker-cost/releases/latest/download/docker-cost -o /usr/local/bin/docker-cost && chmod +x /usr/local/bin/docker-cost && docker-cost --mode=agent --server=http://MAIN_IP:8083 --api-key=${v.api_key || 'YOUR_KEY'}</code>
+                            <button class="btn-copy btn-sm" onclick="copySetupCmd('binary')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                        </div>
+                    </div>
+
+                    <details class="setup-alt">
+                        <summary><svg class="icon-sm"><use href="#icon-layers"/></svg> Docker Compose</summary>
+                        <div class="setup-method" style="margin-top:8px;">
+                            <p style="color:var(--mute);font-size:13px;margin-bottom:8px;">1. Buat <code>docker-compose.agent.yml</code> di VPS remote:</p>
+                            <div class="setup-compose-block">
+                                <pre class="setup-code-block"><code>services:
+  container-cost-agent:
+    image: ghcr.io/edsuwarna/container-cost:latest
+    container_name: container-cost-agent
+    restart: unless-stopped
+    command: >
+      --mode=agent
+      --server=http://MAIN_IP:8083
+      --api-key=${v.api_key || 'YOUR_KEY'}
+      --push-interval=60
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro</code></pre>
+                                <button class="btn-copy btn-sm" onclick="copySetupCmd('compose')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                            </div>
+                            <p style="color:var(--mute);font-size:13px;margin:8px 0 0;">2. Jalankan:</p>
+                            <div class="vps-setup-code" style="margin-top:4px;">
+                                <code>docker compose -f docker-compose.agent.yml up -d</code>
+                                <button class="btn-copy btn-sm" onclick="copySetupCmd('compose-run')"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <p class="setup-hint" style="margin-top:12px;">Agent collects Docker stats and pushes to central. Edit VPS config (price, specs, weights) here in the UI — no config.json needed on remote VPS.</p>
                 </div>
             </div>
 
@@ -1672,12 +1786,51 @@ async function viewVPS(id) {
                         <div class="report-label">Overhead</div>
                         <div class="report-value yellow">${formatCurrency(report.overhead_cost, currency)}</div>
                     </div>
+                    <div class="vps-report-item">
+                        <div class="report-label">Unallocated</div>
+                        <div class="report-value red">${formatCurrency(report.unallocated_cost, currency)}</div>
+                    </div>
                 </div>
             </div>` : ''}
         `;
     } catch (err) {
         content.innerHTML = `<div class="empty-state">Failed to load VPS detail: ${err.message}</div>`;
     }
+}
+
+async function saveVPSConfig(id) {
+    const body = {
+        name: document.getElementById('vps-name').value,
+        notes: '',
+        cpu_cores: parseFloat(document.getElementById('vps-cpu').value) || 0,
+        ram_gb: parseFloat(document.getElementById('vps-ram').value) || 0,
+        storage_gb: parseFloat(document.getElementById('vps-storage').value) || 0,
+        price_per_month: parseFloat(document.getElementById('vps-price').value) || 0,
+        currency: document.getElementById('vps-currency').value || 'IDR',
+        cpu_weight: parseFloat(document.getElementById('vps-cpu-weight').value) || 0.5,
+        ram_weight: parseFloat(document.getElementById('vps-ram-weight').value) || 0.4,
+        storage_weight: parseFloat(document.getElementById('vps-storage-weight').value) || 0.1,
+        overhead_percent: parseFloat(document.getElementById('vps-overhead').value) || 15,
+    };
+    const statusEl = document.getElementById('vpsConfigStatus');
+    const btn = document.getElementById('vpsConfigSaveBtn');
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="icon-sm"><use href="#icon-loader"/></svg> Saving...';
+        await API.put(`/vps/${id}`, body);
+        statusEl.textContent = 'Configuration saved. Report recalculated.';
+        statusEl.className = 'config-status success';
+        statusEl.style.display = 'block';
+        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    } catch (err) {
+        statusEl.textContent = 'Failed: ' + err.message;
+        statusEl.className = 'config-status error';
+        statusEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="icon-sm"><use href="#icon-save"/></svg> Save Configuration';
+    }
+    return false; // prevent form submit reload
 }
 
 function copyVPSKey(id) {
@@ -1698,12 +1851,27 @@ function showCopyFeedback(selector) {
     setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
 
-function copySetupCmd() {
-    const codeEl = document.querySelector('.vps-setup-code code');
-    const cmd = codeEl.textContent;
-    navigator.clipboard.writeText(cmd).then(() => {
-        showCopyFeedback('.vps-setup-code .btn-sm');
-    }).catch(() => fallbackCopy(cmd));
+function copySetupCmd(method) {
+    let cmd = '';
+    if (method === 'binary') {
+        const codeEl = document.querySelector('.vps-setup-card .setup-method:first-of-type .vps-setup-code code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else if (method === 'compose') {
+        const codeEl = document.querySelector('.setup-compose-block .setup-code-block code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else if (method === 'compose-run') {
+        const codeEl = document.querySelector('.setup-alt .vps-setup-code:last-of-type code');
+        if (codeEl) cmd = codeEl.textContent;
+    } else {
+        // Fallback
+        const codeEl = document.querySelector('.vps-setup-card .vps-setup-code code');
+        if (codeEl) cmd = codeEl.textContent;
+    }
+    if (cmd) {
+        navigator.clipboard.writeText(cmd).then(() => {
+            showCopyFeedback('.vps-setup-card .btn-sm');
+        }).catch(() => fallbackCopy(cmd));
+    }
 }
 
 function fallbackCopy(text) {
@@ -1717,9 +1885,8 @@ function fallbackCopy(text) {
 }
 
 document.getElementById('btnBackToVPSList').addEventListener('click', () => {
-    document.getElementById('vpsDetail').style.display = 'none';
     currentVPSId = null;
-    loadVPSList();
+    navigate('vps');
 });
 
 async function deleteVPS(id) {
@@ -1727,10 +1894,11 @@ async function deleteVPS(id) {
     try {
         await API.del(`/vps/${id}`);
         if (currentVPSId === id) {
-            document.getElementById('vpsDetail').style.display = 'none';
             currentVPSId = null;
+            navigate('vps');
+        } else {
+            loadVPSList();
         }
-        loadVPSList();
     } catch (err) {
         alert('Failed to delete VPS: ' + err.message);
     }
@@ -1777,10 +1945,15 @@ document.getElementById('vpsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('vpsNameInput').value;
     const notes = document.getElementById('vpsNotesInput').value;
+    const cpu = parseFloat(document.getElementById('vpsAddCPU').value) || 0;
+    const ram = parseFloat(document.getElementById('vpsAddRAM').value) || 0;
+    const storage = parseFloat(document.getElementById('vpsAddStorage').value) || 0;
+    const price = parseFloat(document.getElementById('vpsAddPrice').value) || 0;
+    const currency = document.getElementById('vpsAddCurrency').value || 'IDR';
     const errEl = document.getElementById('vpsFormError');
 
     try {
-        const result = await API.postWithBody('/vps', { name, notes });
+        const result = await API.postWithBody('/vps', { name, notes, cpu_cores: cpu, ram_gb: ram, storage_gb: storage, price_per_month: price, currency });
         // Show the generated API key — modal stays open until user closes
         document.getElementById('vpsKeyGroup').style.display = 'block';
         document.getElementById('vpsApiKey').textContent = result.api_key;

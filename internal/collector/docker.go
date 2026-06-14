@@ -112,6 +112,27 @@ func (c *Collector) CollectStats() ([]ContainerStat, error) {
 	return stats, nil
 }
 
+// CollectStatsFresh collects stats with a warmup call to ensure CPU delta is valid.
+// Docker stats needs two consecutive readings for accurate CPU calculation.
+func (c *Collector) CollectStatsFresh() ([]ContainerStat, error) {
+	if !c.available {
+		return nil, fmt.Errorf("docker not available")
+	}
+
+	containers, err := c.listContainers()
+	if err != nil {
+		return nil, err
+	}
+
+	// Warmup: discard first reading (precpu_stats is empty on first call)
+	for _, cont := range containers {
+		c.getContainerStats(cont.ID)
+	}
+
+	// Real reading
+	return c.CollectStats()
+}
+
 // --- Internal types matching Docker API ---
 
 type dockerContainer struct {

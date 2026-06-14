@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -384,10 +385,7 @@ func (s *Server) handleCreateVPS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body struct {
-		Name  string `json:"name"`
-		Notes string `json:"notes"`
-	}
+	var body storage.VPSConfigFields
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
@@ -397,7 +395,7 @@ func (s *Server) handleCreateVPS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	agent, err := s.store.CreateVPS(body.Name, body.Notes)
+	agent, err := s.store.CreateVPS(body.Name, body.Notes, body)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -438,18 +436,48 @@ func (s *Server) handleVPSDetail(w http.ResponseWriter, r *http.Request) {
 		})
 
 	case http.MethodPut:
-		var body struct {
-			Name  string `json:"name"`
-			Notes string `json:"notes"`
-		}
+		var body storage.VPSConfigFields
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 			return
 		}
-		if err := s.store.UpdateVPSAgent(id, body.Name, body.Notes); err != nil {
+		if body.Name == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name required"})
+			return
+		}
+		if err := s.store.UpdateVPSConfig(id, body); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
+
+		// Recalculate snapshot with new config
+		agent, _ := s.store.GetVPSByID(id)
+		if agent != nil {
+			vpsCfg := config.VPSConfig{
+				Name:            agent.Name,
+				PricePerMonth:   agent.PricePerMonth,
+				CPU:             agent.CPU,
+				RAMGB:           agent.RAMGB,
+				StorageGB:       agent.StorageGB,
+				Currency:        agent.Currency,
+				CPUWeight:       agent.CPUWeight,
+				RAMWeight:       agent.RAMWeight,
+				StorageWeight:   agent.StorageWeight,
+				OverheadPercent: agent.OverheadPercent,
+			}
+			latest, _ := s.store.GetLatestSnapshotForVPS(id)
+			if latest != nil && len(latest.Containers) > 0 {
+				// Rebuild stats from latest snapshot containers
+				stats := make([]collector.ContainerStat, len(latest.Containers))
+				for i, cc := range latest.Containers {
+					stats[i] = cc.Container
+				}
+				cal := calculator.New(vpsCfg)
+				report := cal.CalculateReport(stats)
+				s.store.SaveSnapshotForVPS(id, report)
+			}
+		}
+
 		writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
 
 	case http.MethodDelete:
@@ -503,12 +531,30 @@ func (s *Server) handlePush(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode report
-	var report calculator.CostReport
-	if err := json.NewDecoder(r.Body).Decode(&report); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid report JSON"})
+	// Decode raw container stats (not pre-calculated report)
+	var payload struct {
+		Containers []collector.ContainerStat `json:"containers"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid stats JSON"})
 		return
 	}
+
+	// Build calculator from VPS config stored in DB
+	vpsCfg := config.VPSConfig{
+		Name:            agent.Name,
+		PricePerMonth:   agent.PricePerMonth,
+		CPU:             agent.CPU,
+		RAMGB:           agent.RAMGB,
+		StorageGB:       agent.StorageGB,
+		Currency:        agent.Currency,
+		CPUWeight:       agent.CPUWeight,
+		RAMWeight:       agent.RAMWeight,
+		StorageWeight:   agent.StorageWeight,
+		OverheadPercent: agent.OverheadPercent,
+	}
+	cal := calculator.New(vpsCfg)
+	report := cal.CalculateReport(payload.Containers)
 
 	// Update last seen
 	s.store.UpdateVPSLastSeen(agent.ID)
@@ -623,7 +669,7 @@ func (s *Server) handleRefreshReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stats, err := s.collector.CollectStats()
+	stats, err := s.collector.CollectStatsFresh()
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
 			"error":   "failed to collect stats",
@@ -717,18 +763,64 @@ func (s *Server) handleContainers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	containers := make([]map[string]interface{}, 0, len(report.Containers))
+	// Fetch last N snapshots for rolling average
+	snapshots, _ := s.store.GetLastSnapshots(0, 3)
+
+	// Build per-container averages from history
+	type avgAccum struct {
+		cpu   float64
+		ram   float64
+		count float64
+	}
+	avgMap := make(map[string]avgAccum)
+	for _, snap := range snapshots {
+		for _, cc := range snap.Containers {
+			key := cc.Container.Name
+			e := avgMap[key]
+			e.cpu += cc.CPUCost
+			e.ram += cc.RAMCost
+			e.count++
+			avgMap[key] = e
+		}
+	}
+
+	type averagedContainer struct {
+		Name         string  `json:"name"`
+		Image        string  `json:"image"`
+		CPUPercent   float64 `json:"cpu_percent"`
+		MemUsageMB   float64 `json:"mem_usage_mb"`
+		MemPercent   float64 `json:"mem_percent"`
+		CostPerMonth float64 `json:"cost_per_month"`
+		CPUCost      float64 `json:"cpu_cost"`
+		RAMCost      float64 `json:"ram_cost"`
+		Status       string  `json:"status"`
+		AvgCPUCost   float64 `json:"avg_cpu_cost"`
+		AvgRAMCost   float64 `json:"avg_ram_cost"`
+		AvgCost      float64 `json:"avg_cost"`
+	}
+
+	containers := make([]averagedContainer, 0, len(report.Containers))
 	for _, cc := range report.Containers {
-		containers = append(containers, map[string]interface{}{
-			"name":           cc.Container.Name,
-			"image":          cc.Container.Image,
-			"cpu_percent":    cc.Container.CPUPercent,
-			"mem_usage_mb":   cc.Container.MemUsageMB,
-			"mem_percent":    cc.Container.MemPercent,
-			"cost_per_month": cc.TotalCost,
-			"cpu_cost":       cc.CPUCost,
-			"ram_cost":       cc.RAMCost,
-			"status":         cc.Container.Status,
+		a := avgMap[cc.Container.Name]
+		var avgCPU, avgRAM, avgCost float64
+		if a.count > 0 {
+			avgCPU = round2(a.cpu / a.count)
+			avgRAM = round2(a.ram / a.count)
+			avgCost = round2((a.cpu + a.ram) / a.count)
+		}
+		containers = append(containers, averagedContainer{
+			Name:         cc.Container.Name,
+			Image:        cc.Container.Image,
+			CPUPercent:   cc.Container.CPUPercent,
+			MemUsageMB:   cc.Container.MemUsageMB,
+			MemPercent:   cc.Container.MemPercent,
+			CostPerMonth: cc.TotalCost,
+			CPUCost:      cc.CPUCost,
+			RAMCost:      cc.RAMCost,
+			Status:       cc.Container.Status,
+			AvgCPUCost:   avgCPU,
+			AvgRAMCost:   avgRAM,
+			AvgCost:      avgCost,
 		})
 	}
 	writeJSON(w, http.StatusOK, containers)
@@ -746,7 +838,10 @@ func (s *Server) handleContainerDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	history, err := s.store.GetContainerHistory(name, 50)
+	// Optional vps_id query param
+	vpsID, _ := strconv.Atoi(r.URL.Query().Get("vps_id"))
+
+	history, err := s.store.GetContainerHistory(name, vpsID, 50)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -825,4 +920,8 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)
+}
+
+func round2(v float64) float64 {
+	return math.Round(v*100) / 100
 }

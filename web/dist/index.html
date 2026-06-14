@@ -155,6 +155,12 @@
             <symbol id="icon-bar-chart-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
             </symbol>
+            <symbol id="icon-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </symbol>
+            <symbol id="icon-hard-drive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/>
+            </symbol>
         </defs>
     </svg>
     <!-- ═══ Loading Overlay ═══ -->
@@ -267,6 +273,8 @@
             <div class="content">
                 <!-- ═══ Dashboard Page ═══ -->
                 <section class="page active" id="page-dashboard">
+
+                    <div id="dashContent">
 
                     <!-- ═══ VPS Strip ═══ -->
                     <div class="vps-strip" id="vpsStrip">
@@ -407,11 +415,46 @@
                                     <tr><td colspan="6" class="empty-state">No data yet. Click Generate Report to start.</td></tr>
                                 </tbody>
                             </table>
-                        </div>
                     </div>
-                </section>
+                </div>
+                    </div>
 
-                <!-- ═══ Containers Page ═══ -->
+                <!-- ═══ Setup Guide (shown when no data yet) ═══ -->
+                <div class="setup-guide" id="dashboardSetup" style="display:none;">
+                    <div class="setup-guide-card">
+                        <h3><svg class="icon-lg" style="width:24px;height:24px;vertical-align:middle;margin-right:8px;color:var(--accent-blue);"><use href="#icon-server"/></svg> Welcome to ContainerCost!</h3>
+                        <p>To get started, install the ContainerCost agent on your VPS. The agent collects Docker container stats and pushes cost reports to this central server.</p>
+
+                        <h4>Step 1: Add VPS via panel</h4>
+                        <p>Go to <strong>VPS</strong> page → click <strong>Add VPS</strong> → give it a name. Copy the generated API key.</p>
+
+                        <h4>Step 2: Run agent on your VPS</h4>
+                        <div class="setup-code-block">
+                            <code># Download &amp; run agent (replace KEY with your API key):</code><br>
+                            <code>docker run -d \</code><br>
+                            <code>  --name container-cost-agent \</code><br>
+                            <code>  -v /var/run/docker.sock:/var/run/docker.sock:ro \</code><br>
+                            <code>  -e MODE=agent \</code><br>
+                            <code>  -e CENTRAL_URL=https://your-server:8081 \</code><br>
+                            <code>  -e API_KEY=YOUR_API_KEY \</code><br>
+                            <code>  ghcr.io/edsuwarna/container-cost:latest</code>
+                        </div>
+
+                        <h4>Step 3: Or use standalone binary</h4>
+                        <div class="setup-code-block">
+                            <code>./container-cost --mode agent \</code><br>
+                            <code>  --server https://your-server:8081 \</code><br>
+                            <code>  --api-key YOUR_API_KEY \</code><br>
+                            <code>  --push-interval 60</code>
+                        </div>
+
+                        <p class="setup-guide-footer"><em>Once the agent pushes its first report, you'll see cost breakdown here. Meanwhile you can also click <strong>Refresh</strong> to collect stats from this server's local Docker socket.</em></p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ═══ Containers Page ═══ -->
                 <section class="page" id="page-containers">
                     <!-- Toolbar: Search + Sort -->
                     <div class="container-toolbar">
@@ -553,14 +596,6 @@
                         </div>
                     </div>
 
-                    <!-- VPS Detail -->
-                    <div class="detail-view" id="vpsDetail" style="display:none;">
-                        <button class="btn-back" id="btnBackToVPSList">← Back to VPS list</button>
-                        <div class="vps-detail-card" id="vpsDetailContent">
-                            <!-- populated by JS -->
-                        </div>
-                    </div>
-
                     <!-- Add VPS Modal -->
                     <div class="modal-overlay" id="vpsModal" style="display:none;">
                         <div class="modal-card" style="width:500px;">
@@ -570,6 +605,29 @@
                                     <label>VPS Name</label>
                                     <input type="text" id="vpsNameInput" placeholder="e.g. Hetzner CX42" required>
                                 </div>
+                                <div class="form-row" style="gap:12px;display:grid;grid-template-columns:1fr 1fr 1fr;">
+                                    <div class="form-group">
+                                        <label>CPU Cores</label>
+                                        <input type="number" id="vpsAddCPU" step="0.5" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>RAM (GB)</label>
+                                        <input type="number" id="vpsAddRAM" step="0.5" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Storage (GB)</label>
+                                        <input type="number" id="vpsAddStorage" step="1" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Price / Month</label>
+                                        <input type="number" id="vpsAddPrice" step="0.01" min="0" value="0" placeholder="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Currency</label>
+                                        <input type="text" id="vpsAddCurrency" value="IDR" placeholder="IDR" style="max-width:100px;">
+                                    </div>
+                                </div>
+                                <p class="form-hint">Specs are optional — set later from the VPS detail page.</p>
                                 <div class="form-group">
                                     <label>Notes (optional)</label>
                                     <input type="text" id="vpsNotesInput" placeholder="Location: Singapore, provider: Hetzner">
@@ -578,7 +636,7 @@
                                     <label>API Key</label>
                                     <div class="key-display">
                                         <code id="vpsApiKey"></code>
-                                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyKey()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
+                                        <button type="button" class="btn-copy btn-sm" onclick="copyKey()"><svg class="icon-sm"><use href="#icon-copy"/></svg> Copy</button>
                                     </div>
                                     <p class="form-hint">Use this key in the VPS agent with <code>--api-key</code> flag</p>
                                 </div>
@@ -592,53 +650,32 @@
                     </div>
                 </section>
 
-                <!-- ═══ Config Page ═══ -->
+                <!-- ═══ VPS Detail Page ═══ -->
+                <section class="page" id="page-vps-detail">
+                    <button class="btn-back" id="btnBackToVPSList"><svg class="icon-sm"><use href="#icon-chevron-left"/></svg> Back to VPS List</button>
+                    <div id="vpsDetailContent">
+                        <!-- populated by JS -->
+                    </div>
+                </section>
+
+                <!-- ═══ Settings Page ═══ -->
                 <section class="page" id="page-config">
                     <div class="config-card">
+                        <div class="config-header">
+                            <h3>Settings</h3>
+                            <p class="config-desc">Global defaults applied when creating new VPS. Each VPS can override these from its detail page.</p>
+                        </div>
                         <form id="configForm">
                             <div class="config-section">
-                                <h3>VPS Info</h3>
+                                <h3>Default VPS Config</h3>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label>VPS Name</label>
-                                        <input type="text" name="name" placeholder="My VPS">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Currency</label>
+                                        <label>Default Currency</label>
                                         <input type="text" name="currency" placeholder="IDR">
                                     </div>
-                                </div>
-                                <div class="form-row">
                                     <div class="form-group">
-                                        <label>Price per Month</label>
-                                        <input type="number" name="price_per_month" step="1000" min="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Overhead %</label>
+                                        <label>Default Overhead %</label>
                                         <input type="number" name="overhead_percent" step="1" min="0" max="50">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="config-section">
-                                <h3>VPS Specs</h3>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>CPU Cores</label>
-                                        <input type="number" name="cpu_cores" step="1" min="1">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>RAM (GB)</label>
-                                        <input type="number" name="ram_gb" step="1" min="1">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Storage (GB)</label>
-                                        <input type="number" name="storage_gb" step="10" min="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Bandwidth (GB)</label>
-                                        <input type="number" name="bandwidth_gb" step="10" min="0">
                                     </div>
                                 </div>
                             </div>
@@ -651,7 +688,8 @@
                                         <input type="number" name="cpu_weight" step="0.05" min="0" max="1">
                                     </div>
                                     <div class="form-group">
-                                        <label>RAM Weight</label>                                        <input type="number" name="ram_weight" step="0.05" min="0" max="1">
+                                        <label>RAM Weight</label>
+                                        <input type="number" name="ram_weight" step="0.05" min="0" max="1">
                                     </div>
                                 </div>
                                 <div class="form-row">
@@ -666,7 +704,7 @@
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-save"/></svg> Save Config</button>
+                                <button type="submit" class="btn btn-primary"><svg class="icon-sm"><use href="#icon-save"/></svg> Save Settings</button>
                             </div>
                         </form>
                         <div id="configStatus" class="config-status"></div>
