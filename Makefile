@@ -32,16 +32,15 @@ test:
 
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -f docker-cost.db
 
 # Install system dependencies (Debian/Ubuntu)
 install-deps:
-	sudo apt-get update && sudo apt-get install -y gcc libc6-dev sqlite3
+	sudo apt-get update && sudo apt-get install -y gcc libc6-dev
 
 info:
 	@echo "Docker Cost Calculator"
 	@echo "----------------------"
 	@echo "Binary:   $(BUILD_DIR)/$(BINARY_NAME)"
 	@echo "Config:   ~/.docker-cost/config.json"
-	@echo "Database: ~/.docker-cost/docker-cost.db"
+	@echo "Database: PostgreSQL (via DATABASE_URL)"
 	@echo "Docs:     http://localhost:8080"

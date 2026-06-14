@@ -47,34 +47,21 @@ curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deplo
   --name="Hetzner CX42"
 ```
 
-**Or with docker-compose:**
+**Or with docker-compose (no config file needed — CLI flags only):**
 
 ```bash
 curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
 
-# Create config file
-mkdir -p ~/.docker-cost
-cat > ~/.docker-cost/config.json <<EOF
-{
-  "agent": {
-    "central_url": "http://CENTRAL_IP:8080",
-    "agent_key": "dckr_xxx",
-    "push_interval": 60,
-    "push_retries": 5
-  }
-}
-EOF
-
+# Edit the file to set your CENTRAL_IP and API_KEY, then:
 docker compose -f docker-compose.agent.yml up -d
 ```
 
-**Or with raw docker run:**
+**Or with raw docker run (CLI flags only — no config file needed):**
 
 ```bash
 docker run -d --name container-cost-agent \
   --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v ~/.docker-cost/config.json:/root/.docker-cost/config.json:ro \
   ghcr.io/edsuwarna/container-cost:latest \
   --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```

@@ -120,10 +120,9 @@ CREATE TABLE IF NOT EXISTS snapshots (
 );
 ```
 
-**Default seeding:** On first startup, creates initial users:
-- `admin` / `change-me` (role: admin)
-- `eng` / `change-me` (role: engineer)
-- `mgt` / `change-me` (role: management)
+**Default seeding:** On first startup, creates the default admin user:
+- `admin` / password = `DOCKER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
+- Demo users `eng` / `mgt` are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set
 
 ### Adding Tests
 

@@ -31,8 +31,6 @@ In **server mode** (central server), the config file defines the local VPS where
   "storage_weight": 0.1,
   "network_weight": 0.0,
   "overhead_percent": 15,
-  "admin_user": "admin",
-  "admin_pass": "",
   "secret_key": ""
 }
 ```
@@ -53,6 +51,7 @@ In **server mode** (central server), the config file defines the local VPS where
 | `storage_weight` | 0.0-1.0 | `0.1` | Storage weight in cost formula |
 | `network_weight` | 0.0-1.0 | `0.0` | Network weight in cost formula (reserved) |
 | `overhead_percent` | 0-100 | `15` | OS/Docker overhead percentage |
+| `secret_key` | string | `""` | Session signing key (auto-generated 64-char hex if empty) |
 
 The server also stores per-VPS configuration in the database (see **VPS Config in DB** below).
 

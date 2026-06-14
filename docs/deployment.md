@@ -73,7 +73,6 @@ docker run -d --name container-cost-agent \
   --mode=agent \
   --server=http://CENTRAL_IP:8080 \
   --api-key=dckr_xxx
-```
 
 That's it — no config files, no VPS specs. Just mount the Docker socket, point to your central server, and provide the API key.
 
@@ -87,47 +86,6 @@ curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/con
 
 # 3. Start agent
 docker compose -f docker-compose.agent.yml up -d
-```
-
-#### With Config File (Optional)
-
-For advanced configuration (custom push interval, retries):
-
-```bash
-# Create config directory
-mkdir -p ~/.docker-cost
-
-# Create config file
-cat > ~/.docker-cost/config.json <<EOF
-{
-  "agent": {
-    "central_url": "http://CENTRAL_IP:8080",
-    "agent_key": "dckr_xxx",
-    "push_interval": 120,
-    "push_retries": 3
-  }
-}
-EOF
-
-# Run with config
-docker run -d --name container-cost-agent \
-  --restart unless-stopped \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v ~/.docker-cost:/root/.docker-cost:ro \
-  ghcr.io/edsuwarna/container-cost:latest \
-  --mode=agent
-```
-
-#### With Go Binary (No Docker)
-
-```bash
-# Download binary from GitHub Releases
-curl -LO https://github.com/edsuwarna/container-cost/releases/latest/download/docker-cost-linux-amd64.tar.gz
-tar xzf docker-cost-linux-amd64.tar.gz
-sudo install docker-cost /usr/local/bin/
-
-# Run as agent
-docker-cost --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```
 
 #### Verify Agent

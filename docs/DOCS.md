@@ -64,7 +64,7 @@ Container Cost answers all of these with a single dashboard.
 **Multi-VPS (v2.0)**
 - VPS management — add/edit/delete VPS from dashboard
 - Agent mode — deploy a lightweight agent on each VPS
-- Push API — agents push reports to central server (API key auth)
+|   - Push API — agents push **raw stats** to central server (API key auth)
 - Aggregated dashboard — total cost across all VPS
 - Live status — online/offline detection per VPS
 - Auto API key generation on VPS creation
@@ -122,14 +122,14 @@ cd container-cost
 docker compose up -d
 
 # Open the dashboard
-echo "Open http://localhost:8081"
+echo "Open http://localhost:8083"
 ```
 
 **Default Login:**
 - Username: `admin`
-- Password: `change-me`
+- Password: *(set via `DOCKER_COST_ADMIN_PASSWORD` env var; randomly generated 32-char hex if not set)*
 
-> Port 8081 is the external port mapped to the container's port 8080 (see docker-compose.yml).
+> Port 8083 is the external port mapped to the container's port 8080 (see docker-compose.yml).
 
 ### 3.2 Add a VPS Agent
 
@@ -147,47 +147,24 @@ echo "Open http://localhost:8081"
 curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh | bash -s -- \
   --server=http://CENTRAL_IP:8080 \
   --api-key=dckr_xxx_generated_from_dashboard \
-  --name="Hetzner CX42" \
-  --price=200000 \
-  --cpu=4 \
-  --ram=8
+  --name="Hetzner CX42"
 ```
 
-**Or with docker-compose:**
+**Or with docker-compose (no config file needed — CLI flags only):**
 
 ```bash
 curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
 
-# Create config file
-cat > container-cost-config.json <<EOF
-{
-  "vps": {
-    "name": "Hetzner CX42",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
-  "agent": {
-    "mode": "agent",
-    "central_url": "http://CENTRAL_IP:8080",
-    "agent_key": "dckr_xxx",
-    "push_interval": 60,
-    "push_retries": 5
-  }
-}
-EOF
-
+# Edit the file to set your CENTRAL_IP and API_KEY, then:
 docker compose -f docker-compose.agent.yml up -d
 ```
 
-**Or with raw docker run:**
+**Or with raw docker run (CLI flags only — no config file needed):**
 
 ```bash
 docker run -d --name container-cost-agent \
   --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v ~/.docker-cost/config.json:/root/.docker-cost/config.json:ro \
   ghcr.io/edsuwarna/container-cost:latest \
   --mode=agent --server=http://CENTRAL_IP:8080 --api-key=dckr_xxx
 ```
@@ -199,9 +176,9 @@ docker run -d --name container-cost-agent \
 docker logs -f container-cost-agent
 
 # Expected output:
-# [agent] push success: VPS=Hetzner CX42 containers=5 cost=200000.00
-
-# Dashboard: http://CENTRAL_IP:8081
+# [agent] push success: containers=5
+```
+# Dashboard: http://CENTRAL_IP:8083
 ```
 
 ---
@@ -256,23 +233,21 @@ docker run -d --name container-cost \
 
 #### One-liner Script
 
-The `deploy/setup-agent.sh` script automates everything:
+The `deploy/setup-agent.sh` script automates everything — it pulls the image and runs the agent with CLI flags only:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deploy/setup-agent.sh | bash -s -- \
   --server=http://central:8080 \
   --api-key=dckr_xxx \
-  --name="My VPS" \
-  --price=200000 \
-  --cpu=4 \
-  --ram=8
+  --name="My VPS"
 ```
 
 **What the script does:**
 1. Validates Docker is installed
-2. Creates `~/.docker-cost/config.json`
-3. Pulls `ghcr.io/edsuwarna/container-cost:latest`
-4. Runs the container with `--mode=agent`
+2. Pulls `ghcr.io/edsuwarna/container-cost:latest`
+3. Runs the container with `--mode=agent`
+
+> VPS config (price, specs, weights) is managed from the dashboard — no local config file needed on agents.
 
 #### Manual Docker Compose
 
@@ -280,29 +255,9 @@ curl -fsSL https://raw.githubusercontent.com/edsuwarna/container-cost/main/deplo
 # 1. Download the agent compose file
 curl -o docker-compose.agent.yml https://raw.githubusercontent.com/edsuwarna/container-cost/main/docker-compose.agent.yml
 
-# 2. Create config (adjust values to match your VPS)
-cat > container-cost-config.json <<EOF
-{
-  "vps": {
-    "name": "My VPS",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
-  "agent": {
-    "mode": "agent",
-    "central_url": "http://YOUR_SERVER_IP:8080",
-    "agent_key": "dckr_xxx",
-    "push_interval": 60,
-    "push_retries": 5
-  }
-}
-EOF
+# 2. Edit — set CENTRAL_IP and API_KEY in the command section
 
-# 3. Edit docker-compose.agent.yml — replace CHANGE_ME with actual values
-
-# 4. Start agent
+# 3. Start agent
 docker compose -f docker-compose.agent.yml up -d
 ```
 
@@ -312,7 +267,6 @@ docker compose -f docker-compose.agent.yml up -d
 docker run -d --name container-cost-agent \
   --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  -v $HOME/.docker-cost/config.json:/root/.docker-cost/config.json:ro \
   ghcr.io/edsuwarna/container-cost:latest \
   --mode=agent \
   --server=http://CENTRAL_IP:8080 \
@@ -344,8 +298,8 @@ docker compose up -d
 - Stage 2: `alpine:3.19` — runtime (only 15MB + binary)
 
 **Volumes:**
-- `/data` — config directory (mount for persistence)
-- `/var/run/docker.sock` — Docker socket (read-only)
+- `/var/run/docker.sock` — Docker socket (read-only, required)
+- No config volume needed — VPS config is managed from dashboard
 
 ---
 
@@ -392,8 +346,6 @@ Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` en
   "storage_weight": 0.1,
   "network_weight": 0.0,
   "overhead_percent": 15,
-  "admin_user": "admin",
-  "admin_pass": "",
   "secret_key": ""
 }
 ```
@@ -414,6 +366,7 @@ Default: `~/.docker-cost/config.json` (override with `DOCKER_COST_CONFIG_DIR` en
 | `storage_weight` | 0.0-1.0 | `0.1` | Storage weight in cost formula |
 | `network_weight` | 0.0-1.0 | `0.0` | Network weight (reserved) |
 | `overhead_percent` | 0-100 | `15` | OS/Docker overhead percentage |
+| `secret_key` | string | `""` | Session signing key (auto-generated 64-char hex if empty) |
 
 > If the config file doesn't exist, it's **auto-created with defaults** on first run.
 
@@ -580,7 +533,7 @@ Total Containers = Σ(Container Count per VPS)
 
 ```
 http://localhost:8080
-// Via docker-compose: http://localhost:8081
+// Via docker-compose: http://localhost:8083
 ```
 
 ### 8.2 Endpoint Summary
@@ -598,7 +551,7 @@ http://localhost:8080
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/v1/push` | Push cost report from agent |
+| POST | `/api/v1/push` | Push raw container stats from agent (central server calculates cost) |
 
 **Headers:** `Authorization: Bearer dckr_xxx`
 
@@ -654,7 +607,7 @@ http://localhost:8080
 // Request
 {
   "username": "admin",
-  "password": "change-me"
+  "password": "your_password"
 }
 
 // Response 200
@@ -670,46 +623,28 @@ http://localhost:8080
 }
 ```
 
-**Sets a session cookie** `session` (HttpOnly, SameSite=Lax, 24h expiry).
+**Sets a session cookie** `session` (HttpOnly, SameSite=Strict, 24h expiry).
 
 #### POST /api/v1/push (Agent Push)
 
 ```json
 // Headers: Authorization: Bearer dckr_xxx
 
-// Request Body
+// Request Body — raw container stats (no pre-calculated costs)
 {
-  "vps": {
-    "name": "Hetzner CX42",
-    "price_per_month": 200000,
-    "cpu_cores": 4,
-    "ram_gb": 8,
-    "currency": "IDR"
-  },
   "containers": [
     {
-      "container": {
-        "name": "web",
-        "id": "a1b2c3d4e5f6",
-        "image": "nginx:latest",
-        "cpu_percent": 2.5,
-        "mem_usage_mb": 128,
-        "mem_limit_mb": 1024,
-        "mem_percent": 12.5,
-        "status": "running",
-        "created_at": "2025-01-01T00:00:00Z",
-        "uptime": "14 days"
-      },
-      "cpu_cost": 4800,
-      "ram_cost": 1500,
-      "storage_cost": 6700,
-      "total_cost": 13000
+      "name": "web",
+      "id": "a1b2c3d4e5f6",
+      "image": "nginx:latest",
+      "cpu_percent": 2.5,
+      "mem_usage_mb": 128.0,
+      "mem_limit_mb": 1024.0,
+      "mem_percent": 12.5,
+      "status": "running",
+      "created_at": "2025-01-01T00:00:00Z"
     }
-  ],
-  "overhead_cost": 30000,
-  "unallocated_cost": 55000,
-  "total_cost": 200000,
-  "period": "month"
+  ]
 }
 
 // Response 200
@@ -718,6 +653,8 @@ http://localhost:8080
   "snapshot_id": 42
 }
 ```
+
+> **Note:** The agent pushes raw stats only. The central server looks up the VPS config (price, weights, specs) from the database and calculates costs. VPS config is managed from the dashboard — no local config needed on agents.
 
 #### GET /api/dashboard (Aggregated)
 
@@ -885,7 +822,7 @@ Usage of /app/docker-cost:
 | `make run-quick` | Quick run with `go run` |
 | `make test` | Run all tests with race detection |
 | `make clean` | Remove build artifacts |
-| `make install-deps` | Install system deps (gcc, sqlite3) |
+| `make install-deps` | Install build deps (gcc, libc6-dev) |
 | `make info` | Show project info |
 
 ---
@@ -1005,10 +942,9 @@ CREATE TABLE IF NOT EXISTS snapshots (
 );
 ```
 
-**Default seeding:** On first startup, creates initial users:
-- `admin` / `change-me` (role: admin)
-- `eng` / `change-me` (role: engineer)
-- `mgt` / `change-me` (role: management)
+**Default seeding:** On first startup, creates the default admin user:
+- `admin` / password = `DOCKER_COST_ADMIN_PASSWORD` env var (or randomly generated 32-char hex)
+- Demo users `eng` / `mgt` are only created if `DOCKER_COST_DEMO_PASSWORD_ENG` and `DOCKER_COST_DEMO_PASSWORD_MGT` env vars are set
 
 ### 11.7 Adding Tests
 
@@ -1048,7 +984,7 @@ The Docker socket is mounted **read-only** (`ro`):
 
 ### 12.4 Network Security
 
-- The default setup exposes port 8080/8081
+- The default setup exposes port 8080 (internal) / 8083 (external via docker-compose)
 - **Recommendation:** Run behind a reverse proxy (nginx, Caddy, Traefik) with:
   - TLS (HTTPS)
   - IP whitelisting for agent push endpoint
@@ -1167,7 +1103,7 @@ docker compose up -d
 
 **Server mode** (`--mode=server`, default): Runs the API server, database connection, frontend, and optionally collects local Docker stats. This is your central dashboard.
 
-**Agent mode** (`--mode=agent`): A lightweight process that collects Docker stats, calculates costs, and pushes reports to the central server. No database, no frontend.
+**Agent mode** (`--mode=agent`): A lightweight process that collects raw Docker stats (CPU%, memory usage) and pushes them to the central server. **No cost calculation happens on the agent** — the central server looks up the VPS config from the database and calculates costs. No database, no frontend.
 
 ### Can I run multiple agents on the same VPS?
 
@@ -1219,6 +1155,7 @@ Podman with Docker-compatible socket (`podman system service`) should work, but 
 - [x] Offline detection per VPS
 - [x] GitHub Container Registry
 - [x] One-liner agent deployment
+- [x] Multi-currency support (`currency` field in config and DB)
 
 ### 🔜 Future
 - [ ] Cost alerts (Telegram / webhook)
@@ -1227,7 +1164,6 @@ Podman with Docker-compatible socket (`podman system service`) should work, but 
 - [ ] Telegram bot for daily reports
 - [ ] Per-container disk usage tracking
 - [ ] Time-range cost projections
-- [ ] Multi-currency support
 
 ---
 

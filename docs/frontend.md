@@ -12,10 +12,10 @@
 After starting the server, open:
 
 ```
-http://your-server:8081
+http://your-server:8083
 ```
 
-Default login: `admin` / `change-me`
+Default login: `admin` / *(password from `DOCKER_COST_ADMIN_PASSWORD` env var or randomly generated)*
 
 ### Pages
 
