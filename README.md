@@ -58,4 +58,4 @@ Also available in: 🇮🇩 [Bahasa Indonesia](README.id.md)
 
 ---
 
-**License:** MIT
+**License:** [Apache 2.0](LICENSE) ![License](https://img.shields.io/badge/License-Apache%202.0-57c1ff.svg)
